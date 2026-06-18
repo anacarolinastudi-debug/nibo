@@ -1,0 +1,619 @@
+// =====================================================================
+// SCHEMA DO BANCO DE DADOS — Sistema de Gestão Contábil (estilo Nibo)
+// =====================================================================
+// Como ler isto: cada "model" é uma tabela. Os campos com @relation
+// mostram como as tabelas se conectam. Tudo é multi-tenant: cada
+// escritório de contabilidade (AccountingFirm) só vê os próprios dados.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------
+// NÚCLEO: Escritório, usuários e empresas-cliente
+// ---------------------------------------------------------------------
+
+model AccountingFirm {
+  id        String   @id @default(uuid())
+  name      String
+  cnpj      String   @unique
+  email     String
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users              User[]
+  clients            Client[]
+  financialCategories FinancialCategory[]
+  obligations        Obligation[]
+  obligationGroups   ObligationGroup[]
+  obligationRobots   ObligationRobot[]
+  protocolDocuments  ProtocolDocument[]
+  auditLogs          AuditLog[]
+
+  @@map("accounting_firms")
+}
+
+enum UserRole {
+  ADMIN       // dono/gestor do escritório
+  ACCOUNTANT  // contador/colaborador interno
+  CLIENT      // usuário do portal do cliente
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  // Preenchido apenas quando role = CLIENT (usuário do portal vinculado a 1 empresa)
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  demandsAssigned   Demand[]        @relation("DemandAssignee")
+  demandsCreated    Demand[]        @relation("DemandCreator")
+  demandComments    DemandComment[]
+  documentsUploaded Document[]
+  obligationLinks    ClientObligation[]
+  protocolDocuments  ProtocolDocument[]
+  notifications     Notification[]
+  auditLogs          AuditLog[]
+
+  @@index([accountingFirmId])
+  @@map("users")
+}
+
+enum TaxRegime {
+  MEI
+  SIMPLES_NACIONAL
+  LUCRO_PRESUMIDO
+  LUCRO_REAL
+}
+
+model Client {
+  id          String    @id @default(uuid())
+  name        String
+  cnpj        String    @unique
+  taxRegime   TaxRegime
+  email       String?
+  phone       String?
+  active      Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  portalUsers        User[]
+  demands            Demand[]
+  documents          Document[]
+  obligationLinks    ClientObligation[]
+  protocolDocuments  ProtocolDocument[]
+  financialAccounts  FinancialAccount[]
+  financialTransactions FinancialTransaction[]
+  invoices           Invoice[]
+  employees          Employee[]
+
+  @@index([accountingFirmId])
+  @@map("clients")
+}
+
+// ---------------------------------------------------------------------
+// GESTÃO DE DEMANDAS (núcleo do pedido)
+// ---------------------------------------------------------------------
+
+enum DemandStatus {
+  PENDING       // aguardando
+  IN_PROGRESS   // em andamento
+  WAITING_CLIENT // aguardando retorno do cliente
+  DONE          // concluída
+  CANCELED      // cancelada
+}
+
+enum DemandPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum DemandCategory {
+  FISCAL
+  CONTABIL
+  FOLHA_PAGAMENTO
+  SOCIETARIO
+  FINANCEIRO
+  DOCUMENTACAO
+  OUTROS
+}
+
+enum RecurrenceFrequency {
+  NONE
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+model Demand {
+  id          String          @id @default(uuid())
+  title       String
+  description String?
+  status      DemandStatus    @default(PENDING)
+  priority    DemandPriority  @default(MEDIUM)
+  category    DemandCategory
+  dueDate     DateTime?
+  completedAt DateTime?
+  recurrence  RecurrenceFrequency @default(NONE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("DemandAssignee", fields: [assignedToId], references: [id])
+
+  createdById String
+  createdBy   User   @relation("DemandCreator", fields: [createdById], references: [id])
+
+  comments    DemandComment[]
+  attachments DemandAttachment[]
+
+  @@index([clientId])
+  @@index([assignedToId])
+  @@index([status])
+  @@map("demands")
+}
+
+model DemandComment {
+  id        String   @id @default(uuid())
+  message   String
+  createdAt DateTime @default(now())
+
+  demandId String
+  demand   Demand @relation(fields: [demandId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@index([demandId])
+  @@map("demand_comments")
+}
+
+model DemandAttachment {
+  id        String   @id @default(uuid())
+  fileName  String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+
+  demandId String
+  demand   Demand @relation(fields: [demandId], references: [id], onDelete: Cascade)
+
+  @@index([demandId])
+  @@map("demand_attachments")
+}
+
+// ---------------------------------------------------------------------
+// OBRIGAÇÕES, CALENDÁRIO, VÍNCULOS, ROBÔS E PROTOCOLOS
+// ---------------------------------------------------------------------
+
+enum ObligationType {
+  PAGAMENTO
+  CADASTRAL
+  DECLARACAO
+  DOCUMENTO
+  OUTRO
+}
+
+enum ObligationStatus {
+  ATIVO
+  INATIVO
+}
+
+enum DueDateRule {
+  ANTECIPA
+  POSTERGA
+}
+
+enum DeliveryType {
+  PORTAL
+  EMAIL
+  FISICA
+}
+
+enum ProtocolStatus {
+  CONFERENCIA
+  RECONHECIDO_ROBO
+  PROTOCOLADO
+  BAIXA_JUSTIFICADA
+  AGUARDANDO_ENTREGA_FISICA
+}
+
+enum TaskStatus {
+  EM_ABERTO
+  CONCLUIDA
+}
+
+model Obligation {
+  id              String             @id @default(uuid())
+  name            String
+  type            ObligationType
+  department      String
+  nickname        String?
+  frequency       RecurrenceFrequency @default(MONTHLY)
+  status          ObligationStatus    @default(ATIVO)
+  defaultRobot    Boolean             @default(false)
+  physicalOnly    Boolean             @default(false)
+  dueControl      Boolean             @default(true)
+  internalGoalDays Int?
+  ruleMonth       Int?
+  dueDay          Int?
+  dueDateRule     DueDateRule         @default(ANTECIPA)
+  saturdayBusinessDay Boolean         @default(false)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  groupItems        ObligationGroupItem[]
+  clientLinks       ClientObligation[]
+  robots            ObligationRobot[]
+  protocolDocuments ProtocolDocument[]
+
+  @@index([accountingFirmId])
+  @@index([status])
+  @@map("obligations")
+}
+
+model ObligationGroup {
+  id        String   @id @default(uuid())
+  nickname  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  items ObligationGroupItem[]
+
+  @@unique([accountingFirmId, nickname])
+  @@index([accountingFirmId])
+  @@map("obligation_groups")
+}
+
+model ObligationGroupItem {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+
+  groupId String
+  group   ObligationGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  obligationId String
+  obligation   Obligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, obligationId])
+  @@index([obligationId])
+  @@map("obligation_group_items")
+}
+
+model ClientObligation {
+  id        String     @id @default(uuid())
+  active    Boolean    @default(true)
+  taskStatus TaskStatus @default(EM_ABERTO)
+  startsAt  DateTime?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  obligationId String
+  obligation   Obligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+
+  responsibleId String?
+  responsible   User? @relation(fields: [responsibleId], references: [id])
+
+  @@unique([clientId, obligationId])
+  @@index([obligationId])
+  @@index([responsibleId])
+  @@map("client_obligations")
+}
+
+model ObligationRobot {
+  id          String   @id @default(uuid())
+  name        String?
+  identifiers String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  obligationId String
+  obligation   Obligation @relation(fields: [obligationId], references: [id], onDelete: Cascade)
+
+  @@index([accountingFirmId])
+  @@index([obligationId])
+  @@map("obligation_robots")
+}
+
+model ProtocolDocument {
+  id           String         @id @default(uuid())
+  fileName     String
+  fileUrl      String?
+  fileSize     Int?
+  mimeType     String?
+  reference    String?
+  dueDate      DateTime?
+  protocolDate DateTime?
+  status       ProtocolStatus @default(CONFERENCIA)
+  deliveryType DeliveryType   @default(PORTAL)
+  robotMatched Boolean        @default(false)
+  robotIdentifier String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  obligationId String?
+  obligation   Obligation? @relation(fields: [obligationId], references: [id])
+
+  responsibleId String?
+  responsible   User? @relation(fields: [responsibleId], references: [id])
+
+  @@index([accountingFirmId])
+  @@index([clientId])
+  @@index([obligationId])
+  @@index([status])
+  @@map("protocol_documents")
+}
+
+// ---------------------------------------------------------------------
+// CENTRALIZADOR DE DOCUMENTOS (portal do cliente)
+// ---------------------------------------------------------------------
+
+enum DocumentCategory {
+  NOTA_FISCAL
+  EXTRATO_BANCARIO
+  CONTRATO
+  GUIA_IMPOSTO
+  COMPROVANTE
+  OUTRO
+}
+
+model Document {
+  id        String           @id @default(uuid())
+  name      String
+  category  DocumentCategory
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+  refMonth  Int?             // mês de referência (1-12)
+  refYear   Int?
+  createdAt DateTime         @default(now())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  uploadedById String
+  uploadedBy   User   @relation(fields: [uploadedById], references: [id])
+
+  @@index([clientId])
+  @@map("documents")
+}
+
+// ---------------------------------------------------------------------
+// FINANCEIRO (contas, plano de contas, lançamentos)
+// ---------------------------------------------------------------------
+
+model FinancialAccount {
+  id         String   @id @default(uuid())
+  bankName   String
+  agency     String?
+  accountNum String?
+  balance    Decimal  @default(0) @db.Decimal(14, 2)
+  createdAt  DateTime @default(now())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  transactions FinancialTransaction[]
+
+  @@index([clientId])
+  @@map("financial_accounts")
+}
+
+enum TransactionType {
+  RECEITA
+  DESPESA
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+model FinancialCategory {
+  id   String          @id @default(uuid())
+  name String
+  type TransactionType
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  transactions FinancialTransaction[]
+
+  @@index([accountingFirmId])
+  @@map("financial_categories")
+}
+
+model FinancialTransaction {
+  id          String            @id @default(uuid())
+  description String
+  amount      Decimal           @db.Decimal(14, 2)
+  type        TransactionType
+  status      TransactionStatus @default(PENDING)
+  dueDate     DateTime
+  paidAt      DateTime?
+  createdAt   DateTime          @default(now())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  accountId String
+  account   FinancialAccount @relation(fields: [accountId], references: [id])
+
+  categoryId String
+  category   FinancialCategory @relation(fields: [categoryId], references: [id])
+
+  @@index([clientId])
+  @@index([accountId])
+  @@map("financial_transactions")
+}
+
+// ---------------------------------------------------------------------
+// NOTAS FISCAIS
+// ---------------------------------------------------------------------
+
+enum InvoiceType {
+  NFE   // produto
+  NFSE  // serviço
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  CANCELED
+  ERROR
+}
+
+model Invoice {
+  id          String        @id @default(uuid())
+  number      String
+  type        InvoiceType
+  status      InvoiceStatus @default(DRAFT)
+  totalValue  Decimal       @db.Decimal(14, 2)
+  issueDate   DateTime?
+  description String?
+  createdAt   DateTime      @default(now())
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  items InvoiceItem[]
+
+  @@index([clientId])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  description String
+  quantity    Decimal @db.Decimal(10, 2)
+  unitValue   Decimal @db.Decimal(14, 2)
+
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+// ---------------------------------------------------------------------
+// FOLHA DE PAGAMENTO
+// ---------------------------------------------------------------------
+
+model Employee {
+  id          String   @id @default(uuid())
+  name        String
+  cpf         String   @unique
+  role        String
+  baseSalary  Decimal  @db.Decimal(14, 2)
+  admissionAt DateTime
+  active      Boolean  @default(true)
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  payrollEntries PayrollEntry[]
+
+  @@index([clientId])
+  @@map("employees")
+}
+
+model PayrollEntry {
+  id           String   @id @default(uuid())
+  refMonth     Int
+  refYear      Int
+  grossSalary  Decimal  @db.Decimal(14, 2)
+  inss         Decimal  @db.Decimal(14, 2)
+  irrf         Decimal  @db.Decimal(14, 2)
+  fgts         Decimal  @db.Decimal(14, 2)
+  otherBenefits Decimal @default(0) @db.Decimal(14, 2)
+  netSalary    Decimal  @db.Decimal(14, 2)
+  createdAt    DateTime @default(now())
+
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, refMonth, refYear])
+  @@index([employeeId])
+  @@map("payroll_entries")
+}
+
+// ---------------------------------------------------------------------
+// NOTIFICAÇÕES E AUDITORIA
+// ---------------------------------------------------------------------
+
+model Notification {
+  id        String   @id @default(uuid())
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@index([accountingFirmId])
+  @@map("audit_logs")
+}
