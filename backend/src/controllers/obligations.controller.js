@@ -329,7 +329,7 @@ async function uploadConferenceFile(req, res) {
       fileName: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      fileUrl: null,
+      fileUrl: `/uploads/${req.file.filename}`,
       deliveryType: data.deliveryType,
       reference: data.reference || null,
       status: robot ? 'RECONHECIDO_ROBO' : 'CONFERENCIA',
@@ -363,6 +363,77 @@ async function confirmProtocol(req, res) {
   res.json(protocol);
 }
 
+const createProtocolSchema = z.object({
+  fileName: z.string().min(1),
+  clientId: z.string().optional().nullable(),
+  obligationId: z.string().optional().nullable(),
+  documentType: z.string().optional().nullable(),
+  documentNumber: z.string().optional().nullable(),
+  reference: z.string().optional().nullable(),
+  dueDate: z.string().datetime().optional().nullable(),
+  payDate: z.string().datetime().optional().nullable(),
+  principalValue: z.number().optional().nullable(),
+  totalValue: z.number().optional().nullable(),
+  recalculo: z.boolean().optional(),
+  deliveryType: z.enum(['PORTAL', 'EMAIL', 'FISICA']).default('PORTAL'),
+  protocolAs: z.enum(['CORRECAO', 'COMPLEMENTO']).optional().nullable(),
+  clientNote: z.string().optional().nullable(),
+});
+
+async function createProtocolDocument(req, res) {
+  const data = createProtocolSchema.parse(req.body);
+  const document = await prisma.protocolDocument.create({
+    data: {
+      ...data,
+      dueDate: data.dueDate ? new Date(data.dueDate) : null,
+      payDate: data.payDate ? new Date(data.payDate) : null,
+      accountingFirmId: req.user.accountingFirmId,
+      responsibleId: req.user.id,
+    },
+    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+  });
+  res.status(201).json(document);
+}
+
+const updateProtocolSchema = z.object({
+  clientId: z.string().optional().nullable(),
+  obligationId: z.string().optional().nullable(),
+  documentType: z.string().optional().nullable(),
+  documentNumber: z.string().optional().nullable(),
+  reference: z.string().optional().nullable(),
+  dueDate: z.string().datetime().optional().nullable(),
+  payDate: z.string().datetime().optional().nullable(),
+  principalValue: z.number().optional().nullable(),
+  totalValue: z.number().optional().nullable(),
+  recalculo: z.boolean().optional(),
+  deliveryType: z.enum(['PORTAL', 'EMAIL', 'FISICA']).optional(),
+  protocolAs: z.enum(['CORRECAO', 'COMPLEMENTO']).optional().nullable(),
+  clientNote: z.string().optional().nullable(),
+});
+
+async function updateProtocolDocument(req, res) {
+  const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
+  if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
+  const data = updateProtocolSchema.parse(req.body);
+  const protocol = await prisma.protocolDocument.update({
+    where: { id: existing.id },
+    data: {
+      ...data,
+      dueDate: data.dueDate !== undefined ? (data.dueDate ? new Date(data.dueDate) : null) : undefined,
+      payDate: data.payDate !== undefined ? (data.payDate ? new Date(data.payDate) : null) : undefined,
+    },
+    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+  });
+  res.json(protocol);
+}
+
+async function removeProtocolDocument(req, res) {
+  const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
+  if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
+  await prisma.protocolDocument.delete({ where: { id: existing.id } });
+  res.status(204).send();
+}
+
 module.exports = {
   listObligations,
   createObligation,
@@ -383,4 +454,7 @@ module.exports = {
   uploadConferenceFile,
   listProtocols,
   confirmProtocol,
+  createProtocolDocument,
+  updateProtocolDocument,
+  removeProtocolDocument,
 };

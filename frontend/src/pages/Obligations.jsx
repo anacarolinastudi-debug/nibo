@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MoreVertical, Pencil, Pin, Trash2, Users } from 'lucide-react';
+import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageSquare, MoreVertical, Pencil, Pin, Send, Trash2, Users, X } from 'lucide-react';
 import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
 import api from '../api/client';
 import NiboRail from '../components/NiboRail';
@@ -140,11 +140,12 @@ function Badge({ value, color }) {
 }
 
 function SelectField({ label, value, onChange, options }) {
+  const normalized = options.map((option) => (typeof option === 'object' ? option : { value: option, label: option }));
   return (
     <label className="block text-sm">
       <span className="mb-1 block">{label}</span>
       <select value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded border border-[#dfe5e8] bg-white px-3 text-[#3f4548]">
-        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+        {normalized.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
     </label>
   );
@@ -320,15 +321,37 @@ function TaskCard({ task, onToggle, compact }) {
   );
 }
 
-function Conference({ protocols, setProtocols, robots }) {
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
+
+const documentStatusMeta = {
+  CONFERENCIA: { label: 'Aguardando conferência', color: 'bg-red-500' },
+  RECONHECIDO_ROBO: { label: 'Reconhecido por robô', color: 'bg-amber-400' },
+  PROTOCOLADO: { label: 'Protocolado', color: 'bg-emerald-500' },
+  BAIXA_JUSTIFICADA: { label: 'Baixa justificada', color: 'bg-zinc-400' },
+  AGUARDANDO_ENTREGA_FISICA: { label: 'Aguardando entrega física', color: 'bg-sky-400' },
+};
+
+const deliveryTypeLabels = { PORTAL: 'Portal do cliente', EMAIL: 'E-mail', FISICA: 'Entrega física' };
+
+function Conference({ robots }) {
   const fileRef = useRef(null);
-  const [files, setFiles] = useState([]);
-  const [client, setClient] = useState('Identificar automaticamente');
+  const [documents, setDocuments] = useState([]);
   const [serverClients, setServerClients] = useState([]);
   const [serverObligations, setServerObligations] = useState([]);
-  const [department, setDepartment] = useState(departments[0]);
-  const [obligation, setObligation] = useState('Identificar automaticamente');
-  const [deliveryType, setDeliveryType] = useState('Portal do cliente');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [filterClient, setFilterClient] = useState('Todos os clientes');
+  const [filterDepartment, setFilterDepartment] = useState('Todos os departamentos');
+  const [filterObligation, setFilterObligation] = useState('Todas as obrigações');
+  const [filterDelivery, setFilterDelivery] = useState('Todos os tipos de entrega');
+  const [duplicateWarningId, setDuplicateWarningId] = useState(null);
+  const [activeDocument, setActiveDocument] = useState(null);
+  const [obsEditingId, setObsEditingId] = useState(null);
+
+  function loadDocuments() {
+    api.get('/obligations/protocols/list').then(({ data }) => {
+      setDocuments(data.filter((doc) => doc.status !== 'PROTOCOLADO'));
+    }).catch(() => {});
+  }
 
   useEffect(() => {
     Promise.all([api.get('/clients'), api.get('/obligations')])
@@ -337,67 +360,75 @@ function Conference({ protocols, setProtocols, robots }) {
         setServerObligations(obligationsResponse.data);
       })
       .catch(() => {});
+    loadDocuments();
   }, []);
 
   async function addFiles(fileList) {
     const pendingFiles = Array.from(fileList);
-    const mapped = await Promise.all(pendingFiles.map(async (file) => {
-      const localMatch = recognizePdf(file.name, robots);
-      const base = {
-        id: `${Date.now()}-${file.name}`,
-        fileName: file.name,
-        size: file.size,
-        client: client === 'Identificar automaticamente' ? 'Não identificado' : client,
-        department,
-        obligation: localMatch?.obligation || (obligation === 'Identificar automaticamente' ? 'Não identificada' : obligation),
-        deliveryType,
-        status: 'Lendo conteúdo do PDF...',
-        robotMatch: localMatch ? localMatch.identifiers.join(', ') : '',
-      };
-
+    for (const file of pendingFiles) {
       try {
         const form = new FormData();
         form.append('file', file);
-        form.append('deliveryType', deliveryType === 'Entrega física' ? 'FISICA' : deliveryType === 'E-mail' ? 'EMAIL' : 'PORTAL');
-        const selectedClient = serverClients.find((item) => item.name === client);
-        if (selectedClient?.id) form.append('clientId', selectedClient.id);
-        const selectedObligation = serverObligations.find((item) => item.name === obligation);
-        if (selectedObligation?.id) form.append('obligationId', selectedObligation.id);
         const { data } = await api.post('/obligations/conference/upload', form);
-        return {
-          ...base,
-          serverId: data.id,
-          client: data.client?.name || base.client,
-          obligation: data.obligation?.name || base.obligation,
-          status: data.robotMatched ? 'Reconhecido por robô' : 'Aguardando conferência',
-          robotMatch: data.robotIdentifier || base.robotMatch,
-        };
+        setDocuments((current) => [data, ...current]);
+        const duplicate = documents.find((doc) => doc.id !== data.id && doc.obligationId && doc.obligationId === data.obligationId && doc.reference && doc.reference === data.reference);
+        if (duplicate) setDuplicateWarningId(data.id);
       } catch {
-        return {
-          ...base,
-          status: localMatch ? 'Reconhecido pelo nome do arquivo' : 'Aguardando conferência manual',
-        };
+        window.alert(`Não foi possível enviar o arquivo "${file.name}".`);
       }
-    }));
-    setFiles((current) => [...mapped, ...current]);
+    }
   }
 
-  function protocolFile(file) {
-    const today = new Date().toLocaleDateString('pt-BR');
-    setProtocols((current) => [{
-      id: file.id,
-      document: file.obligation,
-      client: file.client,
-      reference: '06/2026',
-      dueDate: today,
-      value: '',
-      status: 'Protocolado',
-      responsible: 'Ana Carolina',
-      fileName: file.fileName,
-      protocolDate: today,
-    }, ...current]);
-    setFiles((current) => current.filter((item) => item.id !== file.id));
+  async function setProtocolAs(id, value) {
+    try {
+      const { data } = await api.put(`/obligations/protocols/${id}`, { protocolAs: value });
+      setDocuments((current) => current.map((doc) => (doc.id === id ? data : doc)));
+    } finally {
+      setDuplicateWarningId(null);
+    }
   }
+
+  async function protocolDocument(doc) {
+    await api.post(`/obligations/protocols/${doc.id}/confirm`);
+    setDocuments((current) => current.filter((item) => item.id !== doc.id));
+  }
+
+  async function removeDocument(doc) {
+    if (!window.confirm(`Excluir o documento "${doc.fileName}"?`)) return;
+    await api.delete(`/obligations/protocols/${doc.id}`);
+    setDocuments((current) => current.filter((item) => item.id !== doc.id));
+  }
+
+  async function saveNote(doc, note) {
+    const { data } = await api.put(`/obligations/protocols/${doc.id}`, { clientNote: note });
+    setDocuments((current) => current.map((item) => (item.id === doc.id ? data : item)));
+    setObsEditingId(null);
+  }
+
+  function toggleSelected(id) {
+    setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  }
+
+  const filtered = documents.filter((doc) => {
+    const matchesClient = filterClient === 'Todos os clientes' || doc.client?.name === filterClient;
+    const matchesDepartment = filterDepartment === 'Todos os departamentos' || doc.obligation?.department === filterDepartment;
+    const matchesObligation = filterObligation === 'Todas as obrigações' || doc.obligation?.name === filterObligation;
+    const matchesDelivery = filterDelivery === 'Todos os tipos de entrega' || deliveryTypeLabels[doc.deliveryType] === filterDelivery;
+    return matchesClient && matchesDepartment && matchesObligation && matchesDelivery;
+  });
+
+  const groups = [];
+  filtered.forEach((doc) => {
+    const key = doc.client?.id || 'sem-cliente';
+    let group = groups.find((item) => item.key === key);
+    if (!group) {
+      group = { key, client: doc.client, docs: [] };
+      groups.push(group);
+    }
+    group.docs.push(doc);
+  });
+
+  const allSelected = filtered.length > 0 && filtered.every((doc) => selectedIds.includes(doc.id));
 
   return (
     <section className="p-5">
@@ -405,35 +436,244 @@ function Conference({ protocols, setProtocols, robots }) {
         <h2 className="text-2xl font-semibold">Conferência</h2>
         <div className="flex gap-3">
           <input ref={fileRef} type="file" multiple className="hidden" onChange={(event) => addFiles(event.target.files)} />
-          <button onClick={() => fileRef.current?.click()} className="rounded bg-[#f2f2f2] px-4 py-2">☁ Carregar arquivos</button>
-          <button onClick={() => fileRef.current?.click()} className="rounded bg-[#f2f2f2] px-4 py-2">+ Novo protocolo</button>
+          <button onClick={() => fileRef.current?.click()} className="rounded bg-[#f2f2f2] px-4 py-2">Carregar arquivos</button>
+          <button onClick={() => setActiveDocument({})} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo protocolo</button>
         </div>
       </div>
-      <div className="mb-4 flex gap-4 text-sm text-[#16829b]"><button>☁ Baixar o Nibo Assistente</button><button>☁ Baixar o Nibo Impressora</button><button>□ Lista de robos</button></div>
+      <div className="mb-4 flex gap-4 text-sm text-[#16829b]">
+        <button onClick={() => fileRef.current?.click()}>Baixar o Nibo Assistente</button>
+        <button onClick={() => fileRef.current?.click()}>Baixar o Nibo Impressora</button>
+        <button>Lista de robôs</button>
+      </div>
       <div className="grid grid-cols-4 gap-4">
-        <SelectField label="Cliente" value={client} onChange={setClient} options={['Identificar automaticamente', ...(serverClients.length ? serverClients.map((item) => item.name) : clients)]} />
-        <SelectField label="Departamento" value={department} onChange={setDepartment} options={departments} />
-        <SelectField label="Obrigação" value={obligation} onChange={setObligation} options={['Identificar automaticamente', ...(serverObligations.length ? serverObligations.map((item) => item.name) : obligationNames)]} />
-        <SelectField label="Tipo de entrega" value={deliveryType} onChange={setDeliveryType} options={['Portal do cliente', 'Entrega física', 'E-mail']} />
+        <SelectField label="Cliente" value={filterClient} onChange={setFilterClient} options={['Todos os clientes', ...serverClients.map((item) => item.name)]} />
+        <SelectField label="Departamento" value={filterDepartment} onChange={setFilterDepartment} options={['Todos os departamentos', ...departments]} />
+        <SelectField label="Obrigação" value={filterObligation} onChange={setFilterObligation} options={['Todas as obrigações', ...serverObligations.map((item) => item.name)]} />
+        <SelectField label="Tipo de entrega" value={filterDelivery} onChange={setFilterDelivery} options={['Todos os tipos de entrega', ...Object.values(deliveryTypeLabels)]} />
       </div>
       <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addFiles(event.dataTransfer.files); }} className="mt-6 rounded border-2 border-dashed border-[#d5dde3] bg-[#fafafa] p-8 text-center">
         <div className="text-5xl text-[#777]">☁</div>
         <b>Arraste arquivos para essa tela</b>
-        <p className="mt-2 text-sm text-[#777]">Os arquivos entram na conferencia vinculados ao cliente e podem ser protocolados em seguida.</p>
+        <p className="mt-2 text-sm text-[#777]">Os arquivos entram na conferência vinculados ao cliente e podem ser protocolados em seguida.</p>
       </div>
-      <div className="mt-6">
-        <h3 className="mb-3 font-semibold">Arquivos carregados</h3>
-        {files.length === 0 ? <p className="text-sm text-[#777]">Nenhuma obrigação para conferência.</p> : (
-          <div className="overflow-hidden rounded border border-[#e7ecef]">
+
+      <label className="mt-6 flex items-center gap-2 text-sm">
+        <input type="checkbox" checked={allSelected} onChange={() => setSelectedIds(allSelected ? [] : filtered.map((doc) => doc.id))} /> Selecionar todos
+      </label>
+      <p className="mb-3 mt-1 text-sm text-[#68737a]">{filtered.length} documento{filtered.length === 1 ? '' : 's'}</p>
+
+      {groups.length === 0 && <p className="py-8 text-center text-sm text-[#777]">Nenhuma obrigação para conferência.</p>}
+
+      <div className="space-y-6">
+        {groups.map((group) => (
+          <div key={group.key} className="rounded border border-[#e7ecef]">
+            <header className="flex items-center justify-between border-b border-[#e7ecef] bg-[#fafbfc] px-4 py-3">
+              <div>
+                <b>{group.client ? `${group.client.code || '-'} - ${group.client.name} (${group.client.cnpj})` : 'Não identificado'}</b>
+                <p className="text-sm text-[#68737a]">{group.docs.length} documento{group.docs.length === 1 ? '' : 's'}</p>
+              </div>
+              <Users size={16} className="text-[#68737a]" title="Responsáveis" />
+            </header>
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#f3f3f3]"><tr>{['Arquivo', 'Cliente', 'Obrigação reconhecida', 'Robô', 'Status', ''].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr></thead>
-              <tbody>{files.map((file) => <tr key={file.id} className="border-t border-[#e7ecef]"><td className="px-4 py-3 font-semibold text-[#16829b]">{file.fileName}</td><td className="px-4 py-3">{file.client}</td><td className="px-4 py-3">{file.obligation}</td><td className="px-4 py-3 text-xs text-[#68737a]">{file.robotMatch || '-'}</td><td className="px-4 py-3">{file.status}</td><td className="px-4 py-3 text-right"><button onClick={() => protocolFile(file)} className="rounded bg-[#2693d2] px-3 py-1.5 text-white">Protocolar</button></td></tr>)}</tbody>
+              <thead className="bg-[#f3f3f3]">
+                <tr>
+                  {['', 'Arquivo', 'Obrigação', 'Competência', 'Vencimento', 'Valor (R$)', 'Recálculo', 'Obs', 'Entrega', 'Status', ''].map((head) => (
+                    <th key={head} className="px-3 py-2">{head}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {group.docs.map((doc) => {
+                  const meta = documentStatusMeta[doc.status] || documentStatusMeta.CONFERENCIA;
+                  return (
+                    <tr key={doc.id} className="relative border-t border-[#e7ecef]">
+                      <td className="px-3 py-3"><input type="checkbox" checked={selectedIds.includes(doc.id)} onChange={() => toggleSelected(doc.id)} /></td>
+                      <td className="px-3 py-3"><button onClick={() => setActiveDocument(doc)} className="font-semibold text-[#16829b]">{doc.fileName}</button></td>
+                      <td className="px-3 py-3">{doc.obligation?.name || '-'}</td>
+                      <td className="px-3 py-3">{doc.reference || '-'}</td>
+                      <td className="px-3 py-3 text-red-600">{doc.dueDate ? new Date(doc.dueDate).toLocaleDateString('pt-BR') : '-'}</td>
+                      <td className="px-3 py-3">{doc.totalValue ? Number(doc.totalValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
+                      <td className="px-3 py-3">{doc.recalculo ? 'Sim' : '—'}</td>
+                      <td className="px-3 py-3">
+                        <button title="Observações" onClick={() => setObsEditingId(obsEditingId === doc.id ? null : doc.id)}><MessageSquare size={16} className="text-[#68737a]" /></button>
+                        {obsEditingId === doc.id && (
+                          <div className="absolute z-20 mt-2 w-64 rounded border border-[#dfe5e8] bg-white p-3 shadow-lg">
+                            <textarea defaultValue={doc.clientNote || ''} rows={3} className="mb-2 w-full rounded border border-[#dfe5e8] p-2 text-sm" id={`note-${doc.id}`} />
+                            <div className="flex justify-end gap-2">
+                              <button onClick={() => setObsEditingId(null)} className="text-[#68737a]">Cancelar</button>
+                              <button onClick={() => saveNote(doc, document.getElementById(`note-${doc.id}`).value)} className="rounded bg-[#2693d2] px-3 py-1 text-white">Salvar</button>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3"><Send size={16} className="text-[#68737a]" title={deliveryTypeLabels[doc.deliveryType]} /></td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-block h-2.5 w-2.5 rounded-full ${meta.color}`} title={meta.label} />
+                        {duplicateWarningId === doc.id && (
+                          <div className="absolute z-20 mt-2 w-72 rounded border border-[#dfe5e8] bg-white p-3 text-sm shadow-lg">
+                            <p className="mb-2">Já existe protocolo dessa referência para a obrigação indicada!</p>
+                            <p className="mb-2 text-[#68737a]">Enviar a nova versão como:</p>
+                            <div className="flex gap-4">
+                              <label className="flex items-center gap-1"><input type="radio" name={`dup-${doc.id}`} onChange={() => setProtocolAs(doc.id, 'CORRECAO')} /> Correção</label>
+                              <label className="flex items-center gap-1"><input type="radio" name={`dup-${doc.id}`} onChange={() => setProtocolAs(doc.id, 'COMPLEMENTO')} /> Complemento</label>
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2 text-[#68737a]">
+                          <button title="Configurar Robô" onClick={() => window.alert(doc.robotIdentifier ? `Reconhecido pelo identificador: ${doc.robotIdentifier}` : 'Nenhum robô configurado para esta obrigação.')}><Bot size={16} /></button>
+                          <button title="Editar" onClick={() => setActiveDocument(doc)}><Pencil size={16} /></button>
+                          <button title="Excluir" onClick={() => removeDocument(doc)}><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
+            <div className="flex justify-end border-t border-[#e7ecef] px-4 py-2">
+              {group.docs.filter((doc) => selectedIds.includes(doc.id)).length > 0 && (
+                <button onClick={() => group.docs.filter((doc) => selectedIds.includes(doc.id)).forEach(protocolDocument)} className="rounded bg-[#2693d2] px-3 py-1.5 text-sm text-white">Protocolar selecionados</button>
+              )}
+            </div>
           </div>
-        )}
+        ))}
       </div>
-      <p className="mt-4 text-sm text-[#68737a]">Protocolados nesta sessao: {protocols.filter((item) => item.status === 'Protocolado').length}</p>
+
+      {activeDocument && (
+        <DocumentPanel
+          document={activeDocument}
+          serverClients={serverClients}
+          serverObligations={serverObligations}
+          onClose={() => setActiveDocument(null)}
+          onSaved={(saved) => {
+            setActiveDocument(null);
+            setDocuments((current) => (current.some((doc) => doc.id === saved.id) ? current.map((doc) => (doc.id === saved.id ? saved : doc)) : [saved, ...current]));
+          }}
+        />
+      )}
     </section>
+  );
+}
+
+function DocumentPanel({ document: doc, serverClients, serverObligations, onClose, onSaved }) {
+  const isNew = !doc.id;
+  const [fileName, setFileName] = useState(doc.fileName || '');
+  const [clientId, setClientId] = useState(doc.clientId || doc.client?.id || '');
+  const [obligationId, setObligationId] = useState(doc.obligationId || doc.obligation?.id || '');
+  const [documentType, setDocumentType] = useState(doc.documentType || '');
+  const [documentNumber, setDocumentNumber] = useState(doc.documentNumber || '');
+  const [reference, setReference] = useState(doc.reference || '');
+  const [dueDate, setDueDate] = useState(doc.dueDate ? doc.dueDate.slice(0, 10) : '');
+  const [payDate, setPayDate] = useState(doc.payDate ? doc.payDate.slice(0, 10) : '');
+  const [principalValue, setPrincipalValue] = useState(doc.principalValue || '');
+  const [totalValue, setTotalValue] = useState(doc.totalValue || '');
+  const [recalculo, setRecalculo] = useState(Boolean(doc.recalculo));
+  const [deliveryType, setDeliveryType] = useState(doc.deliveryType || 'PORTAL');
+  const [protocolAs, setProtocolAs] = useState(doc.protocolAs || '');
+  const [clientNote, setClientNote] = useState(doc.clientNote || '');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (isNew && !fileName.trim()) {
+      window.alert('Informe um nome para identificar este protocolo.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = {
+        ...(isNew ? { fileName: fileName.trim() } : {}),
+        clientId: clientId || null,
+        obligationId: obligationId || null,
+        documentType: documentType || null,
+        documentNumber: documentNumber || null,
+        reference: reference || null,
+        dueDate: dueDate ? new Date(dueDate).toISOString() : null,
+        payDate: payDate ? new Date(payDate).toISOString() : null,
+        principalValue: principalValue ? Number(principalValue) : null,
+        totalValue: totalValue ? Number(totalValue) : null,
+        recalculo,
+        deliveryType,
+        protocolAs: protocolAs || null,
+        clientNote: clientNote || null,
+      };
+      const { data } = isNew
+        ? await api.post('/obligations/protocols', payload)
+        : await api.put(`/obligations/protocols/${doc.id}`, payload);
+      onSaved(data);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const fileUrl = doc.fileUrl ? `${API_ORIGIN}${doc.fileUrl}` : null;
+
+  return (
+    <div className="fixed inset-0 z-40 flex bg-black/30">
+      <div className="ml-auto flex h-full w-full max-w-[1100px] bg-white shadow-xl">
+        <div className="hidden flex-1 items-center justify-center bg-[#2b2b2b] lg:flex">
+          {fileUrl ? <iframe title="Documento" src={fileUrl} className="h-full w-full" /> : <p className="text-white/60">Sem arquivo anexado</p>}
+        </div>
+        <div className="w-full max-w-[420px] overflow-y-auto p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Identificação do documento</h2>
+              <p className="text-xs text-[#78838a]">{doc.fileName || 'Novo protocolo'}</p>
+            </div>
+            <button onClick={onClose}><X size={20} /></button>
+          </div>
+          {isNew && (
+            <div className="mb-4">
+              <TextField label="Nome do protocolo" value={fileName} onChange={setFileName} placeholder="Ex.: Guia de pagamento entregue fisicamente" />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <SelectField label="Cliente" value={clientId} onChange={setClientId} options={[{ value: '', label: 'Não identificado' }, ...serverClients.map((c) => ({ value: c.id, label: c.name }))]} />
+            <SelectField label="Obrigação" value={obligationId} onChange={setObligationId} options={[{ value: '', label: 'Não identificada' }, ...serverObligations.map((o) => ({ value: o.id, label: o.name }))]} />
+          </div>
+          <h3 className="mb-3 mt-5 font-semibold">Informações do documento</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <TextField label="Tipo de documento" value={documentType} onChange={setDocumentType} placeholder="DARF, DAS..." />
+            <TextField label="Número do documento" value={documentNumber} onChange={setDocumentNumber} />
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+            <TextField label="Competência" value={reference} onChange={setReference} placeholder="MM/AAAA" />
+            <label className="block"><span className="mb-1 block">Vencimento</span><input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="h-10 w-full rounded border border-[#dfe5e8] px-2" /></label>
+            <label className="block"><span className="mb-1 block">Pagar até</span><input type="date" value={payDate} onChange={(e) => setPayDate(e.target.value)} className="h-10 w-full rounded border border-[#dfe5e8] px-2" /></label>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
+            <TextField label="Valor principal" value={principalValue} onChange={setPrincipalValue} placeholder="0,00" />
+            <TextField label="Valor total (opcional)" value={totalValue} onChange={setTotalValue} placeholder="0,00" />
+          </div>
+          <label className="mt-4 flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={recalculo} onChange={(e) => setRecalculo(e.target.checked)} /> Recálculo
+            <span className="text-xs text-amber-600">Não habilite em parcelamento</span>
+          </label>
+
+          <h3 className="mb-3 mt-6 font-semibold">Protocolo</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <SelectField label="Tipo de entrega" value={deliveryType} onChange={setDeliveryType} options={[{ value: 'PORTAL', label: 'Portal do cliente' }, { value: 'EMAIL', label: 'E-mail' }, { value: 'FISICA', label: 'Física' }]} />
+            <div>
+              <span className="mb-1 block">Protocolar como</span>
+              <div className="flex gap-4 pt-2">
+                <label className="flex items-center gap-1"><input type="radio" checked={protocolAs === 'CORRECAO'} onChange={() => setProtocolAs('CORRECAO')} /> Correção</label>
+                <label className="flex items-center gap-1"><input type="radio" checked={protocolAs === 'COMPLEMENTO'} onChange={() => setProtocolAs('COMPLEMENTO')} /> Complemento</label>
+              </div>
+            </div>
+          </div>
+          <label className="mt-4 block text-sm">
+            <span className="mb-1 block">Informação para o cliente (opcional)</span>
+            <textarea value={clientNote} onChange={(e) => setClientNote(e.target.value)} rows={3} className="w-full resize-y rounded border border-[#dfe5e8] p-2" />
+          </label>
+
+          <div className="mt-8 flex justify-end gap-3">
+            <button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button>
+            <button onClick={handleSave} disabled={saving} className="rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50">Salvar</button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

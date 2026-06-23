@@ -475,11 +475,19 @@ model ProtocolDocument {
   mimeType     String?
   reference    String?
   dueDate      DateTime?
+  payDate      DateTime?
   protocolDate DateTime?
   status       ProtocolStatus @default(CONFERENCIA)
   deliveryType DeliveryType   @default(PORTAL)
   robotMatched Boolean        @default(false)
   robotIdentifier String?
+  documentType   String?
+  documentNumber String?
+  principalValue Decimal? @db.Decimal(14, 2)
+  totalValue     Decimal? @db.Decimal(14, 2)
+  recalculo      Boolean  @default(false)
+  protocolAs     String?
+  clientNote     String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
