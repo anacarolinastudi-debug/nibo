@@ -1,130 +1,60 @@
-import React, { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { Archive, Building2, ChevronDown, CircleHelp, ClipboardCheck, ClipboardList, ContactRound, ExternalLink, Gift, MoreVertical, Pencil, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
 import api from '../api/client';
 
-const REGIME_LABELS = {
-  MEI: 'MEI',
-  SIMPLES_NACIONAL: 'Simples Nacional',
-  LUCRO_PRESUMIDO: 'Lucro Presumido',
-  LUCRO_REAL: 'Lucro Real',
-};
+const regimes = { MEI: 'MEI', SIMPLES_NACIONAL: 'Simples Nacional', LUCRO_PRESUMIDO: 'Lucro Presumido', LUCRO_REAL: 'Lucro Real' };
+const departments = ['Departamento Contábil', 'Departamento de Registro', 'Departamento Financeiro', 'Departamento Fiscal', 'Departamento Pessoal'];
+const emptyClient = { personType: 'JURIDICA', name: '', cnpj: '', code: '', stateRegistration: '', municipalRegistration: '', taxRegime: 'SIMPLES_NACIONAL', email: '', phone: '', cep: '', street: '', number: '', complement: '', state: '', city: '', neighborhood: '', activity: '', cnae: '', allowPublicDocuments: false, taxReminderEmail: true, active: true };
 
-function NewClientModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ name: '', cnpj: '', taxRegime: 'SIMPLES_NACIONAL', email: '', phone: '' });
+function Rail() {
+  return <aside className="fixed inset-y-0 left-0 z-30 flex w-[46px] flex-col items-center bg-[#003f82] text-white"><b className="mt-4 text-2xl">n</b><div className="mt-6 flex flex-1 flex-col gap-2"><Link to="/" title="Obrigações" className="grid h-9 w-9 place-items-center rounded hover:bg-white/10"><ClipboardCheck size={18} /></Link><span className="grid h-9 w-9 place-items-center rounded bg-white/15"><Users size={18} /></span></div><div className="mb-4 flex flex-col items-center gap-3"><Gift size={18} /><CircleHelp size={18} /><span className="grid h-8 w-8 place-items-center rounded-full border border-white/70 text-xs">AC</span></div></aside>;
+}
+
+function ClientMenu({ tab, setTab }) {
+  return <aside className="fixed inset-y-0 left-[46px] z-20 w-[236px] border-r border-[#dfe5e8] bg-[#f4f7fb]"><div className="flex h-[58px] items-center border-b border-[#dfe5e8] px-5 text-xl">Contador</div><nav className="px-5 py-5 text-sm"><p className="mb-6 flex items-center gap-2 text-[#778189]"><Zap size={16} /> Comece rápido</p><p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">OPERAÇÃO</p><Link to="/" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardCheck size={16} /> Obrigações</Link><p className="mb-4 flex justify-between text-[#68737a]">Tarefas &amp; Processos <ChevronDown size={15} /></p><p className="mb-4 text-[#68737a]">Relacionamento</p><p className="mb-4 text-[#68737a]">Documentos recebidos</p><p className="mb-6 text-[#68737a]">Automação contábil</p><p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p><p className="mb-2 flex items-center gap-2 font-semibold"><Users size={16} /> Clientes</p><div className="mb-4 ml-5 space-y-1">{['Meus clientes', 'Contatos'].map((item) => <button key={item} onClick={() => setTab(item)} className={`block w-full rounded px-3 py-2 text-left ${tab === item ? 'bg-[#dce5ef]' : 'text-[#68737a]'}`}>{item}</button>)}</div><Link to="/formularios" className="flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link></nav></aside>;
+}
+
+function Input({ label, value, onChange, type = 'text', placeholder = '' }) {
+  return <label className="block text-sm"><span className="mb-1 block font-medium">{label}</span><input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-full rounded border border-[#d8dfe3] px-3 outline-none focus:border-[#16829b]" /></label>;
+}
+function Select({ label, value, onChange, options }) {
+  return <label className="block text-sm"><span className="mb-1 block font-medium">{label}</span><select value={value || ''} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="">Selecione...</option>{options.map((item) => <option key={item.value || item} value={item.value || item}>{item.label || item}</option>)}</select></label>;
+}
+function Toggle({ label, checked, onChange }) {
+  return <label className="flex cursor-pointer items-center gap-3 text-sm"><button type="button" onClick={() => onChange(!checked)} className={`relative h-5 w-9 rounded-full ${checked ? 'bg-[#2b91d2]' : 'bg-[#c9ced1]'}`}><i className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} /></button>{label}</label>;
+}
+
+function ClientDrawer({ client, onClose, onSaved }) {
+  const [form, setForm] = useState(client ? { ...emptyClient, ...client } : emptyClient);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  async function save(e) { e.preventDefault(); setSaving(true); try { client ? await api.put(`/clients/${client.id}`, form) : await api.post('/clients', form); onSaved(); } catch (error) { window.alert(error.response?.data?.error || 'Não foi possível salvar o cliente.'); } finally { setSaving(false); } }
+  return <div className="fixed inset-0 z-50 bg-black/40"><form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(1050px,92vw)] flex-col bg-white shadow-xl"><header className="flex h-16 items-center justify-between border-b px-6"><h2 className="text-2xl font-semibold">{client ? 'Editar cliente' : 'Criar cliente'}</h2><button type="button" onClick={onClose}><X /></button></header><div className="flex-1 space-y-7 overflow-y-auto p-6"><section><p className="mb-4 text-sm font-medium">Tipo de cliente</p><div className="flex gap-8 text-sm"><label><input type="radio" checked={form.personType === 'JURIDICA'} onChange={() => set('personType', 'JURIDICA')} /> Pessoa jurídica</label><label><input type="radio" checked={form.personType === 'FISICA'} onChange={() => set('personType', 'FISICA')} /> Pessoa física</label></div></section><section className="grid grid-cols-[240px_1fr_180px] gap-5 bg-[#fafafa] p-5"><Input label={form.personType === 'FISICA' ? 'CPF' : 'CNPJ'} value={form.cnpj} onChange={(v) => set('cnpj', v)} /><Input label={form.personType === 'FISICA' ? 'Nome' : 'Razão social'} value={form.name} onChange={(v) => set('name', v)} /><Input label="Código" value={form.code} onChange={(v) => set('code', v)} /><Input label="Inscrição Estadual" value={form.stateRegistration} onChange={(v) => set('stateRegistration', v)} /><Input label="Inscrição Municipal" value={form.municipalRegistration} onChange={(v) => set('municipalRegistration', v)} /><Select label="Regime tributário" value={form.taxRegime} onChange={(v) => set('taxRegime', v)} options={Object.entries(regimes).map(([value, label]) => ({ value, label }))} /></section><section><h3 className="mb-4 font-semibold">Endereço</h3><div className="grid grid-cols-4 gap-5"><Input label="CEP" value={form.cep} onChange={(v) => set('cep', v)} /><div className="col-span-2"><Input label="Logradouro" value={form.street} onChange={(v) => set('street', v)} /></div><Input label="Número" value={form.number} onChange={(v) => set('number', v)} /><Input label="Complemento" value={form.complement} onChange={(v) => set('complement', v)} /><Input label="Estado" value={form.state} onChange={(v) => set('state', v)} /><Input label="Município" value={form.city} onChange={(v) => set('city', v)} /><Input label="Bairro" value={form.neighborhood} onChange={(v) => set('neighborhood', v)} /></div></section><section><h3 className="mb-4 font-semibold">Atividade</h3><div className="grid grid-cols-2 gap-5"><Input label="Ramo de atividade" value={form.activity} onChange={(v) => set('activity', v)} /><Input label="CNAE Federal" value={form.cnae} onChange={(v) => set('cnae', v)} /></div></section><section><h3 className="mb-4 font-semibold">Contato e acesso</h3><div className="mb-5 grid grid-cols-2 gap-5"><Input label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} /><Input label="Telefone" value={form.phone} onChange={(v) => set('phone', v)} /></div><div className="space-y-4"><Toggle label="Permitir visualização de documentos sem login" checked={form.allowPublicDocuments} onChange={(v) => set('allowPublicDocuments', v)} /><Toggle label="Enviar e-mail com lembrete no dia do vencimento de impostos" checked={form.taxReminderEmail} onChange={(v) => set('taxReminderEmail', v)} /></div></section></div><footer className="flex justify-end gap-3 border-t p-4"><button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button><button disabled={saving} className="rounded bg-[#2693d2] px-6 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar'}</button></footer></form></div>;
+}
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
-    try {
-      await api.post('/clients', form);
-      onCreated();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Não foi possível cadastrar o cliente.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-ink/40 flex items-center justify-center p-4 z-50">
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
-        <h2 className="text-lg font-semibold">Nova empresa-cliente</h2>
-        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Razão social</label>
-          <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">CNPJ</label>
-          <input required value={form.cnpj} onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
-            className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm" placeholder="Somente números" />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Regime tributário</label>
-          <select value={form.taxRegime} onChange={(e) => setForm({ ...form, taxRegime: e.target.value })}
-            className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm">
-            {Object.entries(REGIME_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">E-mail de contato</label>
-          <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-            className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm" />
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-lg text-ink/60 hover:bg-ink/5">Cancelar</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 text-sm rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-60">
-            {saving ? 'Salvando...' : 'Cadastrar'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
+function ContactDrawer({ contact, clients, onClose, onSaved }) {
+  const [form, setForm] = useState(contact ? { ...contact } : { clientId: clients[0]?.id || '', name: '', email: '', whatsapp: '', departments });
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const toggleDepartment = (item) => set('departments', form.departments.includes(item) ? form.departments.filter((d) => d !== item) : [...form.departments, item]);
+  async function save(e) { e.preventDefault(); try { contact ? await api.put(`/clients/contacts/${contact.id}`, form) : await api.post('/clients/contacts', form); onSaved(); } catch (error) { window.alert(error.response?.data?.error || 'Não foi possível salvar o contato.'); } }
+  return <div className="fixed inset-0 z-50 bg-black/40"><form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(760px,92vw)] flex-col bg-white"><header className="flex h-16 items-center justify-between border-b px-6"><h2 className="text-2xl font-semibold">{contact ? 'Editar contato' : 'Novo contato'}</h2><button type="button" onClick={onClose}><X /></button></header><div className="flex-1 space-y-7 overflow-y-auto p-6"><div className="grid grid-cols-2 gap-5"><Select label="Cliente" value={form.clientId} onChange={(v) => set('clientId', v)} options={clients.map((c) => ({ value: c.id, label: c.name }))} /><Input label="Nome do contato" value={form.name} onChange={(v) => set('name', v)} /><Input label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} /><Input label="WhatsApp" value={form.whatsapp} onChange={(v) => set('whatsapp', v)} /></div><section><h3 className="mb-4 text-lg font-semibold">Recebe obrigações dos seguintes departamentos</h3><div className="space-y-4 rounded bg-[#f3f3f3] p-5">{departments.map((item) => <label key={item} className="flex items-center gap-3"><input type="checkbox" checked={form.departments.includes(item)} onChange={() => toggleDepartment(item)} /> {item}</label>)}</div></section></div><footer className="flex justify-end gap-3 border-t p-4"><button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button><button className="rounded bg-[#2693d2] px-6 py-2 text-white">Salvar</button></footer></form></div>;
 }
 
 export default function Clients() {
+  const [tab, setTab] = useState('Meus clientes');
   const [clients, setClients] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-
-  async function load() {
-    setLoading(true);
-    const { data } = await api.get('/clients');
-    setClients(data);
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, []);
-
-  return (
-    <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Clientes</h1>
-          <p className="text-ink/50 text-sm">Empresas atendidas pelo escritório.</p>
-        </div>
-        <button onClick={() => setShowModal(true)} className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg">
-          + Novo cliente
-        </button>
-      </div>
-
-      {loading ? (
-        <p className="text-sm text-ink/40">Carregando...</p>
-      ) : (
-        <div className="bg-white rounded-xl border border-ink/10 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-ink/5 text-ink/50 text-xs uppercase">
-              <tr>
-                <th className="text-left px-4 py-3">Razão social</th>
-                <th className="text-left px-4 py-3">CNPJ</th>
-                <th className="text-left px-4 py-3">Regime</th>
-                <th className="text-left px-4 py-3">Demandas abertas</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-ink/5">
-              {clients.map((c) => (
-                <tr key={c.id}>
-                  <td className="px-4 py-3 font-medium">{c.name}</td>
-                  <td className="px-4 py-3 font-mono text-ink/60">{c.cnpj}</td>
-                  <td className="px-4 py-3">{REGIME_LABELS[c.taxRegime]}</td>
-                  <td className="px-4 py-3">{c._count?.demands ?? 0}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {showModal && <NewClientModal onClose={() => setShowModal(false)} onCreated={() => { setShowModal(false); load(); }} />}
-    </Layout>
-  );
+  const [contacts, setContacts] = useState([]);
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('Ativos');
+  const [taxRegime, setTaxRegime] = useState('');
+  const [drawer, setDrawer] = useState(null);
+  const load = async () => { const [clientResult, contactResult] = await Promise.all([api.get('/clients'), api.get('/clients/contacts/list')]); setClients(clientResult.data); setContacts(contactResult.data); };
+  useEffect(() => { load().catch(() => {}); }, []);
+  const visibleClients = useMemo(() => clients.filter((c) => (status === 'Ativos' ? c.active : !c.active) && (!taxRegime || c.taxRegime === taxRegime) && `${c.name} ${c.cnpj} ${c.code || ''}`.toLowerCase().includes(query.toLowerCase())), [clients, status, taxRegime, query]);
+  const visibleContacts = useMemo(() => contacts.filter((c) => `${c.name} ${c.email || ''} ${c.client.name}`.toLowerCase().includes(query.toLowerCase())), [contacts, query]);
+  const groupedContacts = Object.entries(visibleContacts.reduce((acc, item) => ({ ...acc, [item.clientId]: [...(acc[item.clientId] || []), item] }), {}));
+  async function archive(client) { if (!window.confirm(`Arquivar ${client.name}?`)) return; await api.delete(`/clients/${client.id}`); load(); }
+  async function removeContact(contact) { if (!window.confirm(`Excluir o contato ${contact.name}?`)) return; await api.delete(`/clients/contacts/${contact.id}`); load(); }
+  return <div className="min-h-screen bg-white text-[#3f4548]"><Rail /><ClientMenu tab={tab} setTab={setTab} /><main className="ml-[282px]"><header className="flex h-[58px] items-center border-b px-6 text-base text-[#60666b]">52.107.544 ANA CAROLINA CARPINE AGUIAR</header><div className="flex h-[45px] items-end gap-14 border-b px-6 text-sm"><b className="pb-3">Clientes</b>{['Meus clientes', 'Contatos'].map((item) => <button key={item} onClick={() => setTab(item)} className={`h-full border-b-2 px-1 ${tab === item ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{item}</button>)}</div><section className="p-6"><div className="mb-6 flex items-center justify-between"><h1 className="text-2xl font-semibold">{tab}</h1><button onClick={() => setDrawer(tab === 'Meus clientes' ? { type: 'client' } : { type: 'contact' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white"><Plus size={17} /> {tab === 'Meus clientes' ? 'Adicionar cliente' : 'Novo contato'}</button></div><div className="mb-6 flex items-end gap-4"><label className="block min-w-[360px] text-sm"><span className="mb-1 block">Buscar por</span><span className="flex h-10 items-center gap-2 rounded border px-3"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} className="w-full outline-none" placeholder="Buscar por código, cliente, CPF/CNPJ ou contato" /></span></label>{tab === 'Meus clientes' && <><Select label="Regime tributário" value={taxRegime} onChange={setTaxRegime} options={Object.entries(regimes).map(([value, label]) => ({ value, label }))} /><div className="flex h-10 self-end rounded border p-1"><button onClick={() => setStatus('Ativos')} className={`px-4 ${status === 'Ativos' ? 'bg-[#e5f6fb] text-[#16829b]' : ''}`}>Ativos</button><button onClick={() => setStatus('Arquivados')} className={`px-4 ${status === 'Arquivados' ? 'bg-[#e5f6fb] text-[#16829b]' : ''}`}>Arquivados</button></div></>}</div>{tab === 'Meus clientes' ? <div className="overflow-x-auto rounded border"><table className="w-full min-w-[850px] text-left text-sm"><thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Código</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Regime tributário</th><th className="px-5 py-3">Obrigações</th><th className="w-32 px-5 py-3"></th></tr></thead><tbody>{visibleClients.map((client) => <tr key={client.id} className="border-t"><td className="px-5 py-4">{client.code || '-'}</td><td className="px-5 py-4"><button onClick={() => setDrawer({ type: 'client', item: client })} className="font-semibold text-[#16829b]">{client.name}</button><small className="block">{client.cnpj}</small></td><td className="px-5 py-4">{regimes[client.taxRegime]}</td><td className="px-5 py-4">{client._count?.obligationLinks || 0}</td><td className="px-5 py-4"><div className="flex justify-end gap-3 text-[#16829b]"><button title="Editar" onClick={() => setDrawer({ type: 'client', item: client })}><Pencil size={16} /></button><button title="Abrir cliente"><ExternalLink size={16} /></button>{client.active && <button title="Arquivar" onClick={() => archive(client)}><Archive size={16} /></button>}<button title="Mais opções"><MoreVertical size={17} /></button></div></td></tr>)}</tbody></table></div> : <div className="space-y-5">{groupedContacts.map(([clientId, items]) => { const client = clients.find((c) => c.id === clientId); return <article key={clientId} className="overflow-hidden rounded border"><header className="flex justify-between px-4 py-3 font-semibold"><span>{client?.name} <small className="ml-2 font-normal">({client?.cnpj})</small></span><span className="text-sm text-[#16829b]">{items.length} contato(s)</span></header><div className="grid grid-cols-[1.4fr_1.4fr_1fr_140px_70px] bg-[#f3f3f3] px-4 py-3 text-sm"><span>Nome</span><span>E-mail</span><span>WhatsApp</span><span>Departamentos</span><span /></div>{items.map((contact) => <div key={contact.id} className="grid grid-cols-[1.4fr_1.4fr_1fr_140px_70px] items-center border-t px-4 py-3 text-sm"><span>{contact.name}</span><span>{contact.email || '-'}</span><span>{contact.whatsapp || '-'}</span><span>{contact.departments.length}</span><span className="flex gap-3 text-[#16829b]"><button onClick={() => setDrawer({ type: 'contact', item: contact })}><Pencil size={16} /></button><button onClick={() => removeContact(contact)}><Trash2 size={16} /></button></span></div>)}</article>; })}{groupedContacts.length === 0 && <p className="py-10 text-center text-[#78838a]">Nenhum contato encontrado.</p>}</div>}</section></main>{drawer?.type === 'client' && <ClientDrawer client={drawer.item} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); load(); }} />}{drawer?.type === 'contact' && <ContactDrawer contact={drawer.item} clients={clients.filter((c) => c.active)} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); load(); }} />}</div>;
 }

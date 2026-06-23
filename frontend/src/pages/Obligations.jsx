@@ -1,7 +1,10 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { BarChart3, Bot, ChevronDown, CircleHelp, ClipboardCheck, ClipboardList, Gift, Link2, MoreVertical, Pencil, Pin, Store, Trash2, Zap } from 'lucide-react';
 import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
+import api from '../api/client';
 
-const tabs = ['Calendario', 'Conferencia', 'Protocolos', 'Relatorios', 'Configuracoes'];
+const tabs = ['Calendário', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
 const clients = [
   'ANA CAROLINA CARPINE AGUIAR',
   'IVANI SEVERINA SOARES DE ALMEIDA',
@@ -35,9 +38,12 @@ function makeTasks() {
 
 function makeRobots() {
   return [
-    { id: 'robot-darf-prev', obligation: 'DARF Previdenciario', identifiers: ['0561', '0588', '1082', '1089', '1099', 'darf previdenciario'] },
-    { id: 'robot-das', obligation: 'DAS - Documento de Arrecadacao do Simples Nacional', identifiers: ['das', 'simples nacional', 'pgdas'] },
-    { id: 'robot-esocial', obligation: 'DAE - Documento de Arrecadacao do eSocial', identifiers: ['dae', 'esocial'] },
+    { id: 'robot-parcsn', obligation: 'DAS do Parcelamento PARCSN', identifiers: ['DAS de PARCSN'] },
+    { id: 'robot-parcmei', obligation: 'DAS MEI do Parcelamento PARCMEI', identifiers: ['DAS de PARCMEI'] },
+    { id: 'robot-fgts', obligation: 'FGTS Digital', identifiers: ['GFD - Guia do FGTS Digital'] },
+    { id: 'robot-darf-prev', obligation: 'DARF Previdenciário', identifiers: ['CP DESCONTADA SEGURADO', '1099 CP DESCONTADA', 'DARF previdenciário'] },
+    { id: 'robot-das', obligation: 'DAS - Documento de Arrecadação do Simples Nacional', identifiers: ['Documento de Arrecadação do Simples Nacional'] },
+    { id: 'robot-esocial', obligation: 'DAE - Documento de Arrecadação do eSocial', identifiers: ['Documento de Arrecadação do eSocial'] },
   ];
 }
 
@@ -67,14 +73,14 @@ function AppShell({ activeTab, setActiveTab, children }) {
       <aside className="fixed inset-y-0 left-0 z-20 flex w-[46px] flex-col items-center bg-[#003f82] text-white">
         <div className="mb-5 mt-4 text-2xl font-bold leading-none">n</div>
         <div className="flex flex-1 flex-col items-center gap-2">
-          <IconButton active>□</IconButton>
-          <IconButton>⌁</IconButton>
-          <IconButton>▤</IconButton>
+          <IconButton active label="Obrigações"><ClipboardCheck /></IconButton>
+          <IconButton label="Relatórios"><BarChart3 /></IconButton>
+          <IconButton label="Clientes"><Store /></IconButton>
         </div>
         <div className="mb-4 flex flex-col items-center gap-3 text-xs">
-          <IconButton>□</IconButton>
+          <IconButton label="Novidades"><Gift /></IconButton>
           <span>News</span>
-          <IconButton>?</IconButton>
+          <IconButton label="Ajuda"><CircleHelp /></IconButton>
           <span>Ajuda</span>
           <div className="grid h-8 w-8 place-items-center rounded-full border border-white/70 text-xs">AC</div>
         </div>
@@ -83,12 +89,12 @@ function AppShell({ activeTab, setActiveTab, children }) {
       <aside className="fixed inset-y-0 left-[46px] z-10 w-[236px] border-r border-[#dfe5e8] bg-[#f4f7fb]">
         <div className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
           <h1 className="text-xl text-[#444]">Contador</h1>
-          <span className="text-[#9aa5ad]">□</span>
+          <Pin size={16} className="text-[#9aa5ad]" />
         </div>
         <nav className="px-5 py-4 text-sm">
-          <div className="mb-5 flex items-center gap-2 text-[#7a858c]">↯ Comece rapido</div>
-          <MenuSection title="OPERACAO" />
-          <div className="mb-1 font-semibold text-[#4f5559]">□ Obrigacoes</div>
+          <div className="mb-5 flex items-center gap-2 text-[#7a858c]"><Zap size={16} /> Comece rápido</div>
+          <MenuSection title="OPERAÇÃO" />
+          <div className="mb-1 flex items-center gap-2 font-semibold text-[#4f5559]"><ClipboardCheck size={16} /> Obrigações</div>
           <div className="mb-5 ml-5 space-y-1">
             {tabs.map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`block w-full rounded px-3 py-2 text-left ${activeTab === tab ? 'bg-[#dce5ef] text-[#2f3a42]' : 'text-[#6d7479] hover:bg-white'}`}>
@@ -96,15 +102,16 @@ function AppShell({ activeTab, setActiveTab, children }) {
               </button>
             ))}
           </div>
-          {['Tarefas & Processos', 'Relacionamento', 'Documentos recebidos', 'Automacao contabil'].map((item) => (
-            <button key={item} className="mb-4 flex w-full justify-between text-[#69747b]"><span>{item}</span><span>⌄</span></button>
+          {['Tarefas & Processos', 'Relacionamento', 'Documentos recebidos', 'Automação contábil'].map((item) => (
+            <button key={item} className="mb-4 flex w-full items-center justify-between text-[#69747b]"><span>{item}</span><ChevronDown size={15} /></button>
           ))}
           <div className="mb-5 flex items-center justify-between text-[#69747b]">
             <span>Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></span>
-            <span className="grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white">⌄</span>
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white"><ChevronDown size={13} /></span>
           </div>
           <MenuSection title="CADASTROS" />
-          <button className="flex w-full justify-between text-[#69747b]"><span>Clientes</span><span>⌄</span></button>
+          <Link to="/clientes" className="mb-4 flex w-full justify-between text-[#69747b]"><span>Clientes</span><ChevronDown size={15} /></Link>
+          <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#69747b]"><ClipboardList size={16} /> Formulários</Link>
         </nav>
       </aside>
 
@@ -114,7 +121,7 @@ function AppShell({ activeTab, setActiveTab, children }) {
           <div />
         </header>
         <div className="flex h-[45px] items-end gap-14 border-b border-[#dfe5e8] px-5 text-sm">
-          <span className="pb-3 font-semibold">Obrigacoes</span>
+          <span className="pb-3 font-semibold">Obrigações</span>
           {tabs.map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)} className={`h-full border-b-2 px-1 ${activeTab === tab ? 'border-[#003f82] font-semibold text-[#202427]' : 'border-transparent text-[#666]'}`}>
               {tab}
@@ -127,8 +134,8 @@ function AppShell({ activeTab, setActiveTab, children }) {
   );
 }
 
-function IconButton({ children, active }) {
-  return <button className={`grid h-9 w-9 place-items-center rounded-md text-lg ${active ? 'bg-white/15' : 'hover:bg-white/10'}`}>{children}</button>;
+function IconButton({ children, active, label }) {
+  return <button type="button" title={label} aria-label={label} className={`grid h-9 w-9 place-items-center rounded-md ${active ? 'bg-white/15' : 'hover:bg-white/10'} [&>svg]:h-[18px] [&>svg]:w-[18px]`}>{children}</button>;
 }
 
 function MenuSection({ title }) {
@@ -210,7 +217,7 @@ function Calendar({ tasks, setTasks }) {
     <section className="grid grid-cols-[600px_1fr]">
       <div className="p-5">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-2xl font-semibold">Calendario</h2>
+          <h2 className="text-2xl font-semibold">Calendário</h2>
           <div className="flex items-center gap-6 text-lg text-[#147e9a]">
             <button onClick={() => shiftMonth(-1)} className="rounded px-2 py-1 hover:bg-[#eaf6ff]">‹</button>
             <b className="min-w-28 text-center text-[#111]">{monthLabels[month]}/{year}</b>
@@ -323,26 +330,62 @@ function TaskCard({ task, onToggle, compact }) {
 function Conference({ protocols, setProtocols, robots }) {
   const fileRef = useRef(null);
   const [files, setFiles] = useState([]);
-  const [client, setClient] = useState(clients[0]);
+  const [client, setClient] = useState('Identificar automaticamente');
+  const [serverClients, setServerClients] = useState([]);
+  const [serverObligations, setServerObligations] = useState([]);
   const [department, setDepartment] = useState(departments[0]);
-  const [obligation, setObligation] = useState(obligationNames[0]);
+  const [obligation, setObligation] = useState('Identificar automaticamente');
   const [deliveryType, setDeliveryType] = useState('Portal do cliente');
 
-  function addFiles(fileList) {
-    const mapped = Array.from(fileList).map((file) => {
-      const match = recognizePdf(file.name, robots);
-      return {
+  useEffect(() => {
+    Promise.all([api.get('/clients'), api.get('/obligations')])
+      .then(([clientsResponse, obligationsResponse]) => {
+        setServerClients(clientsResponse.data);
+        setServerObligations(obligationsResponse.data);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function addFiles(fileList) {
+    const pendingFiles = Array.from(fileList);
+    const mapped = await Promise.all(pendingFiles.map(async (file) => {
+      const localMatch = recognizePdf(file.name, robots);
+      const base = {
         id: `${Date.now()}-${file.name}`,
         fileName: file.name,
         size: file.size,
-        client,
+        client: client === 'Identificar automaticamente' ? 'Não identificado' : client,
         department,
-        obligation: match?.obligation || obligation,
+        obligation: localMatch?.obligation || (obligation === 'Identificar automaticamente' ? 'Não identificada' : obligation),
         deliveryType,
-        status: match ? 'Reconhecido por robo' : 'Aguardando conferencia',
-        robotMatch: match ? match.identifiers.join(', ') : '',
+        status: 'Lendo conteúdo do PDF...',
+        robotMatch: localMatch ? localMatch.identifiers.join(', ') : '',
       };
-    });
+
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('deliveryType', deliveryType === 'Entrega física' ? 'FISICA' : deliveryType === 'E-mail' ? 'EMAIL' : 'PORTAL');
+        const selectedClient = serverClients.find((item) => item.name === client);
+        if (selectedClient?.id) form.append('clientId', selectedClient.id);
+        const selectedObligation = serverObligations.find((item) => item.name === obligation);
+        if (selectedObligation?.id) form.append('obligationId', selectedObligation.id);
+        const { data } = await api.post('/obligations/conference/upload', form);
+        return {
+          ...base,
+          serverId: data.id,
+          client: data.client?.name || base.client,
+          obligation: data.obligation?.name || base.obligation,
+          status: data.robotMatched ? 'Reconhecido por robô' : 'Aguardando conferência',
+          robotMatch: data.robotIdentifier || base.robotMatch,
+        };
+      } catch {
+        return {
+          ...base,
+          status: localMatch ? 'Reconhecido pelo nome do arquivo' : 'Aguardando conferência manual',
+        };
+      }
+    }));
     setFiles((current) => [...mapped, ...current]);
   }
 
@@ -366,7 +409,7 @@ function Conference({ protocols, setProtocols, robots }) {
   return (
     <section className="p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Conferencia</h2>
+        <h2 className="text-2xl font-semibold">Conferência</h2>
         <div className="flex gap-3">
           <input ref={fileRef} type="file" multiple className="hidden" onChange={(event) => addFiles(event.target.files)} />
           <button onClick={() => fileRef.current?.click()} className="rounded bg-[#f2f2f2] px-4 py-2">☁ Carregar arquivos</button>
@@ -375,10 +418,10 @@ function Conference({ protocols, setProtocols, robots }) {
       </div>
       <div className="mb-4 flex gap-4 text-sm text-[#16829b]"><button>☁ Baixar o Nibo Assistente</button><button>☁ Baixar o Nibo Impressora</button><button>□ Lista de robos</button></div>
       <div className="grid grid-cols-4 gap-4">
-        <SelectField label="Cliente" value={client} onChange={setClient} options={clients} />
+        <SelectField label="Cliente" value={client} onChange={setClient} options={['Identificar automaticamente', ...(serverClients.length ? serverClients.map((item) => item.name) : clients)]} />
         <SelectField label="Departamento" value={department} onChange={setDepartment} options={departments} />
-        <SelectField label="Obrigacao" value={obligation} onChange={setObligation} options={obligationNames} />
-        <SelectField label="Tipo de entrega" value={deliveryType} onChange={setDeliveryType} options={['Portal do cliente', 'Entrega fisica', 'E-mail']} />
+        <SelectField label="Obrigação" value={obligation} onChange={setObligation} options={['Identificar automaticamente', ...(serverObligations.length ? serverObligations.map((item) => item.name) : obligationNames)]} />
+        <SelectField label="Tipo de entrega" value={deliveryType} onChange={setDeliveryType} options={['Portal do cliente', 'Entrega física', 'E-mail']} />
       </div>
       <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addFiles(event.dataTransfer.files); }} className="mt-6 rounded border-2 border-dashed border-[#d5dde3] bg-[#fafafa] p-8 text-center">
         <div className="text-5xl text-[#777]">☁</div>
@@ -387,10 +430,10 @@ function Conference({ protocols, setProtocols, robots }) {
       </div>
       <div className="mt-6">
         <h3 className="mb-3 font-semibold">Arquivos carregados</h3>
-        {files.length === 0 ? <p className="text-sm text-[#777]">Nenhuma obrigacao para conferencia.</p> : (
+        {files.length === 0 ? <p className="text-sm text-[#777]">Nenhuma obrigação para conferência.</p> : (
           <div className="overflow-hidden rounded border border-[#e7ecef]">
             <table className="w-full text-left text-sm">
-              <thead className="bg-[#f3f3f3]"><tr>{['Arquivo', 'Cliente', 'Obrigacao reconhecida', 'Robo', 'Status', ''].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr></thead>
+              <thead className="bg-[#f3f3f3]"><tr>{['Arquivo', 'Cliente', 'Obrigação reconhecida', 'Robô', 'Status', ''].map((head) => <th key={head} className="px-4 py-3">{head}</th>)}</tr></thead>
               <tbody>{files.map((file) => <tr key={file.id} className="border-t border-[#e7ecef]"><td className="px-4 py-3 font-semibold text-[#16829b]">{file.fileName}</td><td className="px-4 py-3">{file.client}</td><td className="px-4 py-3">{file.obligation}</td><td className="px-4 py-3 text-xs text-[#68737a]">{file.robotMatch || '-'}</td><td className="px-4 py-3">{file.status}</td><td className="px-4 py-3 text-right"><button onClick={() => protocolFile(file)} className="rounded bg-[#2693d2] px-3 py-1.5 text-white">Protocolar</button></td></tr>)}</tbody>
             </table>
           </div>
@@ -412,13 +455,13 @@ function Protocols({ protocols, setProtocols }) {
       <div className="mb-6 grid grid-cols-[250px_260px_260px_270px_auto] gap-4">
         <TextField label="Buscar por" value={query} onChange={setQuery} placeholder="Buscar" />
         <SelectField label="Cliente" value={client} onChange={setClient} options={['Todos', ...clients]} />
-        <SelectField label="Obrigacao" value="Todos" onChange={() => {}} options={['Todos', ...obligationNames]} />
-        <TextField label="Periodo de vencimento" value="01/06/2026    30/06/2026" onChange={() => {}} />
+        <SelectField label="Obrigação" value="Todos" onChange={() => {}} options={['Todos', ...obligationNames]} />
+        <TextField label="Período de vencimento" value="01/06/2026    30/06/2026" onChange={() => {}} />
         <button className="self-end rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Filtrar</button>
       </div>
       <DataTable
-        headings={['Documento', 'Cliente', 'Arquivo', 'Data', 'Responsavel pela baixa', 'Status', '']}
-        rows={filtered.map((item) => [item.document, item.client, item.fileName, item.protocolDate, item.responsible, item.status, '⋮'])}
+        headings={['Documento', 'Cliente', 'Arquivo', 'Data', 'Responsável pela baixa', 'Status', '']}
+        rows={filtered.map((item) => [item.document, item.client, item.fileName, item.protocolDate, item.responsible, item.status, <button key={item.id} title="Mais opções" aria-label="Mais opções" className="rounded p-1 hover:bg-[#f2f2f2]"><MoreVertical size={17} /></button>])}
         statusIndex={5}
       />
     </section>
@@ -429,11 +472,11 @@ function Reports({ tasks, protocols }) {
   const [section, setSection] = useState('Produtividade');
   const [filter, setFilter] = useState('Todos');
   const [month, setMonth] = useState(5);
-  const filteredTasks = tasks.filter((task) => filter === 'Todos' || (filter === 'Concluidas' ? isDoneStatus(task.status) : !isDoneStatus(task.status)));
+  const filteredTasks = tasks.filter((task) => filter === 'Todos' || (filter === 'Concluídas' ? isDoneStatus(task.status) : !isDoneStatus(task.status)));
 
   return (
     <section className="grid grid-cols-[205px_1fr]">
-      <SideSubMenu items={['Produtividade', 'Mapa de pendencias', 'Auditoria', 'Completa']} active={section} onChange={setSection} />
+      <SideSubMenu items={['Produtividade', 'Mapa de pendências', 'Auditoria', 'Completa']} active={section} onChange={setSection} />
       <div className="p-5">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-semibold">{section}</h2>
@@ -441,10 +484,10 @@ function Reports({ tasks, protocols }) {
           <div className="rounded-full bg-[#f4f4f4] p-1"><button className="rounded-full bg-[#eaf6ff] px-4 py-2 text-[#16829b]">Meta Interna</button><button className="rounded-full bg-white px-4 py-2">Vencimentos</button></div>
         </div>
         <div className="mb-8 flex gap-3 text-sm">
-          {['Todos', 'Abertas', 'Concluidas'].map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full border px-4 py-2 ${filter === item ? 'border-[#16829b] bg-[#eaf6ff] text-[#16829b]' : 'border-[#ddd]'}`}>{item}</button>)}
+          {['Todos', 'Abertas', 'Concluídas'].map((item) => <button key={item} onClick={() => setFilter(item)} className={`rounded-full border px-4 py-2 ${filter === item ? 'border-[#16829b] bg-[#eaf6ff] text-[#16829b]' : 'border-[#ddd]'}`}>{item}</button>)}
         </div>
         {section === 'Produtividade' && <Productivity tasks={filteredTasks} />}
-        {section === 'Mapa de pendencias' && <PendingMap tasks={filteredTasks} />}
+        {section === 'Mapa de pendências' && <PendingMap tasks={filteredTasks} />}
         {section === 'Auditoria' && <Audit protocols={protocols} />}
         {section === 'Completa' && <CompleteReport tasks={filteredTasks} protocols={protocols} />}
       </div>
@@ -453,7 +496,7 @@ function Reports({ tasks, protocols }) {
 }
 
 function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, robots, setRobots }) {
-  const [section, setSection] = useState('Lista de obrigacoes');
+  const [section, setSection] = useState('Lista de obrigações');
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
   const [linkResponsibles, setLinkResponsibles] = useState(() => ({
@@ -474,18 +517,18 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
 
   return (
     <section className="grid grid-cols-[245px_1fr]">
-      <SideSubMenu items={['Lista de obrigacoes', 'Lista de robos', 'Grupo de obrigacoes', 'Vinculos', 'Responsabilidades']} active={section} onChange={setSection} />
+      <SideSubMenu items={['Lista de obrigações', 'Lista de robôs', 'Grupo de obrigações', 'Vínculos', 'Responsabilidades']} active={section} onChange={setSection} />
       <div className="p-5">
-        {section === 'Lista de obrigacoes' && (
+        {section === 'Lista de obrigações' && (
           <>
-            <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">Lista de obrigacoes</h2><button onClick={() => setEditing({ index: -1, row: ['Nova obrigacao', 'Pagamento', departments[0], 'NOVO', 'Mensal', 'Ativo', 'Nao'] })} className="rounded bg-[#2693d2] px-5 py-2.5 text-white">+ Nova obrigacao</button></div>
+            <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">Lista de obrigações</h2><button onClick={() => setEditing({ index: -1, row: ['Nova obrigação', 'Pagamento', departments[0], 'NOVO', 'Mensal', 'Ativo', 'Não'] })} className="rounded bg-[#2693d2] px-5 py-2.5 text-white">+ Nova obrigação</button></div>
             <div className="mb-6 flex items-end gap-5"><TextField label="Buscar por" value={query} onChange={setQuery} placeholder="Buscar" /><label className="pb-2"><input type="checkbox" /> Exibir itens inativos</label><button className="pb-2 text-[#16829b]">⌁ Filtro avancado⌄</button></div>
-            <DataTable headings={['Obrigacao', 'Tipo', 'Departamento', 'Apelido', 'Frequencia', 'Status', 'Robo padrao', '']} rows={filtered.map((row) => [...row, <ActionButtons key={row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
+            <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Robô padrão', '']} rows={filtered.map((row) => [...row, <ActionButtons key={row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
           </>
         )}
-        {section === 'Lista de robos' && <Robots robots={robots} setRobots={setRobots} obligationRows={obligationRows} />}
-        {section === 'Grupo de obrigacoes' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} />}
-        {section === 'Vinculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} />}
+        {section === 'Lista de robôs' && <Robots robots={robots} setRobots={setRobots} obligationRows={obligationRows} />}
+        {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} />}
+        {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} />}
         {section === 'Responsabilidades' && <Responsibilities />}
       </div>
       {editing && <ObligationModal editing={editing} onClose={() => setEditing(null)} onSave={saveObligation} />}
@@ -504,10 +547,10 @@ function SideSubMenu({ items, active, onChange }) {
 
 function DataTable({ headings, rows, statusIndex }) {
   return (
-    <div className="overflow-hidden rounded border border-[#e7ecef]">
-      <table className="w-full border-collapse text-left text-sm">
-        <thead className="bg-[#f3f3f3] text-[#4c5357]"><tr>{headings.map((head) => <th key={head} className="px-4 py-3 font-medium">{head}</th>)}</tr></thead>
-        <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex} className="border-t border-[#e7ecef]">{row.map((cell, cellIndex) => <td key={`${rowIndex}-${cellIndex}`} className="px-4 py-3 align-top">{cellIndex === 0 ? <b className="text-[#16829b]">{cell}</b> : cellIndex === statusIndex ? <span className="rounded border border-emerald-400 px-2 py-1 text-xs text-emerald-700">{cell}</span> : cell}</td>)}</tr>)}</tbody>
+    <div className="overflow-x-auto rounded border border-[#e7ecef]">
+      <table className="w-full min-w-[980px] table-auto border-collapse text-left text-sm">
+        <thead className="bg-[#f3f3f3] text-[#4c5357]"><tr>{headings.map((head, index) => <th key={`${head}-${index}`} className={`whitespace-nowrap px-4 py-3 font-medium ${index === statusIndex ? 'min-w-[190px]' : ''} ${index === headings.length - 1 ? 'w-14' : ''}`}>{head}</th>)}</tr></thead>
+        <tbody>{rows.map((row, rowIndex) => <tr key={rowIndex} className="border-t border-[#e7ecef]">{row.map((cell, cellIndex) => <td key={`${rowIndex}-${cellIndex}`} className={`px-4 py-3 align-middle ${cellIndex === statusIndex ? 'min-w-[190px]' : ''} ${cellIndex === row.length - 1 ? 'w-14 whitespace-nowrap text-right' : ''}`}>{cellIndex === 0 ? <b className="text-[#16829b]">{cell}</b> : cellIndex === statusIndex ? <span className="inline-flex whitespace-nowrap rounded border border-emerald-400 px-2 py-1 text-xs leading-5 text-emerald-700">{cell}</span> : cell}</td>)}</tr>)}</tbody>
       </table>
     </div>
   );
@@ -520,11 +563,11 @@ function Productivity({ tasks }) {
 }
 
 function PendingMap({ tasks }) {
-  return <DataTable headings={['Cliente', 'Obrigacao', 'Departamento', 'Status']} rows={tasks.map((task) => [task.client, task.obligation, task.department, statusLabel(task.status)])} statusIndex={3} />;
+  return <DataTable headings={['Cliente', 'Obrigação', 'Departamento', 'Status']} rows={tasks.map((task) => [task.client, task.obligation, task.department, statusLabel(task.status)])} statusIndex={3} />;
 }
 
 function Audit({ protocols }) {
-  return <DataTable headings={['Data', 'Arquivo', 'Cliente', 'Responsavel', 'Status']} rows={protocols.map((item) => [item.protocolDate, item.fileName, item.client, item.responsible, item.status])} statusIndex={4} />;
+  return <DataTable headings={['Data', 'Arquivo', 'Cliente', 'Responsável', 'Status']} rows={protocols.map((item) => [item.protocolDate, item.fileName, item.client, item.responsible, item.status])} statusIndex={4} />;
 }
 
 function CompleteReport({ tasks, protocols }) {
@@ -546,7 +589,7 @@ function DepartmentCard({ stat }) {
 }
 
 function ActionButtons({ onEdit, onLink, onDelete }) {
-  return <div className="flex gap-3 text-[#16829b]"><button onClick={onEdit} title="Editar">✎</button><button onClick={onLink} title="Vincular tarefa">🔗</button><button onClick={onDelete} title="Excluir">🗑</button></div>;
+  return <div className="flex items-center justify-end gap-2 text-[#16829b]"><button onClick={onEdit} title="Editar" aria-label="Editar" className="rounded p-1 hover:bg-sky-50"><Pencil size={16} /></button><button onClick={onLink} title="Vincular tarefa" aria-label="Vincular tarefa" className="rounded p-1 hover:bg-sky-50"><Link2 size={16} /></button><button onClick={onDelete} title="Excluir" aria-label="Excluir" className="rounded p-1 hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div>;
 }
 
 function ObligationModal({ editing, onClose, onSave }) {
@@ -687,21 +730,54 @@ function isNonBusinessDay(date, saturdayWorks) {
 function Robots({ robots, setRobots, obligationRows }) {
   const [query, setQuery] = useState('');
   const [editingRobot, setEditingRobot] = useState(null);
+  const [serverObligations, setServerObligations] = useState([]);
   const filtered = robots.filter((robot) => `${robot.obligation} ${robot.identifiers.join(' ')}`.toLowerCase().includes(query.toLowerCase()));
 
-  function saveRobot(robot) {
-    setRobots((current) => {
-      if (!robot.id) return [{ ...robot, id: `robot-${Date.now()}` }, ...current];
-      return current.map((item) => item.id === robot.id ? robot : item);
-    });
-    setEditingRobot(null);
+  useEffect(() => {
+    Promise.all([api.get('/obligations'), api.get('/obligations/robots/list')])
+      .then(([obligationsResponse, robotsResponse]) => {
+        setServerObligations(obligationsResponse.data);
+        setRobots(robotsResponse.data.map((item) => ({
+          id: item.id,
+          obligationId: item.obligationId,
+          obligation: item.obligation?.name || item.name,
+          identifiers: item.identifiers,
+          active: item.active,
+        })));
+      })
+      .catch(() => {});
+  }, [setRobots]);
+
+  async function saveRobot(robot) {
+    const obligationId = robot.obligationId || serverObligations.find((item) => item.name === robot.obligation)?.id;
+    try {
+      if (!obligationId) throw new Error('Crie a obrigação antes de configurar o robô.');
+      const payload = { obligationId, name: `Robô - ${robot.obligation}`, identifiers: robot.identifiers, active: true };
+      const { data } = robot.id
+        ? await api.put(`/obligations/robots/${robot.id}`, payload)
+        : await api.post('/obligations/robots', payload);
+      const saved = { id: data.id, obligationId: data.obligationId, obligation: data.obligation?.name || robot.obligation, identifiers: data.identifiers, active: data.active };
+      setRobots((current) => robot.id ? current.map((item) => item.id === robot.id ? saved : item) : [saved, ...current]);
+      setEditingRobot(null);
+    } catch (error) {
+      window.alert(error.response?.data?.error || error.message || 'Não foi possível salvar o robô.');
+    }
+  }
+
+  async function deleteRobot(robot) {
+    try {
+      await api.delete(`/obligations/robots/${robot.id}`);
+      setRobots((current) => current.filter((item) => item.id !== robot.id));
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível excluir o robô.');
+    }
   }
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Lista de robos</h2>
-        <button onClick={() => setEditingRobot({ id: null, obligation: obligationRows[0][0], identifiers: [] })} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo robo</button>
+        <h2 className="text-2xl font-semibold">Lista de robôs</h2>
+        <button onClick={() => setEditingRobot({ id: null, obligation: obligationRows[0][0], identifiers: [] })} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo robô</button>
       </div>
       <TextField label="" value={query} onChange={setQuery} placeholder="Buscar por obrigacao ou identificador..." />
       <div className="mt-5 space-y-4">
@@ -710,8 +786,8 @@ function Robots({ robots, setRobots, obligationRows }) {
             <div className="flex items-center justify-between p-3">
               <h3 className="font-semibold">{robot.obligation}</h3>
               <div className="flex gap-3 text-[#16829b]">
-                <button onClick={() => setEditingRobot(robot)}>✎</button>
-                <button onClick={() => setRobots((current) => current.filter((item) => item.id !== robot.id))}>🗑</button>
+                <button onClick={() => setEditingRobot(robot)} title="Editar robô" aria-label="Editar robô"><Pencil size={16} /></button>
+                <button onClick={() => deleteRobot(robot)} title="Excluir robô" aria-label="Excluir robô"><Trash2 size={16} /></button>
               </div>
             </div>
             <div className="grid grid-cols-[1fr_180px_180px] bg-[#f1f1f1] p-3 text-sm"><span>Identificadores de PDF</span><span>Criado em</span><span>Atualizado em</span></div>
@@ -723,12 +799,12 @@ function Robots({ robots, setRobots, obligationRows }) {
           </div>
         ))}
       </div>
-      {editingRobot && <RobotModal robot={editingRobot} obligationRows={obligationRows} onClose={() => setEditingRobot(null)} onSave={saveRobot} />}
+      {editingRobot && <RobotModal robot={editingRobot} obligationRows={obligationRows} serverObligations={serverObligations} onClose={() => setEditingRobot(null)} onSave={saveRobot} />}
     </div>
   );
 }
 
-function RobotModal({ robot, obligationRows, onClose, onSave }) {
+function RobotModal({ robot, obligationRows, serverObligations, onClose, onSave }) {
   const [obligation, setObligation] = useState(robot.obligation);
   const [identifiers, setIdentifiers] = useState(robot.identifiers || []);
   const [newIdentifier, setNewIdentifier] = useState('');
@@ -757,9 +833,9 @@ function RobotModal({ robot, obligationRows, onClose, onSave }) {
         </div>
         <div className="p-6">
           <div className="mb-8 flex justify-end"><button onClick={onClose} className="text-2xl text-[#aaa]">×</button></div>
-          <div className="text-center"><div className="text-6xl">🤖</div><h2 className="mt-4 text-xl font-semibold">Robo de leitura de PDFs</h2><p className="mt-2 text-sm text-[#68737a]">Configure os identificadores que associam um PDF a uma obrigacao.</p></div>
+          <div className="text-center"><Bot className="mx-auto h-16 w-16 text-[#287fba]" /><h2 className="mt-4 text-xl font-semibold">Robô de leitura de PDFs</h2><p className="mt-2 text-sm text-[#68737a]">Configure os identificadores que associam um PDF a uma obrigação.</p></div>
           <div className="mt-8 space-y-4">
-            <SelectField label="Nome da obrigacao" value={obligation} onChange={setObligation} options={obligationRows.map((row) => row[0])} />
+            <SelectField label="Nome da obrigação" value={obligation} onChange={setObligation} options={(serverObligations.length ? serverObligations.map((item) => item.name) : obligationRows.map((row) => row[0]))} />
             <div>
               <label className="mb-1 block text-sm">Identificador do PDF</label>
               <div className="flex gap-2"><input value={newIdentifier} onChange={(event) => setNewIdentifier(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && addIdentifier()} placeholder="Ex.: 0561, DARF, Simples Nacional" className="h-10 flex-1 rounded border border-[#dfe5e8] px-3" /><button onClick={addIdentifier} className="rounded bg-[#f2f2f2] px-4">Adicionar</button></div>
@@ -768,7 +844,7 @@ function RobotModal({ robot, obligationRows, onClose, onSave }) {
               {identifiers.map((identifier) => <div key={identifier} className="flex items-center justify-between rounded bg-[#f1f1f1] px-4 py-2"><span>{identifier}</span><button onClick={() => setIdentifiers((current) => current.filter((item) => item !== identifier))} className="text-[#16829b]">🗑</button></div>)}
             </div>
           </div>
-          <button onClick={() => onSave({ id: robot.id, obligation, identifiers })} className="mt-6 w-full rounded bg-[#2693d2] px-5 py-3 text-white">Salvar configuracoes</button>
+          <button onClick={() => onSave({ id: robot.id, obligationId: robot.obligationId, obligation, identifiers })} className="mt-6 w-full rounded bg-[#2693d2] px-5 py-3 text-white">Salvar configurações</button>
         </div>
       </div>
     </div>
@@ -821,9 +897,9 @@ function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkRespon
                 <td className="px-4 py-3">{group.obligations.length}</td>
                 <td className="px-4 py-3">
                   <div className="flex justify-end gap-4 text-[#16829b]">
-                    <button onClick={() => setLinkingGroup(group)} title="Vincular grupo">□</button>
-                    <button onClick={() => setEditingGroup(group)} title="Editar grupo">✎</button>
-                    <button onClick={() => deleteGroup(group.id)} title="Excluir grupo">🗑</button>
+                    <button onClick={() => setLinkingGroup(group)} title="Vincular grupo" aria-label="Vincular grupo"><Link2 size={16} /></button>
+                    <button onClick={() => setEditingGroup(group)} title="Editar grupo" aria-label="Editar grupo"><Pencil size={16} /></button>
+                    <button onClick={() => deleteGroup(group.id)} title="Excluir grupo" aria-label="Excluir grupo"><Trash2 size={16} /></button>
                   </div>
                 </td>
               </tr>
@@ -1160,7 +1236,7 @@ function groupTasks(tasks, by) {
 }
 
 export default function Obligations() {
-  const [activeTab, setActiveTab] = useState('Calendario');
+  const [activeTab, setActiveTab] = useState('Calendário');
   const [tasks, setTasks] = useState(makeTasks);
   const [protocols, setProtocols] = useState(seedProtocols.map(protocolFromSeed));
   const [robots, setRobots] = useState(makeRobots);
@@ -1170,11 +1246,11 @@ export default function Obligations() {
     'ADIANTAMENTO SALARIAL (Vencimento dia 15)': [clients[0]],
   }));
   const content = {
-    Calendario: <Calendar tasks={tasks} setTasks={setTasks} />,
-    Conferencia: <Conference protocols={protocols} setProtocols={setProtocols} robots={robots} />,
+    Calendário: <Calendar tasks={tasks} setTasks={setTasks} />,
+    Conferência: <Conference protocols={protocols} setProtocols={setProtocols} robots={robots} />,
     Protocolos: <Protocols protocols={protocols} setProtocols={setProtocols} />,
-    Relatorios: <Reports tasks={tasks} protocols={protocols} />,
-    Configuracoes: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} robots={robots} setRobots={setRobots} />,
+    Relatórios: <Reports tasks={tasks} protocols={protocols} />,
+    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} robots={robots} setRobots={setRobots} />,
   };
 
   return (

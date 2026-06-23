@@ -10,6 +10,8 @@ import Invoices from './pages/Invoices';
 import Payroll from './pages/Payroll';
 import Documents from './pages/Documents';
 import Obligations from './pages/Obligations';
+import Forms from './pages/Forms';
+import FormEditor from './pages/FormEditor';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -25,6 +27,8 @@ export default function App() {
       <Route path="/notas-fiscais" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
       <Route path="/folha-pagamento" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/documentos" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+      <Route path="/formularios" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
+      <Route path="/formularios/:id" element={<ProtectedRoute><FormEditor /></ProtectedRoute>} />
     </Routes>
   );
 }

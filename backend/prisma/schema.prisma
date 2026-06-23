@@ -35,7 +35,12 @@ model AccountingFirm {
   obligationGroups   ObligationGroup[]
   obligationRobots   ObligationRobot[]
   protocolDocuments  ProtocolDocument[]
+  clientContacts     ClientContact[]
+  taskTemplates      TaskTemplate[]
+  taskProcesses      TaskProcess[]
+  processTemplates   ProcessTemplate[]
   auditLogs          AuditLog[]
+  forms              Form[]
 
   @@map("accounting_firms")
 }
@@ -69,6 +74,7 @@ model User {
   documentsUploaded Document[]
   obligationLinks    ClientObligation[]
   protocolDocuments  ProtocolDocument[]
+  taskProcesses      TaskProcess[]
   notifications     Notification[]
   auditLogs          AuditLog[]
 
@@ -87,9 +93,24 @@ model Client {
   id          String    @id @default(uuid())
   name        String
   cnpj        String    @unique
+  personType  String    @default("JURIDICA")
+  code        String?
+  stateRegistration String?
+  municipalRegistration String?
   taxRegime   TaxRegime
   email       String?
   phone       String?
+  cep         String?
+  street      String?
+  number      String?
+  complement  String?
+  state       String?
+  city        String?
+  neighborhood String?
+  activity    String?
+  cnae        String?
+  allowPublicDocuments Boolean @default(false)
+  taxReminderEmail Boolean @default(true)
   active      Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -106,9 +127,32 @@ model Client {
   financialTransactions FinancialTransaction[]
   invoices           Invoice[]
   employees          Employee[]
+  contacts           ClientContact[]
+  taskProcesses      TaskProcess[]
 
   @@index([accountingFirmId])
   @@map("clients")
+}
+
+model ClientContact {
+  id          String   @id @default(uuid())
+  name        String
+  email       String?
+  whatsapp    String?
+  departments String[]
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  @@index([clientId])
+  @@index([accountingFirmId])
+  @@map("client_contacts")
 }
 
 // ---------------------------------------------------------------------
@@ -157,6 +201,11 @@ model Demand {
   dueDate     DateTime?
   completedAt DateTime?
   recurrence  RecurrenceFrequency @default(NONE)
+  department  String?
+  checklist   Json?
+  forms       Json?
+  settings    Json?
+  processName String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
@@ -176,6 +225,69 @@ model Demand {
   @@index([assignedToId])
   @@index([status])
   @@map("demands")
+}
+
+model TaskTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  department  String?
+  checklist   Json?
+  forms       Json?
+  settings    Json?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  @@index([accountingFirmId])
+  @@map("task_templates")
+}
+
+model TaskProcess {
+  id          String   @id @default(uuid())
+  name        String
+  department  String?
+  status      String   @default("EM_ANDAMENTO")
+  progress    Int      @default(0)
+  startDate   DateTime @default(now())
+  dueDate     DateTime?
+  complement  String?
+  instructions String?
+  stages      Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+  responsibleId String?
+  responsible   User? @relation(fields: [responsibleId], references: [id])
+
+  @@index([accountingFirmId])
+  @@index([clientId])
+  @@map("task_processes")
+}
+
+model ProcessTemplate {
+  id          String   @id @default(uuid())
+  name        String
+  department  String?
+  instructions String?
+  durationDays Int     @default(30)
+  stages      Json
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  @@index([accountingFirmId])
+  @@map("process_templates")
 }
 
 model DemandComment {
@@ -582,6 +694,34 @@ model PayrollEntry {
   @@unique([employeeId, refMonth, refYear])
   @@index([employeeId])
   @@map("payroll_entries")
+}
+
+// ---------------------------------------------------------------------
+// FORMULÁRIOS
+// ---------------------------------------------------------------------
+
+enum FormStatus {
+  ATIVO
+  INATIVO
+}
+
+model Form {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  department  String?
+  status      FormStatus @default(ATIVO)
+  settings    Json?      // idioma, modo (editar/mostrar), nome do cookie, largura
+  pages       Json       // array de paginas: [{ id, title, blocks: [{ id, type, title, description, required, options, logic, validation }] }]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  @@index([accountingFirmId])
+  @@index([status])
+  @@map("forms")
 }
 
 // ---------------------------------------------------------------------

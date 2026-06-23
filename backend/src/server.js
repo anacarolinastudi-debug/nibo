@@ -13,6 +13,7 @@ const invoicesRoutes = require('./routes/invoices.routes');
 const payrollRoutes = require('./routes/payroll.routes');
 const documentsRoutes = require('./routes/documents.routes');
 const obligationsRoutes = require('./routes/obligations.routes');
+const formsRoutes = require('./routes/forms.routes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/invoices', invoicesRoutes);
 app.use('/api/payroll', payrollRoutes);
 app.use('/api/documents', documentsRoutes);
 app.use('/api/obligations', obligationsRoutes);
+app.use('/api/forms', formsRoutes);
 
 // Precisa ser o último middleware
 app.use(errorHandler);

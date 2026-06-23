@@ -1,4 +1,6 @@
 const { z } = require('zod');
+const fs = require('fs/promises');
+const pdfParse = require('pdf-parse');
 const prisma = require('../lib/prisma');
 
 const obligationSchema = z.object({
@@ -239,11 +241,52 @@ async function removeRobot(req, res) {
   res.status(204).send();
 }
 
-function matchRobot(fileName, robots) {
-  const normalized = fileName.toLowerCase();
-  return robots.find((robot) =>
-    robot.active && robot.identifiers.some((identifier) => normalized.includes(identifier.toLowerCase()))
-  );
+function normalizeRobotText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+}
+
+function matchRobot(fileName, pdfText, robots) {
+  const searchableText = normalizeRobotText(`${fileName} ${pdfText}`);
+  const matches = robots
+    .filter((robot) => robot.active)
+    .flatMap((robot) => robot.identifiers
+      .map((identifier) => ({ robot, identifier, normalized: normalizeRobotText(identifier) }))
+      .filter(({ normalized }) => normalized && searchableText.includes(normalized)))
+    .sort((a, b) => b.normalized.length - a.normalized.length);
+
+  return matches[0] || null;
+}
+
+async function extractPdfText(file) {
+  if (file.mimetype !== 'application/pdf') return '';
+  try {
+    const buffer = await fs.readFile(file.path);
+    const parsed = await pdfParse(buffer);
+    return parsed.text || '';
+  } catch (error) {
+    console.warn(`Nao foi possivel ler o PDF ${file.originalname}:`, error.message);
+    return '';
+  }
+}
+
+function onlyDigits(value) {
+  return String(value || '').replace(/\D/g, '');
+}
+
+async function identifyClient(req, pdfText, requestedClientId) {
+  if (requestedClientId) {
+    return prisma.client.findFirst({ where: { id: requestedClientId, ...firmWhere(req) } });
+  }
+
+  const taxIds = Array.from(new Set((pdfText.match(/\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b|\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g) || []).map(onlyDigits)));
+  if (!taxIds.length) return null;
+
+  const clients = await prisma.client.findMany({ where: firmWhere(req), select: { id: true, name: true, cnpj: true } });
+  return clients.find((client) => taxIds.includes(onlyDigits(client.cnpj))) || null;
 }
 
 async function uploadConferenceFile(req, res) {
@@ -259,13 +302,30 @@ async function uploadConferenceFile(req, res) {
     where: firmWhere(req),
     include: { obligation: true },
   });
-  const robot = matchRobot(req.file.originalname, robots);
+  const pdfText = await extractPdfText(req.file);
+  const match = matchRobot(req.file.originalname, pdfText, robots);
+  const robot = match?.robot;
+  const client = await identifyClient(req, pdfText, data.clientId);
+  const resolvedObligationId = robot?.obligationId || data.obligationId || null;
+
+  if (client && resolvedObligationId) {
+    await prisma.clientObligation.upsert({
+      where: { clientId_obligationId: { clientId: client.id, obligationId: resolvedObligationId } },
+      update: { active: true },
+      create: {
+        clientId: client.id,
+        obligationId: resolvedObligationId,
+        responsibleId: req.user.id,
+        active: true,
+      },
+    });
+  }
 
   const document = await prisma.protocolDocument.create({
     data: {
       accountingFirmId: req.user.accountingFirmId,
-      clientId: data.clientId || null,
-      obligationId: robot?.obligationId || data.obligationId || null,
+      clientId: client?.id || null,
+      obligationId: resolvedObligationId,
       fileName: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
@@ -274,7 +334,7 @@ async function uploadConferenceFile(req, res) {
       reference: data.reference || null,
       status: robot ? 'RECONHECIDO_ROBO' : 'CONFERENCIA',
       robotMatched: Boolean(robot),
-      robotIdentifier: robot ? robot.identifiers.find((identifier) => req.file.originalname.toLowerCase().includes(identifier.toLowerCase())) : null,
+      robotIdentifier: match?.identifier || null,
       responsibleId: req.user.id,
     },
     include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },

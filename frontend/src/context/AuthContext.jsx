@@ -6,14 +6,17 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const saved = localStorage.getItem('user');
-    return saved
-      ? JSON.parse(saved)
-      : {
-          id: 'demo-accountant',
-          name: 'Ana Carolina Carpine Aguiar',
-          email: 'demo@nibo-clone.local',
-          role: 'ACCOUNTANT',
-        };
+    const token = localStorage.getItem('token');
+
+    if (!saved || !token) return null;
+
+    try {
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      return null;
+    }
   });
 
   async function login(email, password) {
