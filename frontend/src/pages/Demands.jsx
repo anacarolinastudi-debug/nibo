@@ -226,8 +226,11 @@ function Shell({ tab, setTab, children }) {
           <p className="mb-4 text-[#68737a]">Documentos recebidos</p>
           <p className="mb-6 text-[#68737a]">Automação contábil</p>
           <p className="mb-4 border-t pt-4 text-xs font-semibold">CADASTROS</p>
-          <Link to="/clientes" className="flex gap-2 text-[#68737a]">
+          <Link to="/clientes" className="mb-2 flex gap-2 text-[#68737a]">
             <Users size={16} /> Clientes
+          </Link>
+          <Link to="/formularios" className="flex gap-2 text-[#68737a]">
+            <FileText size={16} /> Formulários
           </Link>
         </nav>
       </aside>

@@ -30,7 +30,7 @@ function FormsMenu() {
         <p className="mb-6 flex items-center gap-2 text-[#778189]"><Zap size={16} /> Comece rápido</p>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">OPERAÇÃO</p>
         <Link to="/" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardCheck size={16} /> Obrigações</Link>
-        <p className="mb-4 flex justify-between text-[#68737a]">Tarefas &amp; Processos <ChevronDown size={15} /></p>
+        <Link to="/demandas" className="mb-4 flex justify-between text-[#68737a]">Tarefas &amp; Processos <ChevronDown size={15} /></Link>
         <p className="mb-4 text-[#68737a]">Relacionamento</p>
         <p className="mb-4 text-[#68737a]">Documentos recebidos</p>
         <p className="mb-6 text-[#68737a]">Automação contábil</p>

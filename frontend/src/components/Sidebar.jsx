@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const links = [
   { to: '/', label: 'Painel', icon: LayoutDashboard },
-  { to: '/demandas', label: 'Demandas', icon: ClipboardList },
+  { to: '/demandas', label: 'Tarefas & Processos', icon: ClipboardList },
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/financeiro', label: 'Financeiro', icon: WalletCards },
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: ReceiptText },

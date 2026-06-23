@@ -102,7 +102,8 @@ function AppShell({ activeTab, setActiveTab, children }) {
               </button>
             ))}
           </div>
-          {['Tarefas & Processos', 'Relacionamento', 'Documentos recebidos', 'Automação contábil'].map((item) => (
+          <Link to="/demandas" className="mb-4 flex w-full items-center justify-between text-[#69747b]"><span>Tarefas &amp; Processos</span><ChevronDown size={15} /></Link>
+          {['Relacionamento', 'Documentos recebidos', 'Automação contábil'].map((item) => (
             <button key={item} className="mb-4 flex w-full items-center justify-between text-[#69747b]"><span>{item}</span><ChevronDown size={15} /></button>
           ))}
           <div className="mb-5 flex items-center justify-between text-[#69747b]">
