@@ -1,8 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, Bot, ChevronDown, CircleHelp, ClipboardCheck, ClipboardList, Gift, Link2, MoreVertical, Pencil, Pin, Store, Trash2, Zap } from 'lucide-react';
+import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MoreVertical, Pencil, Pin, Trash2, Users, Zap } from 'lucide-react';
 import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
 import api from '../api/client';
+import NiboRail from '../components/NiboRail';
+import SideMenuSection from '../components/SideMenuSection';
 
 const tabs = ['Calendário', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
 const clients = [
@@ -68,50 +70,44 @@ function recognizePdf(fileName, robots) {
 }
 
 function AppShell({ activeTab, setActiveTab, children }) {
+  const [openSection, setOpenSection] = useState('obrigacoes');
+  const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
+
   return (
     <div className="nibo-ui min-h-screen bg-white text-[#3f4548]">
-      <aside className="fixed inset-y-0 left-0 z-20 flex w-[46px] flex-col items-center bg-[#003f82] text-white">
-        <div className="mb-5 mt-4 text-2xl font-bold leading-none">n</div>
-        <div className="flex flex-1 flex-col items-center gap-2">
-          <IconButton active label="Obrigações"><ClipboardCheck /></IconButton>
-          <IconButton label="Relatórios"><BarChart3 /></IconButton>
-          <IconButton label="Clientes"><Store /></IconButton>
-        </div>
-        <div className="mb-4 flex flex-col items-center gap-3 text-xs">
-          <IconButton label="Novidades"><Gift /></IconButton>
-          <span>News</span>
-          <IconButton label="Ajuda"><CircleHelp /></IconButton>
-          <span>Ajuda</span>
-          <div className="grid h-8 w-8 place-items-center rounded-full border border-white/70 text-xs">AC</div>
-        </div>
-      </aside>
+      <NiboRail />
 
-      <aside className="fixed inset-y-0 left-[46px] z-10 w-[236px] border-r border-[#dfe5e8] bg-[#f4f7fb]">
-        <div className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
+      <aside className="fixed inset-y-0 left-[46px] z-10 flex w-[236px] flex-col border-r border-[#dfe5e8] bg-[#f4f7fb]">
+        <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-[#dfe5e8] px-5">
           <h1 className="text-xl text-[#444]">Contador</h1>
           <Pin size={16} className="text-[#9aa5ad]" />
         </div>
-        <nav className="px-5 py-4 text-sm">
+        <nav className="flex-1 overflow-y-auto px-5 py-4 text-sm">
           <div className="mb-5 flex items-center gap-2 text-[#7a858c]"><Zap size={16} /> Comece rápido</div>
           <MenuSection title="OPERAÇÃO" />
-          <div className="mb-1 flex items-center gap-2 font-semibold text-[#4f5559]"><ClipboardCheck size={16} /> Obrigações</div>
-          <div className="mb-5 ml-5 space-y-1">
+          <SideMenuSection icon={ClipboardCheck} label="Obrigações" to="/" active open={openSection === 'obrigacoes'} onToggle={() => toggleSection('obrigacoes')}>
             {tabs.map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`block w-full rounded px-3 py-2 text-left ${activeTab === tab ? 'bg-[#dce5ef] text-[#2f3a42]' : 'text-[#6d7479] hover:bg-white'}`}>
                 {tab}
               </button>
             ))}
-          </div>
-          <Link to="/demandas" className="mb-4 flex w-full items-center justify-between text-[#69747b]"><span>Tarefas &amp; Processos</span><ChevronDown size={15} /></Link>
-          {['Relacionamento', 'Documentos recebidos', 'Automação contábil'].map((item) => (
-            <button key={item} className="mb-4 flex w-full items-center justify-between text-[#69747b]"><span>{item}</span><ChevronDown size={15} /></button>
-          ))}
+          </SideMenuSection>
+          <SideMenuSection icon={ListChecks} label="Tarefas & Processos" to="/demandas" open={openSection === 'tarefas'} onToggle={() => toggleSection('tarefas')}>
+            {['Tarefas', 'Processos', 'Configurações'].map((item) => (
+              <Link key={item} to="/demandas" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+            ))}
+          </SideMenuSection>
+          <p className="mb-4 mt-1 text-[#69747b]">Relacionamento</p>
           <div className="mb-5 flex items-center justify-between text-[#69747b]">
             <span>Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></span>
             <span className="grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white"><ChevronDown size={13} /></span>
           </div>
           <MenuSection title="CADASTROS" />
-          <Link to="/clientes" className="mb-4 flex w-full justify-between text-[#69747b]"><span>Clientes</span><ChevronDown size={15} /></Link>
+          <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
+            {['Meus clientes', 'Contatos'].map((item) => (
+              <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+            ))}
+          </SideMenuSection>
           <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#69747b]"><ClipboardList size={16} /> Formulários</Link>
         </nav>
       </aside>
@@ -135,9 +131,6 @@ function AppShell({ activeTab, setActiveTab, children }) {
   );
 }
 
-function IconButton({ children, active, label }) {
-  return <button type="button" title={label} aria-label={label} className={`grid h-9 w-9 place-items-center rounded-md ${active ? 'bg-white/15' : 'hover:bg-white/10'} [&>svg]:h-[18px] [&>svg]:w-[18px]`}>{children}</button>;
-}
 
 function MenuSection({ title }) {
   return <div className="mb-4 border-t border-[#dfe5e8] pt-4 text-xs font-semibold text-[#7b858c]">{title}</div>;

@@ -4,12 +4,9 @@ import {
   Archive,
   CalendarDays,
   Check,
-  ChevronDown,
-  CircleHelp,
   ClipboardCheck,
   Clock3,
   FileText,
-  Gift,
   ListChecks,
   Maximize2,
   MessageSquare,
@@ -28,6 +25,8 @@ import {
 } from "lucide-react";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import NiboRail from "../components/NiboRail";
+import SideMenuSection from "../components/SideMenuSection";
 
 const departments = [
   "Departamento Contábil",
@@ -176,31 +175,18 @@ const builtInProcessTemplates = [
 ];
 
 function Shell({ tab, setTab, children }) {
+  const [openSection, setOpenSection] = useState("tarefas");
+  const toggleSection = (key) =>
+    setOpenSection((current) => (current === key ? null : key));
+
   return (
     <div className="min-h-screen bg-white text-[#3f4548]">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-[46px] flex-col items-center bg-[#003f82] text-white">
-        <b className="mt-4 text-2xl">n</b>
-        <div className="mt-6 flex flex-1 flex-col gap-2">
-          <Link
-            to="/"
-            className="grid h-9 w-9 place-items-center rounded hover:bg-white/10"
-          >
-            <ClipboardCheck size={18} />
-          </Link>
-          <span className="grid h-9 w-9 place-items-center rounded bg-white/15">
-            <ListChecks size={18} />
-          </span>
-        </div>
-        <div className="mb-4 flex flex-col gap-4">
-          <Gift size={18} />
-          <CircleHelp size={18} />
-        </div>
-      </aside>
-      <aside className="fixed inset-y-0 left-[46px] z-20 w-[236px] border-r bg-[#f4f7fb]">
-        <div className="flex h-[58px] items-center border-b px-5 text-xl">
+      <NiboRail />
+      <aside className="fixed inset-y-0 left-[46px] z-20 flex w-[236px] flex-col border-r bg-[#f4f7fb]">
+        <div className="flex h-[58px] shrink-0 items-center border-b px-5 text-xl">
           Contador
         </div>
-        <nav className="px-5 py-5 text-sm">
+        <nav className="flex-1 overflow-y-auto px-5 py-5 text-sm">
           <p className="mb-6 flex gap-2 text-[#78838a]">
             <Zap size={16} /> Comece rápido
           </p>
@@ -208,10 +194,7 @@ function Shell({ tab, setTab, children }) {
           <Link to="/" className="mb-4 flex gap-2 text-[#68737a]">
             <ClipboardCheck size={16} /> Obrigações
           </Link>
-          <p className="mb-2 flex gap-2 font-semibold">
-            <ListChecks size={16} /> Tarefas &amp; Processos
-          </p>
-          <div className="mb-6 ml-5 space-y-1">
+          <SideMenuSection icon={ListChecks} label="Tarefas & Processos" to="/demandas" active open={openSection === "tarefas"} onToggle={() => toggleSection("tarefas")}>
             {["Tarefas", "Processos", "Configurações"].map((item) => (
               <button
                 key={item}
@@ -221,14 +204,14 @@ function Shell({ tab, setTab, children }) {
                 {item}
               </button>
             ))}
-          </div>
-          <p className="mb-4 text-[#68737a]">Relacionamento</p>
-          <p className="mb-4 text-[#68737a]">Documentos recebidos</p>
-          <p className="mb-6 text-[#68737a]">Automação contábil</p>
+          </SideMenuSection>
+          <p className="mb-4 mt-1 text-[#68737a]">Relacionamento</p>
           <p className="mb-4 border-t pt-4 text-xs font-semibold">CADASTROS</p>
-          <Link to="/clientes" className="mb-2 flex gap-2 text-[#68737a]">
-            <Users size={16} /> Clientes
-          </Link>
+          <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === "clientes"} onToggle={() => toggleSection("clientes")}>
+            {["Meus clientes", "Contatos"].map((item) => (
+              <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+            ))}
+          </SideMenuSection>
           <Link to="/formularios" className="flex gap-2 text-[#68737a]">
             <FileText size={16} /> Formulários
           </Link>

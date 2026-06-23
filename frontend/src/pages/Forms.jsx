@@ -1,42 +1,36 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, CircleHelp, ClipboardCheck, ClipboardList, Gift, MoreVertical, Pencil, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MoreVertical, Pencil, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
 import { listForms, createForm, toggleFormStatus, removeForm } from '../api/forms';
+import NiboRail from '../components/NiboRail';
+import SideMenuSection from '../components/SideMenuSection';
 
 const departments = ['Departamento Contábil', 'Departamento de Registro', 'Departamento Financeiro', 'Departamento Fiscal', 'Departamento Pessoal'];
 
-function Rail() {
-  return (
-    <aside className="fixed inset-y-0 left-0 z-30 flex w-[46px] flex-col items-center bg-[#003f82] text-white">
-      <b className="mt-4 text-2xl">n</b>
-      <div className="mt-6 flex flex-1 flex-col gap-2">
-        <Link to="/" title="Obrigações" className="grid h-9 w-9 place-items-center rounded hover:bg-white/10"><ClipboardCheck size={18} /></Link>
-        <Link to="/clientes" title="Clientes" className="grid h-9 w-9 place-items-center rounded hover:bg-white/10"><Users size={18} /></Link>
-      </div>
-      <div className="mb-4 flex flex-col items-center gap-3">
-        <Gift size={18} />
-        <CircleHelp size={18} />
-        <span className="grid h-8 w-8 place-items-center rounded-full border border-white/70 text-xs">AC</span>
-      </div>
-    </aside>
-  );
-}
-
 function FormsMenu() {
+  const [openSection, setOpenSection] = useState('formularios');
+  const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
+
   return (
-    <aside className="fixed inset-y-0 left-[46px] z-20 w-[236px] border-r border-[#dfe5e8] bg-[#f4f7fb]">
-      <div className="flex h-[58px] items-center border-b border-[#dfe5e8] px-5 text-xl">Contador</div>
-      <nav className="px-5 py-5 text-sm">
+    <aside className="fixed inset-y-0 left-[46px] z-20 flex w-[236px] flex-col border-r border-[#dfe5e8] bg-[#f4f7fb]">
+      <div className="flex h-[58px] shrink-0 items-center border-b border-[#dfe5e8] px-5 text-xl">Contador</div>
+      <nav className="flex-1 overflow-y-auto px-5 py-5 text-sm">
         <p className="mb-6 flex items-center gap-2 text-[#778189]"><Zap size={16} /> Comece rápido</p>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">OPERAÇÃO</p>
         <Link to="/" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardCheck size={16} /> Obrigações</Link>
-        <Link to="/demandas" className="mb-4 flex justify-between text-[#68737a]">Tarefas &amp; Processos <ChevronDown size={15} /></Link>
-        <p className="mb-4 text-[#68737a]">Relacionamento</p>
-        <p className="mb-4 text-[#68737a]">Documentos recebidos</p>
-        <p className="mb-6 text-[#68737a]">Automação contábil</p>
+        <SideMenuSection icon={ListChecks} label="Tarefas & Processos" to="/demandas" open={openSection === 'tarefas'} onToggle={() => toggleSection('tarefas')}>
+          {['Tarefas', 'Processos', 'Configurações'].map((item) => (
+            <Link key={item} to="/demandas" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+          ))}
+        </SideMenuSection>
+        <p className="mb-4 mt-1 text-[#68737a]">Relacionamento</p>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
-        <Link to="/clientes" className="mb-2 flex items-center gap-2 text-[#68737a]"><Users size={16} /> Clientes</Link>
-        <p className="mb-2 flex items-center gap-2 font-semibold"><ClipboardList size={16} /> Formulários</p>
+        <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
+          {['Meus clientes', 'Contatos'].map((item) => (
+            <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+          ))}
+        </SideMenuSection>
+        <p className="flex items-center gap-2 font-semibold"><ClipboardList size={16} /> Formulários</p>
       </nav>
     </aside>
   );
@@ -146,7 +140,7 @@ export default function Forms() {
 
   return (
     <div className="nibo-ui min-h-screen bg-white text-[#3f4548]">
-      <Rail />
+      <NiboRail />
       <FormsMenu />
       <main className="ml-[282px] min-h-screen">
         <header className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
