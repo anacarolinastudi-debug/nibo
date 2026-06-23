@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlignLeft, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, CircleDot,
-  ClipboardCheck, ClipboardList, Image, Link2, ListChecks, ListFilter, Pencil,
+  ClipboardCheck, ClipboardList, Image, Link2, ListChecks, ListFilter, MessageCircle, Pencil,
   Plus, Redo2, ShieldCheck, Star, Trash2, Type, Undo2, Users, X,
 } from 'lucide-react';
 import { getForm, updateForm } from '../api/forms';
@@ -55,7 +55,7 @@ function FormsMenu() {
             <Link key={item} to="/demandas" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
           ))}
         </SideMenuSection>
-        <p className="mb-4 mt-1 text-[#68737a]">Relacionamento</p>
+        <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#68737a]"><MessageCircle size={16} /> Relacionamento</Link>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
         <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
           {['Meus clientes', 'Contatos'].map((item) => (

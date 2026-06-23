@@ -9,6 +9,7 @@ import {
   FileText,
   ListChecks,
   Maximize2,
+  MessageCircle,
   MessageSquare,
   MoreVertical,
   Pencil,
@@ -201,7 +202,7 @@ function Shell({ tab, setTab, children }) {
               </button>
             ))}
           </SideMenuSection>
-          <p className="mb-4 mt-1 text-[#68737a]">Relacionamento</p>
+          <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#68737a]"><MessageCircle size={16} /> Relacionamento</Link>
           <p className="mb-4 border-t pt-4 text-xs font-semibold">CADASTROS</p>
           <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === "clientes"} onToggle={() => toggleSection("clientes")}>
             {["Meus clientes", "Contatos"].map((item) => (

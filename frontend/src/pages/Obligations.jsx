@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageSquare, MoreVertical, Pencil, Pin, Send, Trash2, Users, X } from 'lucide-react';
+import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Trash2, Users, X } from 'lucide-react';
 import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
 import api from '../api/client';
 import NiboRail from '../components/NiboRail';
@@ -96,7 +96,7 @@ function AppShell({ activeTab, setActiveTab, children }) {
               <Link key={item} to="/demandas" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
             ))}
           </SideMenuSection>
-          <p className="mb-4 mt-1 text-[#69747b]">Relacionamento</p>
+          <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#69747b]"><MessageCircle size={16} /> Relacionamento</Link>
           <div className="mb-5 flex items-center justify-between text-[#69747b]">
             <span>Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></span>
             <span className="grid h-5 w-5 place-items-center rounded-full bg-violet-600 text-white"><ChevronDown size={13} /></span>

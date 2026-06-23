@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MoreVertical, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
 import { listForms, createForm, toggleFormStatus, removeForm } from '../api/forms';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
@@ -22,7 +22,7 @@ function FormsMenu() {
             <Link key={item} to="/demandas" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
           ))}
         </SideMenuSection>
-        <p className="mb-4 mt-1 text-[#68737a]">Relacionamento</p>
+        <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#68737a]"><MessageCircle size={16} /> Relacionamento</Link>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
         <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
           {['Meus clientes', 'Contatos'].map((item) => (

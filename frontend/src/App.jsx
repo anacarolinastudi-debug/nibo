@@ -12,6 +12,7 @@ import Documents from './pages/Documents';
 import Obligations from './pages/Obligations';
 import Forms from './pages/Forms';
 import FormEditor from './pages/FormEditor';
+import Relationship from './pages/Relationship';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
       <Route path="/documentos" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
       <Route path="/formularios" element={<ProtectedRoute><Forms /></ProtectedRoute>} />
       <Route path="/formularios/:id" element={<ProtectedRoute><FormEditor /></ProtectedRoute>} />
+      <Route path="/relacionamento" element={<ProtectedRoute><Relationship /></ProtectedRoute>} />
     </Routes>
   );
 }

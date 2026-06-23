@@ -41,6 +41,7 @@ model AccountingFirm {
   processTemplates   ProcessTemplate[]
   auditLogs          AuditLog[]
   forms              Form[]
+  whatsappConversations WhatsAppConversation[]
 
   @@map("accounting_firms")
 }
@@ -129,6 +130,7 @@ model Client {
   employees          Employee[]
   contacts           ClientContact[]
   taskProcesses      TaskProcess[]
+  whatsappConversations WhatsAppConversation[]
 
   @@index([accountingFirmId])
   @@map("clients")
@@ -521,6 +523,57 @@ enum DocumentCategory {
   GUIA_IMPOSTO
   COMPROVANTE
   OUTRO
+}
+
+// ---------------------------------------------------------------------
+// RELACIONAMENTO (caixa de entrada do WhatsApp)
+// ---------------------------------------------------------------------
+
+enum ConversationStatus {
+  ABERTA
+  ENCERRADA
+}
+
+enum MessageDirection {
+  ENTRADA
+  SAIDA
+}
+
+model WhatsAppConversation {
+  id            String             @id @default(uuid())
+  phoneNumber   String
+  contactName   String?
+  status        ConversationStatus @default(ABERTA)
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  clientId String?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  messages WhatsAppMessage[]
+
+  @@unique([accountingFirmId, phoneNumber])
+  @@index([accountingFirmId])
+  @@map("whatsapp_conversations")
+}
+
+model WhatsAppMessage {
+  id          String           @id @default(uuid())
+  direction   MessageDirection
+  body        String?
+  mediaUrl    String?
+  status      String           @default("RECEBIDA")
+  waMessageId String?
+  createdAt   DateTime         @default(now())
+
+  conversationId String
+  conversation   WhatsAppConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("whatsapp_messages")
 }
 
 model Document {
