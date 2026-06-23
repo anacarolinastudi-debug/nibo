@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MoreVertical, Pencil, Pin, Trash2, Users, Zap } from 'lucide-react';
+import { Bot, ChevronDown, ClipboardCheck, ClipboardList, Link2, ListChecks, MoreVertical, Pencil, Pin, Trash2, Users } from 'lucide-react';
 import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
 import api from '../api/client';
 import NiboRail from '../components/NiboRail';
@@ -83,7 +83,6 @@ function AppShell({ activeTab, setActiveTab, children }) {
           <Pin size={16} className="text-[#9aa5ad]" />
         </div>
         <nav className="flex-1 overflow-y-auto px-5 py-4 text-sm">
-          <div className="mb-5 flex items-center gap-2 text-[#7a858c]"><Zap size={16} /> Comece rápido</div>
           <MenuSection title="OPERAÇÃO" />
           <SideMenuSection icon={ClipboardCheck} label="Obrigações" to="/" active open={openSection === 'obrigacoes'} onToggle={() => toggleSection('obrigacoes')}>
             {tabs.map((tab) => (

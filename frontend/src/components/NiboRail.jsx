@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { BarChart3, CircleHelp, ClipboardCheck } from 'lucide-react';
+import { CircleHelp, ClipboardCheck } from 'lucide-react';
 
 // Barra azul fixa de navegação principal. É o mesmo componente em todas as
 // páginas para não "pular" visualmente ao trocar de tela.
@@ -13,9 +13,6 @@ export default function NiboRail() {
         <Link to="/" title="Obrigações" className={`grid h-9 w-9 place-items-center rounded ${pathname === '/' ? 'bg-white/15' : 'hover:bg-white/10'}`}>
           <ClipboardCheck size={18} />
         </Link>
-        <span title="Relatórios" className="grid h-9 w-9 place-items-center rounded text-white/50">
-          <BarChart3 size={18} />
-        </span>
       </div>
       <div className="mb-4 flex flex-col items-center gap-3">
         <CircleHelp size={18} title="Ajuda" />

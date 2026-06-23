@@ -21,7 +21,6 @@ import {
   Users,
   Workflow,
   X,
-  Zap,
 } from "lucide-react";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
@@ -187,10 +186,7 @@ function Shell({ tab, setTab, children }) {
           Contador
         </div>
         <nav className="flex-1 overflow-y-auto px-5 py-5 text-sm">
-          <p className="mb-6 flex gap-2 text-[#78838a]">
-            <Zap size={16} /> Comece rápido
-          </p>
-          <p className="mb-4 border-t pt-4 text-xs font-semibold">OPERAÇÃO</p>
+          <p className="mb-4 text-xs font-semibold">OPERAÇÃO</p>
           <Link to="/" className="mb-4 flex gap-2 text-[#68737a]">
             <ClipboardCheck size={16} /> Obrigações
           </Link>

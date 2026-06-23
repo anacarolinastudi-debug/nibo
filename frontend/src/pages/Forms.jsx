@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MoreVertical, Pencil, Plus, Search, Trash2, Users, X, Zap } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MoreVertical, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
 import { listForms, createForm, toggleFormStatus, removeForm } from '../api/forms';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
@@ -15,8 +15,7 @@ function FormsMenu() {
     <aside className="fixed inset-y-0 left-[46px] z-20 flex w-[236px] flex-col border-r border-[#dfe5e8] bg-[#f4f7fb]">
       <div className="flex h-[58px] shrink-0 items-center border-b border-[#dfe5e8] px-5 text-xl">Contador</div>
       <nav className="flex-1 overflow-y-auto px-5 py-5 text-sm">
-        <p className="mb-6 flex items-center gap-2 text-[#778189]"><Zap size={16} /> Comece rápido</p>
-        <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">OPERAÇÃO</p>
+        <p className="mb-4 text-xs font-semibold text-[#7b858c]">OPERAÇÃO</p>
         <Link to="/" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardCheck size={16} /> Obrigações</Link>
         <SideMenuSection icon={ListChecks} label="Tarefas & Processos" to="/demandas" open={openSection === 'tarefas'} onToggle={() => toggleSection('tarefas')}>
           {['Tarefas', 'Processos', 'Configurações'].map((item) => (
