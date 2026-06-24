@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Settings, Trash2, Users, X } from 'lucide-react';
 import { listForms, createForm, toggleFormStatus, removeForm } from '../api/forms';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
@@ -30,7 +30,8 @@ function FormsMenu() {
             <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
           ))}
         </SideMenuSection>
-        <p className="flex items-center gap-2 font-semibold"><ClipboardList size={16} /> Formulários</p>
+        <p className="mb-4 flex items-center gap-2 font-semibold"><ClipboardList size={16} /> Formulários</p>
+        <Link to="/configuracoes" className="flex items-center gap-2 text-[#68737a]"><Settings size={16} /> Configurações</Link>
       </nav>
     </aside>
   );

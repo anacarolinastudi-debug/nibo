@@ -25,6 +25,24 @@ model AccountingFirm {
   cnpj      String   @unique
   email     String
   phone     String?
+  crc       String?
+  logoUrl   String?
+  cep          String?
+  street       String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String?
+
+  // Certificado digital (e-CNPJ A1), usado pelo Radar e-CAC. O arquivo e a
+  // senha ficam sempre criptografados (AES-256-GCM) — nunca em texto puro.
+  certificatePfxEncrypted        String?
+  certificatePassphraseEncrypted String?
+  certificateSubject             String?
+  certificateValidUntil          DateTime?
+  certificateUploadedAt          DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -43,6 +61,8 @@ model AccountingFirm {
   forms              Form[]
   whatsappConversations WhatsAppConversation[]
   taxPendencyChecks  TaxPendencyCheck[]
+  departments        Department[]
+  firmRoles          FirmRole[]
 
   @@map("accounting_firms")
 }
@@ -79,6 +99,9 @@ model User {
   taskProcesses      TaskProcess[]
   notifications     Notification[]
   auditLogs          AuditLog[]
+  departmentsResponsibleFor   Department[] @relation("DepartmentResponsible")
+  clientDepartmentResponsible ClientDepartmentResponsible[] @relation("ClientDepartmentResponsibleUser")
+  firmRoles                   FirmRole[] @relation("FirmRoleUser")
 
   @@index([accountingFirmId])
   @@map("users")
@@ -133,6 +156,7 @@ model Client {
   taskProcesses      TaskProcess[]
   whatsappConversations WhatsAppConversation[]
   taxPendencyChecks  TaxPendencyCheck[]
+  departmentResponsibilities ClientDepartmentResponsible[]
 
   @@index([accountingFirmId])
   @@map("clients")
@@ -157,6 +181,65 @@ model ClientContact {
   @@index([clientId])
   @@index([accountingFirmId])
   @@map("client_contacts")
+}
+
+// ---------------------------------------------------------------------
+// DEPARTAMENTOS E RESPONSABILIDADES
+// ---------------------------------------------------------------------
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  responsibleId String?
+  responsible   User? @relation("DepartmentResponsible", fields: [responsibleId], references: [id])
+
+  clientLinks ClientDepartmentResponsible[]
+
+  @@unique([accountingFirmId, name])
+  @@index([accountingFirmId])
+  @@map("departments")
+}
+
+model ClientDepartmentResponsible {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  responsibleId String?
+  responsible   User? @relation("ClientDepartmentResponsibleUser", fields: [responsibleId], references: [id])
+
+  @@unique([clientId, departmentId])
+  @@index([clientId])
+  @@index([departmentId])
+  @@map("client_department_responsibles")
+}
+
+model FirmRole {
+  id        String   @id @default(uuid())
+  title     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  userId String?
+  user   User? @relation("FirmRoleUser", fields: [userId], references: [id])
+
+  @@index([accountingFirmId])
+  @@map("firm_roles")
 }
 
 // ---------------------------------------------------------------------

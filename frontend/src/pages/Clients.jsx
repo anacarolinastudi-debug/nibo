@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Archive, Building2, ClipboardCheck, ClipboardList, ContactRound, ExternalLink, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Trash2, Users, X } from 'lucide-react';
+import { Archive, Building2, ClipboardCheck, ClipboardList, ContactRound, ExternalLink, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Settings, Trash2, Users, X } from 'lucide-react';
 import api from '../api/client';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
@@ -32,7 +32,8 @@ function ClientMenu({ tab, setTab }) {
             <button key={item} onClick={() => setTab(item)} className={`block w-full rounded px-3 py-2 text-left ${tab === item ? 'bg-[#dce5ef]' : 'text-[#68737a]'}`}>{item}</button>
           ))}
         </SideMenuSection>
-        <Link to="/formularios" className="flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/configuracoes" className="flex items-center gap-2 text-[#68737a]"><Settings size={16} /> Configurações</Link>
       </nav>
     </aside>
   );

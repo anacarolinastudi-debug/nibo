@@ -14,6 +14,7 @@ import Forms from './pages/Forms';
 import FormEditor from './pages/FormEditor';
 import Relationship from './pages/Relationship';
 import RadarEcac from './pages/RadarEcac';
+import Settings from './pages/Settings';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/formularios/:id" element={<ProtectedRoute><FormEditor /></ProtectedRoute>} />
       <Route path="/relacionamento" element={<ProtectedRoute><Relationship /></ProtectedRoute>} />
       <Route path="/radar-ecac" element={<ProtectedRoute><RadarEcac /></ProtectedRoute>} />
+      <Route path="/configuracoes" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
     </Routes>
   );
 }

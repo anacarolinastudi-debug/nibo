@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   AlignLeft, CalendarDays, CheckSquare, ChevronLeft, ChevronRight, CircleDot,
   ClipboardCheck, ClipboardList, Image, Link2, ListChecks, ListFilter, MessageCircle, Pencil,
-  Plus, Redo2, ShieldCheck, Star, Trash2, Type, Undo2, Users, X,
+  Plus, Redo2, Settings, ShieldCheck, Star, Trash2, Type, Undo2, Users, X,
 } from 'lucide-react';
 import { getForm, updateForm } from '../api/forms';
 import NiboRail from '../components/NiboRail';
@@ -63,7 +63,8 @@ function FormsMenu() {
             <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
           ))}
         </SideMenuSection>
-        <Link to="/formularios" className="flex items-center gap-2 font-semibold"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/formularios" className="mb-4 flex items-center gap-2 font-semibold"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/configuracoes" className="flex items-center gap-2 text-[#68737a]"><Settings size={16} /> Configurações</Link>
       </nav>
     </aside>
   );

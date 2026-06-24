@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, RefreshCw, TriangleAlert, Users } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, RefreshCw, Settings, TriangleAlert, Users } from 'lucide-react';
 import { getStatus, getLatestByClient, syncClient } from '../api/ecac';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
@@ -30,7 +30,8 @@ function RadarMenu() {
             <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
           ))}
         </SideMenuSection>
-        <Link to="/formularios" className="flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/configuracoes" className="flex items-center gap-2 text-[#68737a]"><Settings size={16} /> Configurações</Link>
       </nav>
     </aside>
   );

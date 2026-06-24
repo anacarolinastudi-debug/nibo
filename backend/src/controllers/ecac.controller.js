@@ -5,8 +5,9 @@ function firmWhere(req) {
   return { accountingFirmId: req.user.accountingFirmId };
 }
 
-function getStatus(req, res) {
-  res.json({ configured: ecacService.isCertificateConfigured() });
+async function getStatus(req, res) {
+  const configured = await ecacService.isCertificateConfigured(req.user.accountingFirmId);
+  res.json({ configured });
 }
 
 async function listChecks(req, res) {
@@ -38,8 +39,9 @@ async function runCheckForClient(req, res) {
   const client = await prisma.client.findFirst({ where: { id: req.params.clientId, ...firmWhere(req) } });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
-  if (!ecacService.isCertificateConfigured()) {
-    return res.status(400).json({ error: 'Certificado digital não configurado neste ambiente. Configure RECEITA_CERT_PFX_BASE64 e RECEITA_CERT_PASSPHRASE.' });
+  const configured = await ecacService.isCertificateConfigured(req.user.accountingFirmId);
+  if (!configured) {
+    return res.status(400).json({ error: 'Certificado digital não configurado. Faça o upload em Configurações > Escritório.' });
   }
 
   const check = await prisma.taxPendencyCheck.create({

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, Plus, Search, Send, TriangleAlert, Users, X } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
 import { getStatus, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
 import NiboRail from '../components/NiboRail';
@@ -29,7 +29,8 @@ function RelationshipMenu() {
             <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
           ))}
         </SideMenuSection>
-        <Link to="/formularios" className="flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/configuracoes" className="flex items-center gap-2 text-[#68737a]"><Settings size={16} /> Configurações</Link>
       </nav>
     </aside>
   );

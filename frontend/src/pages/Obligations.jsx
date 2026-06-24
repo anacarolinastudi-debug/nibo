@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Trash2, Users, X } from 'lucide-react';
+import { Bot, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Settings, Trash2, Users, X } from 'lucide-react';
 import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
 import api from '../api/client';
 import NiboRail from '../components/NiboRail';
@@ -107,6 +107,7 @@ function AppShell({ activeTab, setActiveTab, children }) {
             ))}
           </SideMenuSection>
           <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#69747b]"><ClipboardList size={16} /> Formulários</Link>
+          <Link to="/configuracoes" className="mb-4 flex items-center gap-2 text-[#69747b]"><Settings size={16} /> Configurações</Link>
         </nav>
       </aside>
 

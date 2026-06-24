@@ -210,8 +210,11 @@ function Shell({ tab, setTab, children }) {
               <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
             ))}
           </SideMenuSection>
-          <Link to="/formularios" className="flex gap-2 text-[#68737a]">
+          <Link to="/formularios" className="mb-4 flex gap-2 text-[#68737a]">
             <FileText size={16} /> Formulários
+          </Link>
+          <Link to="/configuracoes" className="flex gap-2 text-[#68737a]">
+            <Settings size={16} /> Configurações
           </Link>
         </nav>
       </aside>

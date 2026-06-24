@@ -13,7 +13,9 @@ function requireAuth(req, res, next) {
 
   try {
     const payload = verifyToken(token);
-    req.user = payload;
+    // O token guarda o id do usuário em "sub" (padrão JWT). Expomos também
+    // como "id" porque boa parte dos controllers usa req.user.id.
+    req.user = { ...payload, id: payload.sub };
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Token inválido ou expirado.' });

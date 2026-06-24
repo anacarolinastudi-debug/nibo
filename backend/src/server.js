@@ -16,6 +16,8 @@ const obligationsRoutes = require('./routes/obligations.routes');
 const formsRoutes = require('./routes/forms.routes');
 const whatsappRoutes = require('./routes/whatsapp.routes');
 const ecacRoutes = require('./routes/ecac.routes');
+const firmRoutes = require('./routes/firm.routes');
+const departmentsRoutes = require('./routes/departments.routes');
 const { startEcacScheduler } = require('./jobs/ecacScheduler');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -42,6 +44,8 @@ app.use('/api/obligations', obligationsRoutes);
 app.use('/api/forms', formsRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/ecac', ecacRoutes);
+app.use('/api/firm', firmRoutes);
+app.use('/api/departments', departmentsRoutes);
 
 // Precisa ser o último middleware
 app.use(errorHandler);

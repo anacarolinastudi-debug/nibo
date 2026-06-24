@@ -14,21 +14,33 @@
 const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
+const prisma = require('../lib/prisma');
+const certCrypto = require('../utils/certCrypto');
 
 const GOVBR_LOGIN_URL = 'https://sso.acesso.gov.br/login?client_id=cav.receita.fazenda.gov.br';
 const ECAC_HOME_URL = 'https://cav.receita.fazenda.gov.br/';
 
-function isCertificateConfigured() {
-  return Boolean(process.env.RECEITA_CERT_PFX_BASE64 && process.env.RECEITA_CERT_PASSPHRASE);
+// O certificado é carregado por escritório (não por variável de ambiente):
+// fica criptografado no banco e é decifrado em memória só no momento do uso.
+async function isCertificateConfigured(accountingFirmId) {
+  const firm = await prisma.accountingFirm.findUnique({
+    where: { id: accountingFirmId },
+    select: { certificatePfxEncrypted: true, certificatePassphraseEncrypted: true },
+  });
+  return Boolean(firm?.certificatePfxEncrypted && firm?.certificatePassphraseEncrypted);
 }
 
-function loadCertificate() {
-  if (!isCertificateConfigured()) {
-    throw new Error('Certificado digital não configurado (RECEITA_CERT_PFX_BASE64 / RECEITA_CERT_PASSPHRASE).');
+async function loadCertificate(accountingFirmId) {
+  const firm = await prisma.accountingFirm.findUnique({
+    where: { id: accountingFirmId },
+    select: { certificatePfxEncrypted: true, certificatePassphraseEncrypted: true },
+  });
+  if (!firm?.certificatePfxEncrypted || !firm?.certificatePassphraseEncrypted) {
+    throw new Error('Certificado digital não configurado para este escritório. Faça o upload em Configurações > Escritório.');
   }
   return {
-    pfx: Buffer.from(process.env.RECEITA_CERT_PFX_BASE64, 'base64'),
-    passphrase: process.env.RECEITA_CERT_PASSPHRASE,
+    pfx: certCrypto.decrypt(firm.certificatePfxEncrypted),
+    passphrase: certCrypto.decrypt(firm.certificatePassphraseEncrypted).toString('utf8'),
   };
 }
 
@@ -45,8 +57,8 @@ async function withDebugArtifacts(page, label) {
 
 // Faz login no gov.br com o certificado digital e retorna o contexto
 // autenticado do e-CAC, pronto para selecionar o outorgante (cliente).
-async function loginWithCertificate(browser) {
-  const cert = loadCertificate();
+async function loginWithCertificate(browser, accountingFirmId) {
+  const cert = await loadCertificate(accountingFirmId);
   const context = await browser.newContext({
     clientCertificates: [
       { origin: 'https://sso.acesso.gov.br', pfx: cert.pfx, passphrase: cert.passphrase },
@@ -122,13 +134,14 @@ function parseAmount(value) {
 // Função principal: roda a checagem de pendências para um único cliente.
 // Retorna a lista de pendências encontradas (já no formato do banco).
 async function runPendencyCheck(client) {
-  if (!isCertificateConfigured()) {
-    throw new Error('Certificado digital não configurado neste ambiente.');
+  const configured = await isCertificateConfigured(client.accountingFirmId);
+  if (!configured) {
+    throw new Error('Certificado digital não configurado para este escritório.');
   }
 
   const browser = await chromium.launch({ headless: process.env.ECAC_HEADLESS !== 'false' });
   try {
-    const { context, page } = await loginWithCertificate(browser);
+    const { context, page } = await loginWithCertificate(browser, client.accountingFirmId);
     try {
       await selectOutorgante(page, client.cnpj);
       const rows = await scrapePendencies(page);
