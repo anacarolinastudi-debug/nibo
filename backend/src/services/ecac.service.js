@@ -44,14 +44,26 @@ async function loadCertificate(accountingFirmId) {
   };
 }
 
+// Salva uma screenshot e o HTML da página no momento da falha, e devolve
+// as URLs públicas (servidas em /uploads) para facilitar o diagnóstico
+// remoto, sem precisar de acesso ao servidor.
 async function withDebugArtifacts(page, label) {
   try {
     const dir = path.join(__dirname, '..', '..', 'uploads', 'ecac-debug');
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, `${label}-${Date.now()}.png`);
-    await page.screenshot({ path: file, fullPage: true });
+    const stamp = Date.now();
+    const screenshotFile = path.join(dir, `${label}-${stamp}.png`);
+    const htmlFile = path.join(dir, `${label}-${stamp}.html`);
+    await page.screenshot({ path: screenshotFile, fullPage: true });
+    fs.writeFileSync(htmlFile, await page.content());
+    return {
+      screenshotUrl: `/uploads/ecac-debug/${label}-${stamp}.png`,
+      htmlUrl: `/uploads/ecac-debug/${label}-${stamp}.html`,
+      currentUrl: page.url(),
+    };
   } catch {
     // Captura de tela é só para depuração; nunca deve derrubar o robô.
+    return null;
   }
 }
 
@@ -76,8 +88,8 @@ async function loginWithCertificate(browser, accountingFirmId) {
   }
 
   await page.waitForURL(/cav\.receita\.fazenda\.gov\.br/, { timeout: 30000 }).catch(async () => {
-    await withDebugArtifacts(page, 'login-timeout');
-    throw new Error('Não foi possível confirmar o login no e-CAC (timeout aguardando redirecionamento).');
+    const debug = await withDebugArtifacts(page, 'login-timeout');
+    throw new Error(`Não foi possível confirmar o login no e-CAC (timeout aguardando redirecionamento).${debug ? ` URL atual: ${debug.currentUrl} | screenshot: ${debug.screenshotUrl} | html: ${debug.htmlUrl}` : ''}`);
   });
 
   return { context, page };
@@ -117,8 +129,8 @@ async function selectOutorgante(page, clientCnpj) {
   );
 
   if (!found) {
-    await withDebugArtifacts(page, `outorgante-nao-encontrado-${digits}`);
-    throw new Error(`CNPJ ${clientCnpj} não encontrado na lista de procurações. Confirme se a procuração eletrônica está ativa.`);
+    const debug = await withDebugArtifacts(page, `outorgante-nao-encontrado-${digits}`);
+    throw new Error(`CNPJ ${clientCnpj} não encontrado na lista de procurações. Confirme se a procuração eletrônica está ativa.${debug ? ` URL atual: ${debug.currentUrl} | screenshot: ${debug.screenshotUrl} | html: ${debug.htmlUrl}` : ''}`);
   }
 
   await page.locator(`[${marker}]`).first().click();
