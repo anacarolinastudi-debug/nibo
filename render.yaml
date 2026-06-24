@@ -18,3 +18,5 @@ services:
         generateValue: true
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: "0"
+      - key: NODE_OPTIONS
+        value: "--openssl-legacy-provider"
