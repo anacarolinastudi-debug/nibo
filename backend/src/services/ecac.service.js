@@ -139,7 +139,12 @@ async function runPendencyCheck(client) {
     throw new Error('Certificado digital não configurado para este escritório.');
   }
 
-  const browser = await chromium.launch({ headless: process.env.ECAC_HEADLESS !== 'false' });
+  // --no-sandbox e --disable-dev-shm-usage evitam falhas comuns do Chromium
+  // em containers com pouca memória/sem /dev/shm grande, como o Render free.
+  const browser = await chromium.launch({
+    headless: process.env.ECAC_HEADLESS !== 'false',
+    args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
+  });
   try {
     const { context, page } = await loginWithCertificate(browser, client.accountingFirmId);
     try {
