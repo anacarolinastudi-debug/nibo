@@ -16,3 +16,5 @@ services:
         sync: false
       - key: CERT_ENCRYPTION_KEY
         generateValue: true
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: "0"
