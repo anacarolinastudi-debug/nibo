@@ -92,13 +92,36 @@ async function selectOutorgante(page, clientCnpj) {
   // (geralmente em "Procurações" ou no seletor de perfil no topo da página).
   await page.goto(`${ECAC_HOME_URL}#/procuracoes`, { waitUntil: 'domcontentloaded' }).catch(() => {});
 
-  const cnpjOption = page.getByText(digits, { exact: false });
-  if (await cnpjOption.count()) {
-    await cnpjOption.first().click();
-  } else {
+  // A página costuma exibir o CNPJ formatado (com pontos/barra), por isso
+  // comparamos só os dígitos em vez de buscar o texto exato.
+  const marker = 'data-ecac-match';
+  const found = await page.evaluate(
+    ({ targetDigits, markerAttr }) => {
+      const candidates = Array.from(document.querySelectorAll('body *')).filter((el) => {
+        if (el.children.length > 0) return false;
+        const text = (el.textContent || '').replace(/\D/g, '');
+        return text && text.includes(targetDigits);
+      });
+      if (candidates.length === 0) return false;
+
+      let target = candidates[0];
+      let depth = 0;
+      while (target && depth < 6 && !['BUTTON', 'A', 'LI', 'TR'].includes(target.tagName) && target.parentElement) {
+        target = target.parentElement;
+        depth += 1;
+      }
+      target.setAttribute(markerAttr, 'true');
+      return true;
+    },
+    { targetDigits: digits, markerAttr: marker }
+  );
+
+  if (!found) {
     await withDebugArtifacts(page, `outorgante-nao-encontrado-${digits}`);
     throw new Error(`CNPJ ${clientCnpj} não encontrado na lista de procurações. Confirme se a procuração eletrônica está ativa.`);
   }
+
+  await page.locator(`[${marker}]`).first().click();
 }
 
 // Abre a área de Situação Fiscal / Pendências e extrai os itens da tabela.
