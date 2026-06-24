@@ -15,6 +15,8 @@ const documentsRoutes = require('./routes/documents.routes');
 const obligationsRoutes = require('./routes/obligations.routes');
 const formsRoutes = require('./routes/forms.routes');
 const whatsappRoutes = require('./routes/whatsapp.routes');
+const ecacRoutes = require('./routes/ecac.routes');
+const { startEcacScheduler } = require('./jobs/ecacScheduler');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -39,6 +41,7 @@ app.use('/api/documents', documentsRoutes);
 app.use('/api/obligations', obligationsRoutes);
 app.use('/api/forms', formsRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/ecac', ecacRoutes);
 
 // Precisa ser o último middleware
 app.use(errorHandler);
@@ -46,4 +49,5 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`API rodando em http://localhost:${PORT}`);
+  startEcacScheduler();
 });

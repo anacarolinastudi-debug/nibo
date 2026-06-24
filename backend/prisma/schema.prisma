@@ -42,6 +42,7 @@ model AccountingFirm {
   auditLogs          AuditLog[]
   forms              Form[]
   whatsappConversations WhatsAppConversation[]
+  taxPendencyChecks  TaxPendencyCheck[]
 
   @@map("accounting_firms")
 }
@@ -131,6 +132,7 @@ model Client {
   contacts           ClientContact[]
   taskProcesses      TaskProcess[]
   whatsappConversations WhatsAppConversation[]
+  taxPendencyChecks  TaxPendencyCheck[]
 
   @@index([accountingFirmId])
   @@map("clients")
@@ -574,6 +576,51 @@ model WhatsAppMessage {
 
   @@index([conversationId])
   @@map("whatsapp_messages")
+}
+
+// ---------------------------------------------------------------------
+// RADAR e-CAC (pendências fiscais via certificado digital)
+// ---------------------------------------------------------------------
+
+enum SyncStatus {
+  SUCESSO
+  ERRO
+  EM_ANDAMENTO
+}
+
+model TaxPendencyCheck {
+  id        String     @id @default(uuid())
+  status    SyncStatus @default(EM_ANDAMENTO)
+  errorMessage String?
+  startedAt DateTime   @default(now())
+  finishedAt DateTime?
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  pendencies TaxPendency[]
+
+  @@index([accountingFirmId])
+  @@index([clientId])
+  @@map("tax_pendency_checks")
+}
+
+model TaxPendency {
+  id          String   @id @default(uuid())
+  type        String
+  description String
+  amount       Decimal? @db.Decimal(14, 2)
+  situation    String?
+  createdAt    DateTime @default(now())
+
+  checkId String
+  check   TaxPendencyCheck @relation(fields: [checkId], references: [id], onDelete: Cascade)
+
+  @@index([checkId])
+  @@map("tax_pendencies")
 }
 
 model Document {
