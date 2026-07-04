@@ -3,13 +3,13 @@ const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const { generateToken } = require('../utils/jwt');
 
-// Cadastro inicial: cria o escritório de contabilidade + o primeiro usuário admin.
-// É o equivalente a "criar minha conta" no Nibo.
+// Cadastro inicial: cria o escritorio de contabilidade + o primeiro usuario admin.
+// E o equivalente a "criar minha conta" no Nibo.
 const registerFirmSchema = z.object({
-  firmName: z.string().min(2, 'Nome do escritório é obrigatório.'),
-  firmCnpj: z.string().min(11, 'CNPJ do escritório inválido.'),
-  adminName: z.string().min(2, 'Nome do responsável é obrigatório.'),
-  adminEmail: z.string().email('E-mail inválido.'),
+  firmName: z.string().min(2, 'Nome do escritorio e obrigatorio.'),
+  firmCnpj: z.string().min(11, 'CNPJ do escritorio invalido.'),
+  adminName: z.string().min(2, 'Nome do responsavel e obrigatorio.'),
+  adminEmail: z.string().email('E-mail invalido.'),
   adminPassword: z.string().min(6, 'A senha precisa ter ao menos 6 caracteres.'),
 });
 
@@ -51,19 +51,30 @@ async function registerFirm(req, res) {
 }
 
 const loginSchema = z.object({
-  email: z.string().email('E-mail inválido.'),
+  email: z.string().email('E-mail invalido.'),
   password: z.string().min(1, 'Informe a senha.'),
 });
 
 async function login(req, res) {
   const data = loginSchema.parse(req.body);
+  const normalizedEmail = data.email.trim().toLowerCase();
 
-  const user = await prisma.user.findUnique({ where: { email: data.email } });
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (!user || !user.active) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
 
-  const passwordMatches = await bcrypt.compare(data.password, user.passwordHash);
+  if (!user.passwordHash || typeof user.passwordHash !== 'string') {
+    return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+  }
+
+  let passwordMatches = false;
+  try {
+    passwordMatches = await bcrypt.compare(data.password, user.passwordHash);
+  } catch {
+    return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+  }
+
   if (!passwordMatches) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
   }
