@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -8,8 +8,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -26,21 +30,21 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-ink text-white">
+    <div className="min-h-screen bg-[#0f2e52] text-white">
       <div className="relative flex min-h-screen items-center overflow-hidden px-6 py-10">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(62,156,124,0.32),transparent_32%),linear-gradient(135deg,#142019_0%,#142019_48%,#175E46_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_16%,rgba(38,147,210,0.26),transparent_32%),radial-gradient(circle_at_82%_24%,rgba(22,130,155,0.2),transparent_28%),linear-gradient(135deg,#0b1f39_0%,#0f2e52_48%,#0d4b86_100%)]" />
         <div className="absolute inset-x-0 top-0 h-px bg-white/20" />
         <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/20 to-transparent" />
 
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <section className="max-w-xl">
             <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white/80">
-              <ShieldCheck size={15} strokeWidth={1.9} />
+              <ShieldCheck size={15} strokeWidth={1.9} className="text-[#7ed0ff]" />
               Gestao contabil segura
             </div>
 
             <h1 className="font-display text-4xl font-semibold leading-tight sm:text-5xl">
-              Contabil<span className="text-brand-400">Gestao</span>
+              Contabil<span className="text-[#57b9f6]">Gestao</span>
             </h1>
             <p className="mt-4 max-w-lg text-base leading-7 text-white/65">
               Centralize demandas, clientes, financeiro e documentos em um painel feito para a rotina do escritorio.
@@ -49,7 +53,7 @@ export default function Login() {
             <div className="mt-10 grid gap-3 sm:grid-cols-3">
               {['Demandas em dia', 'Clientes organizados', 'Financeiro claro'].map((item) => (
                 <div key={item} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
-                  <CheckCircle2 className="mb-3 text-brand-400" size={20} strokeWidth={1.8} />
+                  <CheckCircle2 className="mb-3 text-[#57b9f6]" size={20} strokeWidth={1.8} />
                   <p className="text-sm font-medium text-white/85">{item}</p>
                 </div>
               ))}
@@ -58,7 +62,7 @@ export default function Login() {
 
           <section className="w-full justify-self-center lg:max-w-md">
             <div className="mb-6 text-center lg:text-left">
-              <p className="text-sm font-medium uppercase text-brand-400">Acesso ao sistema</p>
+              <p className="text-sm font-medium uppercase text-[#7ed0ff]">Acesso ao sistema</p>
               <h2 className="mt-2 text-2xl font-semibold">Entre na sua conta</h2>
               <p className="mt-1 text-sm text-white/55">Use seus dados cadastrados para continuar.</p>
             </div>
@@ -76,7 +80,7 @@ export default function Login() {
               <div className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-ink/80">E-mail</label>
-                  <div className="flex items-center rounded-lg border border-ink/15 bg-white px-3 transition focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20">
+                  <div className="flex items-center rounded-lg border border-ink/15 bg-white px-3 transition focus-within:border-[#2693d2] focus-within:ring-2 focus-within:ring-[#2693d2]/20">
                     <Mail className="text-ink/35" size={18} strokeWidth={1.8} />
                     <input
                       type="email"
@@ -91,7 +95,7 @@ export default function Login() {
 
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-ink/80">Senha</label>
-                  <div className="flex items-center rounded-lg border border-ink/15 bg-white px-3 transition focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20">
+                  <div className="flex items-center rounded-lg border border-ink/15 bg-white px-3 transition focus-within:border-[#2693d2] focus-within:ring-2 focus-within:ring-[#2693d2]/20">
                     <LockKeyhole className="text-ink/35" size={18} strokeWidth={1.8} />
                     <input
                       type="password"
@@ -108,7 +112,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-600 disabled:opacity-60"
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-[#003f82] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#0d4b86] disabled:opacity-60"
               >
                 {loading ? 'Entrando...' : 'Entrar'}
                 {!loading && <ArrowRight size={17} strokeWidth={1.9} />}
@@ -120,7 +124,7 @@ export default function Login() {
 
               <p className="mt-5 text-center text-xs text-ink/45">
                 Ainda nao tem conta?{' '}
-                <Link to="/registrar" className="font-medium text-brand-600 hover:underline">
+                <Link to="/registrar" className="font-medium text-[#003f82] hover:underline">
                   Cadastre seu escritorio
                 </Link>
               </p>
