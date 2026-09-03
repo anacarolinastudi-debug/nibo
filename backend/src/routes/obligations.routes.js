@@ -7,6 +7,7 @@ const upload = require('../middleware/upload');
 router.use(requireAuth);
 
 router.get('/', ctrl.listObligations);
+router.post('/catalog/seed', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.seedCatalog);
 router.post('/', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createObligation);
 router.put('/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateObligation);
 router.delete('/:id', requireRole('ADMIN'), ctrl.removeObligation);
