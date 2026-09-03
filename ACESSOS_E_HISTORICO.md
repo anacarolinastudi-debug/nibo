@@ -359,6 +359,7 @@ Atualização registrada em 03/09/2026:
 - Se o token estiver ausente, inválido ou expirado, o usuário é direcionado para a tela de login.
 - Mantido o comportamento de entrar direto apenas quando a sessão ainda estiver válida.
 - Removida uma pasta de migração vazia que poderia impedir o deploy do backend no Render.
+- Adicionada a rota `/health/db` para diagnosticar rapidamente se o backend publicado está conseguindo acessar o banco de dados.
 
 ## 10. Seguranca
 

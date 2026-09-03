@@ -20,6 +20,7 @@ const firmRoutes = require('./routes/firm.routes');
 const departmentsRoutes = require('./routes/departments.routes');
 const { startEcacScheduler } = require('./jobs/ecacScheduler');
 const errorHandler = require('./middleware/errorHandler');
+const prisma = require('./lib/prisma');
 
 const app = express();
 
@@ -31,6 +32,20 @@ app.use('/uploads', express.static('uploads'));
 
 // Rota de saúde, útil para checar se o servidor está de pé depois do deploy
 app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+app.get('/health/db', async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    res.status(503).json({
+      status: 'error',
+      database: 'unavailable',
+      message: 'Banco de dados indisponível. Confira a variável DATABASE_URL no Render.',
+    });
+  }
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/clients', clientsRoutes);
