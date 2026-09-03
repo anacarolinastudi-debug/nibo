@@ -333,6 +333,39 @@ const documentStatusMeta = {
 
 const deliveryTypeLabels = { PORTAL: 'Portal do cliente', EMAIL: 'E-mail', FISICA: 'Entrega física' };
 
+const frequencyLabels = {
+  NONE: 'Por evento',
+  MONTHLY: 'Mensal',
+  QUARTERLY: 'Trimestral',
+  YEARLY: 'Anual',
+};
+
+const typeLabels = {
+  PAGAMENTO: 'Pagamento',
+  CADASTRAL: 'Cadastral',
+  DECLARACAO: 'Declaração',
+  DOCUMENTO: 'Documento',
+  OUTRO: 'Outro',
+};
+
+function obligationToRow(obligation) {
+  const dueText = obligation.dueControl === false
+    ? 'Conforme evento/validade'
+    : [obligation.ruleMonth ? `Mês ${obligation.ruleMonth}` : null, obligation.dueDay ? `Dia ${obligation.dueDay}` : null].filter(Boolean).join(' · ') || '-';
+
+  return [
+    obligation.name,
+    typeLabels[obligation.type] || obligation.type,
+    obligation.department,
+    obligation.nickname || '-',
+    frequencyLabels[obligation.frequency] || obligation.frequency,
+    obligation.status === 'ATIVO' ? 'Ativo' : 'Inativo',
+    obligation.defaultRobot ? 'Sim' : 'Não',
+    dueText,
+    obligation.id,
+  ];
+}
+
 function Conference({ robots }) {
   const fileRef = useRef(null);
   const [documents, setDocuments] = useState([]);
@@ -732,6 +765,7 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
   const [section, setSection] = useState('Lista de obrigações');
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
+  const [loadingObligations, setLoadingObligations] = useState(false);
   const [linkResponsibles, setLinkResponsibles] = useState(() => ({
     '13o SALARIO 1a PARCELA::ANA CAROLINA CARPINE AGUIAR': 'Ana Carolina',
     '13o SALARIO 1a PARCELA::IVANI SEVERINA SOARES DE ALMEIDA': 'Ana Carolina',
@@ -739,6 +773,14 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
   }));
   const [query, setQuery] = useState('');
   const filtered = obligationRows.filter((row) => row[0].toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => {
+    setLoadingObligations(true);
+    api.get('/obligations')
+      .then(({ data }) => setObligationRows(data.map(obligationToRow)))
+      .catch(() => {})
+      .finally(() => setLoadingObligations(false));
+  }, [setObligationRows]);
 
   function saveObligation(next) {
     setObligationRows((current) => {
@@ -756,7 +798,8 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
           <>
             <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">Lista de obrigações</h2><button onClick={() => setEditing({ index: -1, row: ['Nova obrigação', 'Pagamento', departments[0], 'NOVO', 'Mensal', 'Ativo', 'Não'] })} className="rounded bg-[#2693d2] px-5 py-2.5 text-white">+ Nova obrigação</button></div>
             <div className="mb-6 flex items-end gap-5"><TextField label="Buscar por" value={query} onChange={setQuery} placeholder="Buscar" /><label className="pb-2"><input type="checkbox" /> Exibir itens inativos</label><button className="pb-2 text-[#16829b]">⌁ Filtro avancado⌄</button></div>
-            <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Robô padrão', '']} rows={filtered.map((row) => [...row, <ActionButtons key={row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
+            {loadingObligations && <p className="mb-3 text-sm text-[#68737a]">Carregando obrigações cadastradas...</p>}
+            <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Robô padrão', 'Vencimento', '']} rows={filtered.map((row) => [...row.slice(0, 8), <ActionButtons key={row[8] || row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
           </>
         )}
         {section === 'Lista de robôs' && <Robots robots={robots} setRobots={setRobots} obligationRows={obligationRows} />}
@@ -1085,17 +1128,27 @@ function RobotModal({ robot, obligationRows, serverObligations, onClose, onSave 
 }
 
 function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkResponsibles }) {
-  const [groups, setGroups] = useState(() => [
-    { id: 'FPD', nickname: 'FPD', name: 'Folha de Pagamento - Domestica', obligations: obligationRows.slice(0, 3).map((row) => row[0]) },
-    { id: 'FPM', nickname: 'FPM', name: 'Folha de Pagamento MEI', obligations: obligationRows.slice(0, 6).map((row) => row[0]) },
-    { id: 'FPP', nickname: 'FPP', name: 'Folha de Pagamento Padrao', obligations: obligationRows.slice(0, 7).map((row) => row[0]) },
-    { id: 'LPS', nickname: 'LPS', name: 'Lucro Presumido Servicos', obligations: obligationRows.slice(2, 6).map((row) => row[0]) },
-    { id: 'SNC', nickname: 'SNC', name: 'Simples Nacional Comercio', obligations: obligationRows.slice(1, 5).map((row) => row[0]) },
-  ]);
+  const [groups, setGroups] = useState([]);
   const [query, setQuery] = useState('');
   const [editingGroup, setEditingGroup] = useState(null);
   const [linkingGroup, setLinkingGroup] = useState(null);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const filtered = groups.filter((group) => `${group.nickname} ${group.name}`.toLowerCase().includes(query.toLowerCase()));
+
+  useEffect(() => {
+    setLoadingGroups(true);
+    api.get('/obligations/groups/list')
+      .then(({ data }) => {
+        setGroups(data.map((group) => ({
+          id: group.id,
+          nickname: group.nickname,
+          name: group.name,
+          obligations: (group.items || []).map((item) => item.obligation?.name).filter(Boolean),
+        })));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingGroups(false));
+  }, []);
 
   function saveGroup(nextGroup) {
     setGroups((current) => {
@@ -1114,11 +1167,12 @@ function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkRespon
       <div className="mb-7 flex justify-between">
         <h2 className="text-2xl font-semibold">Grupo de obrigacoes</h2>
         <div className="flex gap-2">
-          <button onClick={() => setLinkingGroup(groups[0])} className="rounded bg-[#f2f2f2] px-4 py-2">Vincular por grupo</button>
+          <button onClick={() => groups[0] && setLinkingGroup(groups[0])} disabled={!groups.length} className="rounded bg-[#f2f2f2] px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50">Vincular por grupo</button>
           <button onClick={() => setEditingGroup({ id: null, nickname: '', name: '', obligations: [] })} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo grupo</button>
         </div>
       </div>
       <TextField label="" value={query} onChange={setQuery} placeholder="Buscar por apelido ou grupo..." />
+      {loadingGroups && <p className="mt-3 text-sm text-[#68737a]">Carregando grupos cadastrados...</p>}
       <div className="mt-5 overflow-hidden rounded border border-[#e7ecef]">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#f3f3f3]"><tr><th className="px-4 py-3">Apelido</th><th className="px-4 py-3">Grupo de obrigacoes</th><th className="px-4 py-3">Qtd de obrigacoes</th><th className="px-4 py-3"></th></tr></thead>

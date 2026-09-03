@@ -363,6 +363,7 @@ Atualização registrada em 03/09/2026:
 - Senha do banco Supabase redefinida para corrigir a conexão do Render. Por segurança, o valor da senha não deve ser registrado neste arquivo nem enviado ao GitHub; manter apenas no Supabase/Render ou em um gerenciador de senhas.
 - Login demo `admin@exemplo.com / senha123` passa a criar automaticamente o escritório e usuário de teste se eles ainda não existirem no banco publicado.
 - Adicionado catálogo-base de obrigações por departamento, com periodicidade e vencimento padrão, e grupos por regime: MEI, Simples Nacional Comércio, Simples Nacional Serviços, Lucro Presumido, Lucro Real, Imunes/Isentas e Doméstico. A sincronização compara nome/apelido antes de criar para evitar duplicidades.
+- Corrigida a aba Configurações > Obrigações para carregar a lista real da API e exibir os grupos reais de obrigações por regime, em vez da lista fixa antiga do frontend.
 
 ## 10. Seguranca
 
