@@ -358,6 +358,7 @@ Atualização registrada em 03/09/2026:
 - Reforço da proteção das rotas internas: ao abrir o app, a sessão salva no navegador agora é conferida com o backend antes de liberar o acesso ao sistema.
 - Se o token estiver ausente, inválido ou expirado, o usuário é direcionado para a tela de login.
 - Mantido o comportamento de entrar direto apenas quando a sessão ainda estiver válida.
+- Removida uma pasta de migração vazia que poderia impedir o deploy do backend no Render.
 
 ## 10. Seguranca
 
