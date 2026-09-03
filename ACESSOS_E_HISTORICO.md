@@ -360,6 +360,8 @@ Atualização registrada em 03/09/2026:
 - Mantido o comportamento de entrar direto apenas quando a sessão ainda estiver válida.
 - Removida uma pasta de migração vazia que poderia impedir o deploy do backend no Render.
 - Adicionada a rota `/health/db` para diagnosticar rapidamente se o backend publicado está conseguindo acessar o banco de dados.
+- Senha do banco Supabase redefinida para corrigir a conexão do Render. Por segurança, o valor da senha não deve ser registrado neste arquivo nem enviado ao GitHub; manter apenas no Supabase/Render ou em um gerenciador de senhas.
+- Login demo `admin@exemplo.com / senha123` passa a criar automaticamente o escritório e usuário de teste se eles ainda não existirem no banco publicado.
 
 ## 10. Seguranca
 
