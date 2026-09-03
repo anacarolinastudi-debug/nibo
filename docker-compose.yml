@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nibo_clone_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: senha123
+      POSTGRES_DB: nibo_clone
+    ports:
+      - "5432:5432"
+    volumes:
+      - nibo_clone_data:/var/lib/postgresql/data
+
+volumes:
+  nibo_clone_data:

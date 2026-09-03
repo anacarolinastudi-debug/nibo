@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "accounting_firms" ADD COLUMN     "cep" TEXT,
+ADD COLUMN     "certificatePassphraseEncrypted" TEXT,
+ADD COLUMN     "certificatePfxEncrypted" TEXT,
+ADD COLUMN     "certificateSubject" TEXT,
+ADD COLUMN     "certificateUploadedAt" TIMESTAMP(3),
+ADD COLUMN     "certificateValidUntil" TIMESTAMP(3),
+ADD COLUMN     "city" TEXT,
+ADD COLUMN     "complement" TEXT,
+ADD COLUMN     "crc" TEXT,
+ADD COLUMN     "logoUrl" TEXT,
+ADD COLUMN     "neighborhood" TEXT,
+ADD COLUMN     "number" TEXT,
+ADD COLUMN     "state" TEXT,
+ADD COLUMN     "street" TEXT;
