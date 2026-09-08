@@ -63,6 +63,7 @@ model AccountingFirm {
   taxPendencyChecks  TaxPendencyCheck[]
   departments        Department[]
   firmRoles          FirmRole[]
+  passwordResetRequests PasswordResetRequest[]
 
   @@map("accounting_firms")
 }
@@ -102,9 +103,31 @@ model User {
   departmentsResponsibleFor   Department[] @relation("DepartmentResponsible")
   clientDepartmentResponsible ClientDepartmentResponsible[] @relation("ClientDepartmentResponsibleUser")
   firmRoles                   FirmRole[] @relation("FirmRoleUser")
+  passwordResetRequests       PasswordResetRequest[]
 
   @@index([accountingFirmId])
   @@map("users")
+}
+
+model PasswordResetRequest {
+  id        String   @id @default(uuid())
+  email     String
+  status    String   @default("PENDING")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  resolvedAt DateTime?
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  userId String?
+  user   User? @relation(fields: [userId], references: [id])
+
+  @@index([accountingFirmId])
+  @@index([userId])
+  @@index([email])
+  @@map("password_reset_requests")
 }
 
 enum TaxRegime {

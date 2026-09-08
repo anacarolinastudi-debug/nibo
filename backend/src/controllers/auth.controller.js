@@ -55,6 +55,10 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Informe a senha.'),
 });
 
+const passwordResetSchema = z.object({
+  email: z.string().email('E-mail inválido.'),
+});
+
 async function login(req, res) {
   const data = loginSchema.parse(req.body);
   const normalizedEmail = data.email.trim().toLowerCase();
@@ -116,6 +120,30 @@ async function login(req, res) {
   });
 }
 
+async function requestPasswordReset(req, res) {
+  const data = passwordResetSchema.parse(req.body);
+  const email = data.email.trim().toLowerCase();
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, active: true, accountingFirmId: true },
+  });
+
+  if (user?.active) {
+    await prisma.passwordResetRequest.create({
+      data: {
+        email,
+        userId: user.id,
+        accountingFirmId: user.accountingFirmId,
+      },
+    });
+  }
+
+  res.status(202).json({
+    message: 'Se o e-mail estiver cadastrado, a solicitação aparecerá para o administrador do escritório.',
+  });
+}
+
 async function me(req, res) {
   const user = await prisma.user.findUnique({
     where: { id: req.user.sub },
@@ -124,4 +152,4 @@ async function me(req, res) {
   res.json(user);
 }
 
-module.exports = { registerFirm, login, me };
+module.exports = { registerFirm, login, requestPasswordReset, me };

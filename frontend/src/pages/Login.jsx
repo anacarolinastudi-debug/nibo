@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle2, KeyRound, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/client';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -38,8 +39,9 @@ export default function Login() {
     setResetOpen(true);
   }
 
-  function handlePasswordReset(e) {
+  async function handlePasswordReset(e) {
     e.preventDefault();
+    await api.post('/auth/password-reset', { email: resetEmail });
     setResetSent(true);
   }
 
@@ -184,8 +186,8 @@ export default function Login() {
 
             {resetSent ? (
               <div className="rounded-xl border border-[#b7e1ff] bg-[#f0f9ff] px-4 py-4 text-sm leading-6 text-[#0d4b86]">
-                Solicitação registrada para <strong>{resetEmail}</strong>. Peça ao administrador do escritório para
-                confirmar a troca de senha.
+                Solicitação registrada para <strong>{resetEmail}</strong>. Ela aparecerá em Configurações &gt; Equipe,
+                na área de redefinições de senha.
               </div>
             ) : (
               <>

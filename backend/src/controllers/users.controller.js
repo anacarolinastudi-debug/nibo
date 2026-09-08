@@ -67,4 +67,30 @@ async function deactivate(req, res) {
   res.status(204).send();
 }
 
-module.exports = { list, create, update, deactivate };
+async function listPasswordResetRequests(req, res) {
+  const requests = await prisma.passwordResetRequest.findMany({
+    where: { accountingFirmId: req.user.accountingFirmId },
+    include: { user: { select: { id: true, name: true, email: true, role: true } } },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+  });
+
+  res.json(requests);
+}
+
+async function resolvePasswordResetRequest(req, res) {
+  const existing = await prisma.passwordResetRequest.findFirst({
+    where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Solicitação não encontrada.' });
+
+  const request = await prisma.passwordResetRequest.update({
+    where: { id: req.params.id },
+    data: { status: 'RESOLVED', resolvedAt: new Date() },
+    include: { user: { select: { id: true, name: true, email: true, role: true } } },
+  });
+
+  res.json(request);
+}
+
+module.exports = { list, create, update, deactivate, listPasswordResetRequests, resolvePasswordResetRequest };

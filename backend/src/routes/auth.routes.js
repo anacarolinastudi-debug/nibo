@@ -5,6 +5,7 @@ const { requireAuth } = require('../middleware/auth');
 
 router.post('/register-firm', ctrl.registerFirm); // cria escritório + admin
 router.post('/login', ctrl.login);
+router.post('/password-reset', ctrl.requestPasswordReset);
 router.get('/me', requireAuth, ctrl.me);
 
 module.exports = router;

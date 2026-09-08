@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ClipboardCheck, ClipboardList, ListChecks, MessageCircle, Pencil, Plus, Search,
-  Settings as SettingsIcon, ShieldCheck, Trash2, Upload, Users, X,
+  Settings as SettingsIcon, ShieldCheck, Trash2, Upload, Users, X, KeyRound,
 } from 'lucide-react';
 import { getFirm, updateFirm, uploadLogo, uploadCertificate, removeCertificate } from '../api/firm';
 import {
@@ -289,19 +289,28 @@ function NewUserModal({ onClose, onCreated }) {
 
 function EquipeTab() {
   const [users, setUsers] = useState([]);
+  const [resetRequests, setResetRequests] = useState([]);
   const [query, setQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
 
   function load() {
     api.get('/users').then(({ data }) => setUsers(data));
+    api.get('/users/password-reset-requests').then(({ data }) => setResetRequests(data));
   }
 
   useEffect(() => { load(); }, []);
 
   const filtered = users.filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(query.toLowerCase()));
+  const pendingRequests = resetRequests.filter((request) => request.status === 'PENDING');
+  const resolvedRequests = resetRequests.filter((request) => request.status !== 'PENDING');
+
+  async function handleResolveReset(request) {
+    await api.put(`/users/password-reset-requests/${request.id}/resolve`);
+    load();
+  }
 
   return (
-    <div className="p-6">
+    <div className="space-y-8 p-6">
       <div className="mb-5 flex items-center justify-between">
         <h2 className="text-2xl font-semibold">Equipe</h2>
         <div className="flex items-center gap-3">
@@ -314,6 +323,47 @@ function EquipeTab() {
           </button>
         </div>
       </div>
+      <section className="rounded border border-[#dfe5e8] bg-white">
+        <div className="flex items-center justify-between border-b border-[#dfe5e8] px-4 py-3">
+          <div>
+            <h3 className="font-semibold">Redefinições de senha</h3>
+            <p className="mt-0.5 text-xs text-[#7b858c]">Solicitações feitas pela tela de login.</p>
+          </div>
+          <span className="rounded-full bg-[#eaf6ff] px-3 py-1 text-xs font-medium text-[#003f82]">
+            {pendingRequests.length} pendente{pendingRequests.length === 1 ? '' : 's'}
+          </span>
+        </div>
+        {resetRequests.length === 0 ? (
+          <div className="flex items-center gap-3 px-4 py-6 text-sm text-[#7b858c]">
+            <KeyRound size={18} className="text-[#9aa5ad]" />
+            Nenhuma solicitação de redefinição registrada.
+          </div>
+        ) : (
+          <div className="divide-y divide-[#eef0f2]">
+            {[...pendingRequests, ...resolvedRequests].map((request) => (
+              <div key={request.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+                <div>
+                  <p className="font-medium text-[#3f4548]">{request.user?.name || request.email}</p>
+                  <p className="text-xs text-[#7b858c]">
+                    {request.email} • {new Date(request.createdAt).toLocaleString('pt-BR')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`rounded px-2 py-1 text-xs ${request.status === 'PENDING' ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}`}>
+                    {request.status === 'PENDING' ? 'Pendente' : 'Resolvida'}
+                  </span>
+                  {request.status === 'PENDING' && (
+                    <button onClick={() => handleResolveReset(request)} className="rounded border border-[#dfe5e8] px-3 py-1.5 text-xs font-medium text-[#003f82] hover:bg-[#eaf6ff]">
+                      Marcar como resolvida
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       <div className="overflow-hidden rounded border border-[#dfe5e8]">
         <table className="w-full text-left text-sm">
           <thead className="bg-[#f3f3f3]">
