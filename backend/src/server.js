@@ -18,6 +18,7 @@ const whatsappRoutes = require('./routes/whatsapp.routes');
 const ecacRoutes = require('./routes/ecac.routes');
 const firmRoutes = require('./routes/firm.routes');
 const departmentsRoutes = require('./routes/departments.routes');
+const maintenanceRoutes = require('./routes/maintenance.routes');
 const { startEcacScheduler } = require('./jobs/ecacScheduler');
 const errorHandler = require('./middleware/errorHandler');
 const prisma = require('./lib/prisma');
@@ -61,6 +62,7 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/ecac', ecacRoutes);
 app.use('/api/firm', firmRoutes);
 app.use('/api/departments', departmentsRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
 
 // Precisa ser o último middleware
 app.use(errorHandler);

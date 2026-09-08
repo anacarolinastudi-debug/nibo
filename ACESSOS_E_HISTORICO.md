@@ -369,6 +369,7 @@ Atualização registrada em 03/09/2026:
 - A redefinição de senha passou a gerar uma solicitação real no banco. Administradores conseguem consultar e marcar como resolvida em `Configurações > Equipe`, no bloco "Redefinições de senha".
 - Simplificada a mensagem de redefinição: se o e-mail não estiver cadastrado, o usuário é avisado imediatamente. O usuário demo `admin@exemplo.com` foi renomeado para "Administrador teste", separando o login administrativo do nome ANA CAROLINA CARPINE AGUIAR.
 - Corrigido o cabeçalho da tela `Configurações`: agora exibe o nome real do escritório cadastrado, em vez de um texto fixo.
+- Criada ação administrativa protegida para limpar todos os cadastros do escritório e manter apenas o usuário administrador ativo.
 
 ## 10. Seguranca
 
