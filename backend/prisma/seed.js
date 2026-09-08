@@ -14,7 +14,7 @@ async function main() {
       email: 'contato@contabilexemplo.com.br',
       users: {
         create: [
-          { name: 'Ana (Admin)', email: 'admin@exemplo.com', passwordHash, role: 'ADMIN' },
+          { name: 'Administrador teste', email: 'admin@exemplo.com', passwordHash, role: 'ADMIN' },
           { name: 'Carlos (Contador)', email: 'contador@exemplo.com', passwordHash, role: 'ACCOUNTANT' },
         ],
       },

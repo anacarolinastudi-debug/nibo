@@ -367,6 +367,7 @@ Atualização registrada em 03/09/2026:
 - Corrigida a tela de cadastro (`/registrar`) para usar a identidade visual azul do app, igual à tela de login.
 - Adicionado botão "Esqueci minha senha" na tela de login, com painel para registrar a solicitação de redefinição pelo e-mail cadastrado. O envio automático de e-mail ainda não foi configurado; por enquanto, a orientação exibida é confirmar a troca com o administrador do escritório.
 - A redefinição de senha passou a gerar uma solicitação real no banco. Administradores conseguem consultar e marcar como resolvida em `Configurações > Equipe`, no bloco "Redefinições de senha".
+- Simplificada a mensagem de redefinição: se o e-mail não estiver cadastrado, o usuário é avisado imediatamente. O usuário demo `admin@exemplo.com` foi renomeado para "Administrador teste", separando o login administrativo do nome ANA CAROLINA CARPINE AGUIAR.
 
 ## 10. Seguranca
 

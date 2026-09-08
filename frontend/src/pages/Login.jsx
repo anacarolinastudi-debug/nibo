@@ -12,6 +12,7 @@ export default function Login() {
   const [resetOpen, setResetOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
+  const [resetError, setResetError] = useState('');
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
@@ -36,13 +37,19 @@ export default function Login() {
   function openPasswordReset() {
     setResetEmail(email);
     setResetSent(false);
+    setResetError('');
     setResetOpen(true);
   }
 
   async function handlePasswordReset(e) {
     e.preventDefault();
-    await api.post('/auth/password-reset', { email: resetEmail });
-    setResetSent(true);
+    setResetError('');
+    try {
+      await api.post('/auth/password-reset', { email: resetEmail });
+      setResetSent(true);
+    } catch (err) {
+      setResetError(err.response?.data?.message || 'Não encontramos esse e-mail no sistema.');
+    }
   }
 
   return (
@@ -186,11 +193,15 @@ export default function Login() {
 
             {resetSent ? (
               <div className="rounded-xl border border-[#b7e1ff] bg-[#f0f9ff] px-4 py-4 text-sm leading-6 text-[#0d4b86]">
-                Solicitação registrada para <strong>{resetEmail}</strong>. Ela aparecerá em Configurações &gt; Equipe,
-                na área de redefinições de senha.
+                Solicitação enviada. O administrador verá o pedido em Configurações &gt; Equipe.
               </div>
             ) : (
               <>
+                {resetError && (
+                  <p className="mb-4 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-600">
+                    {resetError}
+                  </p>
+                )}
                 <label className="mb-1.5 block text-sm font-medium text-ink/80">E-mail cadastrado</label>
                 <div className="flex items-center rounded-lg border border-ink/15 bg-white px-3 transition focus-within:border-[#2693d2] focus-within:ring-2 focus-within:ring-[#2693d2]/20">
                   <Mail className="text-ink/35" size={18} strokeWidth={1.8} />

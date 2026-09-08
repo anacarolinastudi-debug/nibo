@@ -79,7 +79,7 @@ async function login(req, res) {
 
     user = await prisma.user.create({
       data: {
-        name: 'Ana (Admin)',
+        name: 'Administrador teste',
         email: 'admin@exemplo.com',
         passwordHash,
         role: 'ADMIN',
@@ -129,18 +129,24 @@ async function requestPasswordReset(req, res) {
     select: { id: true, active: true, accountingFirmId: true },
   });
 
-  if (user?.active) {
-    await prisma.passwordResetRequest.create({
-      data: {
-        email,
-        userId: user.id,
-        accountingFirmId: user.accountingFirmId,
-      },
+  if (!user?.active) {
+    return res.status(404).json({
+      message: 'Este e-mail não está cadastrado como usuário do sistema.',
+      created: false,
     });
   }
 
-  res.status(202).json({
-    message: 'Se o e-mail estiver cadastrado, a solicitação aparecerá para o administrador do escritório.',
+  await prisma.passwordResetRequest.create({
+    data: {
+      email,
+      userId: user.id,
+      accountingFirmId: user.accountingFirmId,
+    },
+  });
+
+  res.status(201).json({
+    message: 'Solicitação enviada para o administrador do escritório.',
+    created: true,
   });
 }
 
