@@ -56,10 +56,10 @@ async function clearRegistrationsKeepAdmin(req, res) {
         id: { not: currentUser.id },
       },
     }),
-    prisma.user.update({
+    prisma.user.updateMany({
       where: { id: currentUser.id },
       data: {
-        name: currentUser.email === 'admin@exemplo.com' ? 'Administrador teste' : undefined,
+        ...(currentUser.email === 'admin@exemplo.com' ? { name: 'Administrador teste' } : {}),
         role: 'ADMIN',
         active: true,
         clientId: null,
