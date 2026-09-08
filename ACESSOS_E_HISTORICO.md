@@ -370,6 +370,7 @@ Atualização registrada em 03/09/2026:
 - Simplificada a mensagem de redefinição: se o e-mail não estiver cadastrado, o usuário é avisado imediatamente. O usuário demo `admin@exemplo.com` foi renomeado para "Administrador teste", separando o login administrativo do nome ANA CAROLINA CARPINE AGUIAR.
 - Corrigido o cabeçalho da tela `Configurações`: agora exibe o nome real do escritório cadastrado, em vez de um texto fixo.
 - Limpeza executada no banco publicado: clientes, contatos, tarefas, processos, obrigações, documentos, financeiro, formulários, departamentos e demais cadastros foram apagados. Permaneceu apenas o usuário administrador `admin@exemplo.com`, com nome "Administrador teste". A rota administrativa usada para essa limpeza foi removida após a execução.
+- Revisados os cabeçalhos das telas principais. Obrigações, Clientes, Tarefas & Processos, Formulários, Editor de Formulários, Relacionamento, Radar e-CAC e Configurações agora exibem o nome real do escritório cadastrado, em vez do texto fixo com CNPJ/nome antigo.
 
 ## 10. Seguranca
 

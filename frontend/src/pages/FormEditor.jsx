@@ -6,6 +6,7 @@ import {
   Plus, Redo2, Settings, ShieldCheck, Star, Trash2, Type, Undo2, Users, X,
 } from 'lucide-react';
 import { getForm, updateForm } from '../api/forms';
+import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
@@ -184,9 +185,7 @@ export default function FormEditor() {
       <NiboRail />
       <FormsMenu />
       <main className="ml-[282px] min-h-screen pb-24">
-        <header className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
-          <div className="text-base text-[#60666b]">52.107.544 ANA CAROLINA CARPINE AGUIAR</div>
-        </header>
+        <FirmHeader />
         <section className="px-6 py-5">
           <p className="mb-1 text-sm text-[#78838a]">
             <Link to="/formularios" className="text-[#16829b]">Formulários</Link>

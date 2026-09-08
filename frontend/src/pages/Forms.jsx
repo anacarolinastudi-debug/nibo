@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Settings, Trash2, Users, X } from 'lucide-react';
 import { listForms, createForm, toggleFormStatus, removeForm } from '../api/forms';
+import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
@@ -144,9 +145,7 @@ export default function Forms() {
       <NiboRail />
       <FormsMenu />
       <main className="ml-[282px] min-h-screen">
-        <header className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
-          <div className="text-base text-[#60666b]">52.107.544 ANA CAROLINA CARPINE AGUIAR</div>
-        </header>
+        <FirmHeader />
         <section className="p-6">
           <div className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-semibold">Formulários</h1>

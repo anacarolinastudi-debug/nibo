@@ -10,6 +10,7 @@ import {
   getClientMatrix, upsertClientMatrix, listFirmRoles, createFirmRole, removeFirmRole,
 } from '../api/departments';
 import api from '../api/client';
+import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
@@ -760,22 +761,13 @@ function PlaceholderTab({ name }) {
 
 export default function Settings() {
   const [tab, setTab] = useState('Escritório');
-  const [firmName, setFirmName] = useState('');
-
-  useEffect(() => {
-    getFirm()
-      .then((firm) => setFirmName(firm.name || 'Escritório'))
-      .catch(() => setFirmName('Escritório'));
-  }, []);
 
   return (
     <div className="nibo-ui min-h-screen bg-white text-[#3f4548]">
       <NiboRail />
       <SettingsMenu tab={tab} setTab={setTab} />
       <main className="ml-[282px] min-h-screen">
-        <header className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
-          <div className="text-base text-[#60666b]">{firmName || 'Escritório'}</div>
-        </header>
+        <FirmHeader />
         <div className="flex h-[45px] items-end gap-10 border-b border-[#dfe5e8] px-5 text-sm">
           <span className="pb-3 font-semibold">Configurações</span>
           {TABS.map((item) => (

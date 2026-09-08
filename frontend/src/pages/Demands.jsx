@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import api from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import FirmHeader from "../components/FirmHeader";
 import NiboRail from "../components/NiboRail";
 import SideMenuSection from "../components/SideMenuSection";
 
@@ -219,9 +220,7 @@ function Shell({ tab, setTab, children }) {
         </nav>
       </aside>
       <main className="ml-[282px]">
-        <header className="flex h-[58px] items-center border-b px-6 text-[#60666b]">
-          52.107.544 ANA CAROLINA CARPINE AGUIAR
-        </header>
+        <FirmHeader className="px-6" />
         <div className="flex h-[45px] items-end gap-14 border-b px-6 text-sm">
           <b className="pb-3">Tarefas &amp; Processos</b>
           {["Tarefas", "Processos", "Configurações"].map((item) => (

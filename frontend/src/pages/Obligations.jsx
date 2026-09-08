@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bot, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Settings, Trash2, Users, X } from 'lucide-react';
-import { company, departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
+import { departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
 import api from '../api/client';
+import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
@@ -112,10 +113,7 @@ function AppShell({ activeTab, setActiveTab, children }) {
       </aside>
 
       <main className="ml-[282px] min-h-screen">
-        <header className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
-          <div className="text-base text-[#60666b]">{company.document} {company.name}</div>
-          <div />
-        </header>
+        <FirmHeader />
         <div className="flex h-[45px] items-end gap-14 border-b border-[#dfe5e8] px-5 text-sm">
           <span className="pb-3 font-semibold">Obrigações</span>
           {tabs.map((tab) => (

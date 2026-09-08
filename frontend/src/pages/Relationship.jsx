@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
 import { getStatus, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
+import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
@@ -144,9 +145,7 @@ export default function Relationship() {
       <NiboRail />
       <RelationshipMenu />
       <main className="ml-[282px] min-h-screen">
-        <header className="flex h-[58px] items-center justify-between border-b border-[#dfe5e8] px-5">
-          <div className="text-base text-[#60666b]">52.107.544 ANA CAROLINA CARPINE AGUIAR</div>
-        </header>
+        <FirmHeader />
         <section className="p-6">
           <div className="mb-4 flex items-center justify-between">
             <h1 className="text-2xl font-semibold">Relacionamento</h1>
