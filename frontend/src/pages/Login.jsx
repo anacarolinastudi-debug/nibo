@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, LockKeyhole, Mail, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, KeyRound, LockKeyhole, Mail, ShieldCheck, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
@@ -8,6 +8,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
 
@@ -27,6 +30,17 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function openPasswordReset() {
+    setResetEmail(email);
+    setResetSent(false);
+    setResetOpen(true);
+  }
+
+  function handlePasswordReset(e) {
+    e.preventDefault();
+    setResetSent(true);
   }
 
   return (
@@ -106,6 +120,15 @@ export default function Login() {
                       placeholder="senha"
                     />
                   </div>
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={openPasswordReset}
+                      className="text-xs font-medium text-[#003f82] transition hover:text-[#0d4b86] hover:underline"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -132,6 +155,73 @@ export default function Login() {
           </section>
         </div>
       </div>
+
+      {resetOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 px-4">
+          <form
+            onSubmit={handlePasswordReset}
+            className="w-full max-w-md rounded-2xl border border-white/15 bg-paper p-6 text-ink shadow-2xl shadow-black/30"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <div className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#eaf6ff] text-[#003f82]">
+                  <KeyRound size={21} strokeWidth={1.9} />
+                </div>
+                <h3 className="text-xl font-semibold text-ink">Redefinir senha</h3>
+                <p className="mt-1 text-sm leading-6 text-ink/55">
+                  Informe seu e-mail para registrar a solicitação de troca de senha.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setResetOpen(false)}
+                className="rounded-full p-1.5 text-ink/45 transition hover:bg-ink/5 hover:text-ink"
+                aria-label="Fechar"
+              >
+                <X size={18} strokeWidth={1.8} />
+              </button>
+            </div>
+
+            {resetSent ? (
+              <div className="rounded-xl border border-[#b7e1ff] bg-[#f0f9ff] px-4 py-4 text-sm leading-6 text-[#0d4b86]">
+                Solicitação registrada para <strong>{resetEmail}</strong>. Peça ao administrador do escritório para
+                confirmar a troca de senha.
+              </div>
+            ) : (
+              <>
+                <label className="mb-1.5 block text-sm font-medium text-ink/80">E-mail cadastrado</label>
+                <div className="flex items-center rounded-lg border border-ink/15 bg-white px-3 transition focus-within:border-[#2693d2] focus-within:ring-2 focus-within:ring-[#2693d2]/20">
+                  <Mail className="text-ink/35" size={18} strokeWidth={1.8} />
+                  <input
+                    type="email"
+                    required
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full border-0 bg-transparent px-3 py-3 text-sm outline-none placeholder:text-ink/35"
+                    placeholder="voce@empresa.com.br"
+                  />
+                </div>
+
+                <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setResetOpen(false)}
+                    className="rounded-lg px-4 py-2.5 text-sm font-medium text-[#003f82] transition hover:bg-[#eaf6ff]"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-[#003f82] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d4b86]"
+                  >
+                    Solicitar redefinição
+                  </button>
+                </div>
+              </>
+            )}
+          </form>
+        </div>
+      )}
     </div>
   );
 }

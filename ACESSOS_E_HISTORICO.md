@@ -365,6 +365,7 @@ Atualização registrada em 03/09/2026:
 - Adicionado catálogo-base de obrigações por departamento, com periodicidade e vencimento padrão, e grupos por regime: MEI, Simples Nacional Comércio, Simples Nacional Serviços, Lucro Presumido, Lucro Real, Imunes/Isentas e Doméstico. A sincronização compara nome/apelido antes de criar para evitar duplicidades.
 - Corrigida a aba Configurações > Obrigações para carregar a lista real da API e exibir os grupos reais de obrigações por regime, em vez da lista fixa antiga do frontend.
 - Corrigida a tela de cadastro (`/registrar`) para usar a identidade visual azul do app, igual à tela de login.
+- Adicionado botão "Esqueci minha senha" na tela de login, com painel para registrar a solicitação de redefinição pelo e-mail cadastrado. O envio automático de e-mail ainda não foi configurado; por enquanto, a orientação exibida é confirmar a troca com o administrador do escritório.
 
 ## 10. Seguranca
 
