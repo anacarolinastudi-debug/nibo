@@ -98,6 +98,7 @@ export default function Relationship() {
   const [connecting, setConnecting] = useState(false);
   const [webhookSynced, setWebhookSynced] = useState(false);
   const [manualWebhookRequired, setManualWebhookRequired] = useState(false);
+  const [showIntegrationSettings, setShowIntegrationSettings] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [clients, setClients] = useState([]);
@@ -213,13 +214,23 @@ export default function Relationship() {
         <FirmHeader />
         <section className="p-6">
           <div className="mb-4 flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Relacionamento</h1>
+            <div>
+              <h1 className="text-2xl font-semibold">Relacionamento</h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${whatsappStatus?.evolutionConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                  <CheckCircle2 size={13} /> {whatsappStatus?.evolutionConfigured ? `Evolution ativa (${whatsappStatus.evolutionInstanceName})` : 'WhatsApp manual'}
+                </span>
+                <button onClick={() => setShowIntegrationSettings((current) => !current)} className="inline-flex items-center gap-1 rounded-full border border-[#dfe5e8] px-3 py-1 text-[#68737a] hover:bg-[#f7f9fa]">
+                  <Settings size={13} /> Configurar
+                </button>
+              </div>
+            </div>
             <button onClick={() => setShowModal(true)} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white">
               <Plus size={17} /> Nova conversa
             </button>
           </div>
 
-          <div className={`mb-4 rounded border p-4 text-sm ${configured ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+          {showIntegrationSettings && <div className={`mb-4 rounded border p-4 text-sm ${configured ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 {configured ? <CheckCircle2 size={19} className="mt-0.5 shrink-0" /> : <TriangleAlert size={19} className="mt-0.5 shrink-0" />}
@@ -306,9 +317,9 @@ export default function Relationship() {
                 </div>
               </div>
             )}
-          </div>
+          </div>}
 
-          <div className="grid h-[calc(100vh-220px)] grid-cols-[320px_1fr] overflow-hidden rounded border border-[#dfe5e8]">
+          <div className={`grid ${showIntegrationSettings ? 'h-[calc(100vh-220px)]' : 'h-[calc(100vh-155px)]'} grid-cols-[320px_1fr] overflow-hidden rounded border border-[#dfe5e8]`}>
             <div className="flex flex-col border-r border-[#dfe5e8]">
               <div className="border-b border-[#dfe5e8] p-3">
                 <span className="flex h-10 items-center gap-2 rounded border border-[#dfe5e8] px-3">
