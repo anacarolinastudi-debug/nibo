@@ -69,8 +69,13 @@ Variaveis configuradas no Render:
 | `CERT_ENCRYPTION_KEY` | Criptografa o certificado digital salvo no banco (Radar e-CAC) | Valor secreto gerado pelo Render |
 | `PLAYWRIGHT_BROWSERS_PATH` | Forca o Chromium a instalar dentro de `node_modules` | `0` (literal) |
 | `NODE_OPTIONS` | Habilita algoritmos antigos do OpenSSL, exigidos por certificados e-CNPJ mais antigos | `--openssl-legacy-provider` |
+| `PUBLIC_API_URL` | URL publica usada para montar webhooks externos | `https://nibo-clone-api.onrender.com` |
+| `WHATSAPP_ACCESS_TOKEN` | Token permanente da Meta para envio de mensagens pelo WhatsApp Business | Valor secreto gerado na Meta |
+| `WHATSAPP_PHONE_NUMBER_ID` | ID do numero de telefone do WhatsApp Cloud API | Valor informado pela Meta |
+| `WHATSAPP_VERIFY_TOKEN` | Token escolhido no sistema e repetido na tela de webhook da Meta | Valor secreto definido pelo escritorio |
+| `WHATSAPP_API_VERSION` | Versao da API da Meta usada no envio | `v21.0` |
 
-Nao registrar neste documento os valores completos de `DATABASE_URL`, `JWT_SECRET` ou `CERT_ENCRYPTION_KEY`.
+Nao registrar neste documento os valores completos de `DATABASE_URL`, `JWT_SECRET`, `CERT_ENCRYPTION_KEY`, `WHATSAPP_ACCESS_TOKEN` ou `WHATSAPP_VERIFY_TOKEN`.
 
 Observacao sobre o build: o passo `playwright install --with-deps` (que instala dependencias de sistema via apt-get) **quebra o build no Render free**, porque exige privilegios de root que o ambiente de build nao concede. Usar sempre `playwright install chromium` sem `--with-deps`.
 
@@ -279,8 +284,10 @@ Observacao: no repositorio do GitHub, a pasta do frontend foi publicada com o no
 - Tela `/relacionamento`: lista de conversas + thread de mensagens, estilo WhatsApp.
 - Modelos `WhatsAppConversation` e `WhatsAppMessage`.
 - Webhook `GET`/`POST /api/whatsapp/webhook` pronto para a verificacao e recebimento de mensagens da Meta Cloud API (WhatsApp Business).
-- Envio real de mensagem so funciona com `WHATSAPP_ACCESS_TOKEN` e `WHATSAPP_PHONE_NUMBER_ID` configurados (ainda nao configurado em producao). Sem isso, a mensagem fica salva localmente como "nao enviada", sem quebrar o restante do sistema.
-- **Pendente:** criar a conta Meta Business / WhatsApp Cloud API, gerar as credenciais e configurar o webhook apontando para `https://nibo-clone-api.onrender.com/api/whatsapp/webhook`.
+- Tela de Relacionamento exibe status separado de envio e webhook, URL para copiar e variaveis pendentes com nomes amigaveis.
+- Envio real de mensagem so funciona com `WHATSAPP_ACCESS_TOKEN` e `WHATSAPP_PHONE_NUMBER_ID` configurados. Sem isso, a mensagem fica salva localmente como "nao enviada", sem quebrar o restante do sistema.
+- O webhook atualiza mensagens enviadas para `ENVIADA`, `ENTREGUE`, `LIDA` ou `FALHA` quando a Meta retorna status.
+- **Pendente:** criar a conta Meta Business / WhatsApp Cloud API, gerar as credenciais, preencher as variaveis no Render e configurar o webhook apontando para a URL exibida na tela de Relacionamento.
 
 ### Radar e-CAC (em desenvolvimento — robo ainda nao validado contra o site real)
 

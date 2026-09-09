@@ -5,16 +5,21 @@ function firmWhere(req) {
   return { accountingFirmId: req.user.accountingFirmId };
 }
 
-function isConfigured() {
+function isSendConfigured() {
   return Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
 }
 
 function getStatus(req, res) {
-  const missing = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_VERIFY_TOKEN'].filter((key) => !process.env[key]);
+  const sendMissing = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'].filter((key) => !process.env[key]);
+  const webhookMissing = ['WHATSAPP_VERIFY_TOKEN'].filter((key) => !process.env[key]);
+  const missing = [...sendMissing, ...webhookMissing];
   const apiBase = process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
   res.json({
-    configured: isConfigured(),
+    configured: missing.length === 0,
+    sendConfigured: sendMissing.length === 0,
+    webhookConfigured: webhookMissing.length === 0,
     missing,
+    apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
     webhookUrl: `${apiBase}/api/whatsapp/webhook?firmId=${req.user.accountingFirmId}`,
   });
 }
@@ -66,17 +71,34 @@ async function receiveWebhook(req, res) {
         const accountingFirmId = value.metadata?.accountingFirmId || req.query.firmId || fallbackFirm?.id;
         if (!accountingFirmId) continue;
 
+        for (const statusUpdate of value.statuses || []) {
+          const nextStatus = {
+            sent: 'ENVIADA',
+            delivered: 'ENTREGUE',
+            read: 'LIDA',
+            failed: 'FALHA',
+          }[statusUpdate.status];
+
+          if (!nextStatus || !statusUpdate.id) continue;
+          await prisma.whatsAppMessage.updateMany({
+            where: { waMessageId: statusUpdate.id },
+            data: { status: nextStatus },
+          });
+        }
+
         for (const message of value.messages || []) {
           const phoneNumber = message.from;
           const contact = (value.contacts || []).find((item) => item.wa_id === phoneNumber);
           const conversation = await findOrCreateConversation(accountingFirmId, phoneNumber, contact?.profile?.name);
+          const body = message.text?.body || message.button?.text || message.interactive?.button_reply?.title || null;
+          const mediaUrl = message.image?.id || message.document?.id || message.audio?.id || message.video?.id || null;
 
           await prisma.whatsAppMessage.create({
             data: {
               conversationId: conversation.id,
               direction: 'ENTRADA',
-              body: message.text?.body || null,
-              mediaUrl: message.image?.id || message.document?.id || null,
+              body,
+              mediaUrl,
               waMessageId: message.id,
               status: 'RECEBIDA',
             },
@@ -145,7 +167,7 @@ async function sendMessage(req, res) {
   let status = 'NAO_CONFIGURADO';
   let waMessageId = null;
 
-  if (isConfigured()) {
+  if (isSendConfigured()) {
     try {
       const apiVersion = process.env.WHATSAPP_API_VERSION || 'v21.0';
       const response = await fetch(`https://graph.facebook.com/${apiVersion}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
 import { getStatus, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
@@ -92,6 +92,7 @@ function NewConversationModal({ clients, onClose, onCreated }) {
 export default function Relationship() {
   const [configured, setConfigured] = useState(true);
   const [whatsappStatus, setWhatsappStatus] = useState(null);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
@@ -130,6 +131,22 @@ export default function Relationship() {
   });
 
   const active = conversations.find((conv) => conv.id === activeId);
+  const missingLabels = {
+    WHATSAPP_ACCESS_TOKEN: 'Token de acesso da Meta',
+    WHATSAPP_PHONE_NUMBER_ID: 'ID do número do WhatsApp',
+    WHATSAPP_VERIFY_TOKEN: 'Token de verificação do webhook',
+  };
+
+  async function copyWebhook() {
+    if (!whatsappStatus?.webhookUrl) return;
+    try {
+      await navigator.clipboard.writeText(whatsappStatus.webhookUrl);
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 1800);
+    } catch {
+      window.prompt('Copie a URL do webhook:', whatsappStatus.webhookUrl);
+    }
+  }
 
   async function handleSend() {
     if (!draft.trim() || !activeId) return;
@@ -158,16 +175,48 @@ export default function Relationship() {
             </button>
           </div>
 
-          {!configured && (
-            <div className="mb-4 flex items-start gap-3 rounded border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-              <TriangleAlert size={18} className="mt-0.5 shrink-0" />
-              <div>
-                <b>WhatsApp ainda não conectado.</b> A caixa de entrada já funciona para organizar conversas e testar o fluxo, mas o envio real de mensagens só funciona depois de configurar a conta Meta Business (WhatsApp Cloud API) e preencher <code>WHATSAPP_ACCESS_TOKEN</code>, <code>WHATSAPP_PHONE_NUMBER_ID</code> e <code>WHATSAPP_VERIFY_TOKEN</code> no backend.
-                {whatsappStatus?.webhookUrl && <p className="mt-2">Webhook para cadastrar na Meta: <code>{whatsappStatus.webhookUrl}</code></p>}
-                {whatsappStatus?.missing?.length > 0 && <p className="mt-1">Faltando configurar: <code>{whatsappStatus.missing.join(', ')}</code></p>}
+          <div className={`mb-4 rounded border p-4 text-sm ${configured ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                {configured ? <CheckCircle2 size={19} className="mt-0.5 shrink-0" /> : <TriangleAlert size={19} className="mt-0.5 shrink-0" />}
+                <div>
+                  <b>{configured ? 'WhatsApp conectado.' : 'WhatsApp aguardando configuração.'}</b>
+                  <p className="mt-1 max-w-3xl">
+                    {configured
+                      ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
+                      : 'A caixa de entrada já pode organizar conversas internas. Para enviar e receber mensagens reais, preencha as credenciais no Render e cadastre o webhook na Meta Business.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 text-xs">
+                <span className={`rounded-full px-3 py-1 ${whatsappStatus?.sendConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Envio {whatsappStatus?.sendConfigured ? 'ativo' : 'pendente'}</span>
+                <span className={`rounded-full px-3 py-1 ${whatsappStatus?.webhookConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Webhook {whatsappStatus?.webhookConfigured ? 'ativo' : 'pendente'}</span>
               </div>
             </div>
-          )}
+
+            {whatsappStatus?.webhookUrl && (
+              <div className="mt-4 grid gap-3 rounded border border-white/70 bg-white/70 p-3 text-[#3f4548] md:grid-cols-[1fr_auto]">
+                <div>
+                  <p className="mb-1 text-xs font-semibold uppercase text-[#68737a]">URL do webhook para cadastrar na Meta</p>
+                  <code className="block break-all rounded bg-white px-3 py-2 text-xs text-[#005ea8]">{whatsappStatus.webhookUrl}</code>
+                </div>
+                <button onClick={copyWebhook} className="inline-flex h-10 items-center justify-center gap-2 self-end rounded border border-[#b8d8ec] bg-white px-4 text-[#006da8] hover:bg-[#f1f9ff]">
+                  <Copy size={15} /> {copiedWebhook ? 'Copiado' : 'Copiar'}
+                </button>
+              </div>
+            )}
+
+            {!configured && whatsappStatus?.missing?.length > 0 && (
+              <div className="mt-3 text-[#7a5a00]">
+                <b>Falta preencher:</b>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {whatsappStatus.missing.map((key) => (
+                    <span key={key} className="rounded-full bg-white px-3 py-1 text-xs">{missingLabels[key] || key}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div className="grid h-[calc(100vh-220px)] grid-cols-[320px_1fr] overflow-hidden rounded border border-[#dfe5e8]">
             <div className="flex flex-col border-r border-[#dfe5e8]">
