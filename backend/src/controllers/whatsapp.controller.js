@@ -10,7 +10,13 @@ function isConfigured() {
 }
 
 function getStatus(req, res) {
-  res.json({ configured: isConfigured() });
+  const missing = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID', 'WHATSAPP_VERIFY_TOKEN'].filter((key) => !process.env[key]);
+  const apiBase = process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
+  res.json({
+    configured: isConfigured(),
+    missing,
+    webhookUrl: `${apiBase}/api/whatsapp/webhook?firmId=${req.user.accountingFirmId}`,
+  });
 }
 
 // Etapa de verificação exigida pela Meta ao cadastrar a URL do webhook.
@@ -52,11 +58,12 @@ async function receiveWebhook(req, res) {
   res.sendStatus(200); // a Meta exige resposta rápida; processamos depois
 
   try {
+    const fallbackFirm = await prisma.accountingFirm.findFirst({ select: { id: true }, orderBy: { createdAt: 'asc' } });
     const entries = req.body?.entry || [];
     for (const entry of entries) {
       for (const change of entry.changes || []) {
         const value = change.value || {};
-        const accountingFirmId = value.metadata?.accountingFirmId || req.query.firmId;
+        const accountingFirmId = value.metadata?.accountingFirmId || req.query.firmId || fallbackFirm?.id;
         if (!accountingFirmId) continue;
 
         for (const message of value.messages || []) {
@@ -140,7 +147,8 @@ async function sendMessage(req, res) {
 
   if (isConfigured()) {
     try {
-      const response = await fetch(`https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      const apiVersion = process.env.WHATSAPP_API_VERSION || 'v21.0';
+      const response = await fetch(`https://graph.facebook.com/${apiVersion}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,

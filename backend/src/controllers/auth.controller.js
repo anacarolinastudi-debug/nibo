@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const { generateToken } = require('../utils/jwt');
+const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
 
 // Cadastro inicial: cria o escritório de contabilidade + o primeiro usuário admin.
 // É o equivalente a "criar minha conta" no Nibo.
@@ -34,6 +35,8 @@ async function registerFirm(req, res) {
     },
     include: { users: true },
   });
+
+  await seedCatalogForFirm(firm.id);
 
   const admin = firm.users[0];
   const token = generateToken({
@@ -86,6 +89,8 @@ async function login(req, res) {
         accountingFirmId: firm.id,
       },
     });
+
+    await seedCatalogForFirm(firm.id);
   }
 
   if (!user || !user.active) {

@@ -91,6 +91,7 @@ function NewConversationModal({ clients, onClose, onCreated }) {
 
 export default function Relationship() {
   const [configured, setConfigured] = useState(true);
+  const [whatsappStatus, setWhatsappStatus] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
@@ -106,7 +107,10 @@ export default function Relationship() {
   }
 
   useEffect(() => {
-    getStatus().then(({ configured }) => setConfigured(configured)).catch(() => {});
+    getStatus().then((status) => {
+      setConfigured(status.configured);
+      setWhatsappStatus(status);
+    }).catch(() => {});
     api.get('/clients').then(({ data }) => setClients(data)).catch(() => {});
     loadConversations();
   }, []);
@@ -159,6 +163,8 @@ export default function Relationship() {
               <TriangleAlert size={18} className="mt-0.5 shrink-0" />
               <div>
                 <b>WhatsApp ainda não conectado.</b> A caixa de entrada já funciona para organizar conversas e testar o fluxo, mas o envio real de mensagens só funciona depois de configurar a conta Meta Business (WhatsApp Cloud API) e preencher <code>WHATSAPP_ACCESS_TOKEN</code>, <code>WHATSAPP_PHONE_NUMBER_ID</code> e <code>WHATSAPP_VERIFY_TOKEN</code> no backend.
+                {whatsappStatus?.webhookUrl && <p className="mt-2">Webhook para cadastrar na Meta: <code>{whatsappStatus.webhookUrl}</code></p>}
+                {whatsappStatus?.missing?.length > 0 && <p className="mt-1">Faltando configurar: <code>{whatsappStatus.missing.join(', ')}</code></p>}
               </div>
             </div>
           )}

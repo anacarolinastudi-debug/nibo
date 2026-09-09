@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
 
 const optionalText = z.string().optional().nullable();
 const clientSchema = z.object({
@@ -73,6 +74,43 @@ async function remove(req, res) {
   res.status(204).send();
 }
 
+async function clearForSetup(req, res) {
+  const firmId = req.user.accountingFirmId;
+  const clients = await prisma.client.findMany({ where: { accountingFirmId: firmId }, select: { id: true } });
+  const clientIds = clients.map((client) => client.id);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.taxPendency.deleteMany({ where: { check: { clientId: { in: clientIds } } } });
+    await tx.taxPendencyCheck.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.payrollEntry.deleteMany({ where: { employee: { clientId: { in: clientIds } } } });
+    await tx.employee.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.invoiceItem.deleteMany({ where: { invoice: { clientId: { in: clientIds } } } });
+    await tx.invoice.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.financialTransaction.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.financialAccount.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.document.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.demandComment.deleteMany({ where: { demand: { clientId: { in: clientIds } } } });
+    await tx.demandAttachment.deleteMany({ where: { demand: { clientId: { in: clientIds } } } });
+    await tx.protocolDocument.deleteMany({ where: { accountingFirmId: firmId } });
+    await tx.demand.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.taskProcess.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.clientContact.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.clientDepartmentResponsible.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.clientObligation.deleteMany({ where: { clientId: { in: clientIds } } });
+    await tx.whatsAppMessage.deleteMany({ where: { conversation: { accountingFirmId: firmId } } });
+    await tx.whatsAppConversation.deleteMany({ where: { accountingFirmId: firmId } });
+    await tx.user.deleteMany({ where: { accountingFirmId: firmId, role: 'CLIENT' } });
+    await tx.client.deleteMany({ where: { id: { in: clientIds } } });
+  });
+
+  const seeded = await seedCatalogForFirm(firmId);
+  res.json({
+    removedClients: clientIds.length,
+    remainingClients: await prisma.client.count({ where: { accountingFirmId: firmId } }),
+    seeded,
+  });
+}
+
 async function listContacts(req, res) {
   const contacts = await prisma.clientContact.findMany({
     where: { ...firmWhere(req), ...(req.query.clientId ? { clientId: req.query.clientId } : {}) },
@@ -111,4 +149,4 @@ async function removeContact(req, res) {
   res.status(204).send();
 }
 
-module.exports = { list, getById, create, update, remove, listContacts, createContact, updateContact, removeContact };
+module.exports = { list, getById, create, update, remove, clearForSetup, listContacts, createContact, updateContact, removeContact };

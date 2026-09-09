@@ -30,6 +30,7 @@ router.delete('/robots/:id', requireRole('ADMIN'), ctrl.removeRobot);
 router.get('/protocols/list', ctrl.listProtocols);
 router.post('/conference/upload', requireRole('ADMIN', 'ACCOUNTANT'), upload.single('file'), ctrl.uploadConferenceFile);
 router.post('/protocols/:id/confirm', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.confirmProtocol);
+router.post('/protocols/:id/send-email', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.sendProtocolByEmail);
 router.post('/protocols', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createProtocolDocument);
 router.put('/protocols/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateProtocolDocument);
 router.delete('/protocols/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeProtocolDocument);

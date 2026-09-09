@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Bot, ClipboardCheck, ClipboardList, Link2, ListChecks, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Settings, Trash2, Users, X } from 'lucide-react';
-import { departmentStats, obligations as seedObligations, protocols as seedProtocols } from '../data/niboMockData';
+import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Settings, Trash2, Users, X } from 'lucide-react';
+import { departmentStats, obligations as seedObligations } from '../data/niboMockData';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -37,37 +37,6 @@ function makeTasks() {
     { id: 7, day: 25, client: clients[4], department: 'Departamento Contabil', obligation: 'BALANCETE DE VERIFICACAO', status: 'openOnTime', responsible: 'Ana Carolina' },
     { id: 8, day: 25, client: clients[0], department: 'Departamento Fiscal', obligation: 'NOTAS FISCAIS DE ENTRADA', status: 'openOnTime', responsible: 'Ana Carolina' },
   ];
-}
-
-function makeRobots() {
-  return [
-    { id: 'robot-parcsn', obligation: 'DAS do Parcelamento PARCSN', identifiers: ['DAS de PARCSN'] },
-    { id: 'robot-parcmei', obligation: 'DAS MEI do Parcelamento PARCMEI', identifiers: ['DAS de PARCMEI'] },
-    { id: 'robot-fgts', obligation: 'FGTS Digital', identifiers: ['GFD - Guia do FGTS Digital'] },
-    { id: 'robot-darf-prev', obligation: 'DARF Previdenciário', identifiers: ['CP DESCONTADA SEGURADO', '1099 CP DESCONTADA', 'DARF previdenciário'] },
-    { id: 'robot-das', obligation: 'DAS - Documento de Arrecadação do Simples Nacional', identifiers: ['Documento de Arrecadação do Simples Nacional'] },
-    { id: 'robot-esocial', obligation: 'DAE - Documento de Arrecadação do eSocial', identifiers: ['Documento de Arrecadação do eSocial'] },
-  ];
-}
-
-function protocolFromSeed(row, index) {
-  return {
-    id: `seed-${index}`,
-    document: row[0],
-    client: row[1],
-    reference: row[2],
-    dueDate: row[3],
-    value: row[4],
-    status: row[5],
-    responsible: 'Ana Carolina',
-    fileName: `${row[0].slice(0, 22)}.pdf`,
-    protocolDate: '18/06/2026',
-  };
-}
-
-function recognizePdf(fileName, robots) {
-  const normalizedName = fileName.toLowerCase();
-  return robots.find((robot) => robot.identifiers.some((identifier) => normalizedName.includes(identifier.toLowerCase())));
 }
 
 function AppShell({ activeTab, setActiveTab, children }) {
@@ -323,7 +292,7 @@ const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api')
 
 const documentStatusMeta = {
   CONFERENCIA: { label: 'Aguardando conferência', color: 'bg-red-500' },
-  RECONHECIDO_ROBO: { label: 'Reconhecido por robô', color: 'bg-amber-400' },
+  RECONHECIDO_ROBO: { label: 'Reconhecido', color: 'bg-amber-400' },
   PROTOCOLADO: { label: 'Protocolado', color: 'bg-emerald-500' },
   BAIXA_JUSTIFICADA: { label: 'Baixa justificada', color: 'bg-zinc-400' },
   AGUARDANDO_ENTREGA_FISICA: { label: 'Aguardando entrega física', color: 'bg-sky-400' },
@@ -364,11 +333,17 @@ function obligationToRow(obligation) {
   ];
 }
 
-function Conference({ robots }) {
+function Conference() {
   const fileRef = useRef(null);
   const [documents, setDocuments] = useState([]);
   const [serverClients, setServerClients] = useState([]);
   const [serverObligations, setServerObligations] = useState([]);
+  const [serverDemands, setServerDemands] = useState([]);
+  const [uploadClientId, setUploadClientId] = useState('');
+  const [uploadObligationId, setUploadObligationId] = useState('');
+  const [uploadDemandId, setUploadDemandId] = useState('');
+  const [uploadReference, setUploadReference] = useState('');
+  const [uploadDeliveryType, setUploadDeliveryType] = useState('EMAIL');
   const [selectedIds, setSelectedIds] = useState([]);
   const [filterClient, setFilterClient] = useState('Todos os clientes');
   const [filterDepartment, setFilterDepartment] = useState('Todos os departamentos');
@@ -385,10 +360,11 @@ function Conference({ robots }) {
   }
 
   useEffect(() => {
-    Promise.all([api.get('/clients'), api.get('/obligations')])
-      .then(([clientsResponse, obligationsResponse]) => {
+    Promise.all([api.get('/clients'), api.get('/obligations'), api.get('/demands')])
+      .then(([clientsResponse, obligationsResponse, demandsResponse]) => {
         setServerClients(clientsResponse.data);
         setServerObligations(obligationsResponse.data);
+        setServerDemands(demandsResponse.data);
       })
       .catch(() => {});
     loadDocuments();
@@ -400,6 +376,11 @@ function Conference({ robots }) {
       try {
         const form = new FormData();
         form.append('file', file);
+        if (uploadClientId) form.append('clientId', uploadClientId);
+        if (uploadObligationId) form.append('obligationId', uploadObligationId);
+        if (uploadDemandId) form.append('demandId', uploadDemandId);
+        if (uploadReference) form.append('reference', uploadReference);
+        form.append('deliveryType', uploadDeliveryType);
         const { data } = await api.post('/obligations/conference/upload', form);
         setDocuments((current) => [data, ...current]);
         const duplicate = documents.find((doc) => doc.id !== data.id && doc.obligationId && doc.obligationId === data.obligationId && doc.reference && doc.reference === data.reference);
@@ -420,7 +401,21 @@ function Conference({ robots }) {
   }
 
   async function protocolDocument(doc) {
-    await api.post(`/obligations/protocols/${doc.id}/confirm`);
+    await api.post(`/obligations/protocols/${doc.id}/confirm`, { deliveryType: doc.deliveryType || 'PORTAL' });
+    setDocuments((current) => current.filter((item) => item.id !== doc.id));
+  }
+
+  async function sendByEmail(doc) {
+    try {
+      await api.post(`/obligations/protocols/${doc.id}/send-email`);
+      setDocuments((current) => current.filter((item) => item.id !== doc.id));
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível enviar por e-mail.');
+    }
+  }
+
+  async function markPhysical(doc) {
+    await api.post(`/obligations/protocols/${doc.id}/confirm`, { deliveryType: 'FISICA' });
     setDocuments((current) => current.filter((item) => item.id !== doc.id));
   }
 
@@ -471,11 +466,6 @@ function Conference({ robots }) {
           <button onClick={() => setActiveDocument({})} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo protocolo</button>
         </div>
       </div>
-      <div className="mb-4 flex gap-4 text-sm text-[#16829b]">
-        <button onClick={() => fileRef.current?.click()}>Baixar o Nibo Assistente</button>
-        <button onClick={() => fileRef.current?.click()}>Baixar o Nibo Impressora</button>
-        <button>Lista de robôs</button>
-      </div>
       <div className="grid grid-cols-4 gap-4">
         <SelectField label="Cliente" value={filterClient} onChange={setFilterClient} options={['Todos os clientes', ...serverClients.map((item) => item.name)]} />
         <SelectField label="Departamento" value={filterDepartment} onChange={setFilterDepartment} options={['Todos os departamentos', ...departments]} />
@@ -483,6 +473,13 @@ function Conference({ robots }) {
         <SelectField label="Tipo de entrega" value={filterDelivery} onChange={setFilterDelivery} options={['Todos os tipos de entrega', ...Object.values(deliveryTypeLabels)]} />
       </div>
       <div onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); addFiles(event.dataTransfer.files); }} className="mt-6 rounded border-2 border-dashed border-[#d5dde3] bg-[#fafafa] p-8 text-center">
+        <div className="mb-6 grid grid-cols-5 gap-4 text-left">
+          <SelectField label="Vincular cliente" value={uploadClientId} onChange={setUploadClientId} options={[{ value: '', label: 'Selecionar cliente' }, ...serverClients.map((item) => ({ value: item.id, label: item.name }))]} />
+          <SelectField label="Vincular obrigação" value={uploadObligationId} onChange={setUploadObligationId} options={[{ value: '', label: 'Selecionar obrigação' }, ...serverObligations.map((item) => ({ value: item.id, label: item.name }))]} />
+          <SelectField label="Vincular tarefa" value={uploadDemandId} onChange={setUploadDemandId} options={[{ value: '', label: 'Sem tarefa' }, ...serverDemands.map((item) => ({ value: item.id, label: item.title }))]} />
+          <TextField label="Competência" value={uploadReference} onChange={setUploadReference} placeholder="MM/AAAA" />
+          <SelectField label="Entrega" value={uploadDeliveryType} onChange={setUploadDeliveryType} options={[{ value: 'EMAIL', label: 'E-mail' }, { value: 'FISICA', label: 'Física' }, { value: 'PORTAL', label: 'Portal' }]} />
+        </div>
         <div className="text-5xl text-[#777]">☁</div>
         <b>Arraste arquivos para essa tela</b>
         <p className="mt-2 text-sm text-[#777]">Os arquivos entram na conferência vinculados ao cliente e podem ser protocolados em seguida.</p>
@@ -508,7 +505,7 @@ function Conference({ robots }) {
             <table className="w-full text-left text-sm">
               <thead className="bg-[#f3f3f3]">
                 <tr>
-                  {['', 'Arquivo', 'Obrigação', 'Competência', 'Vencimento', 'Valor (R$)', 'Recálculo', 'Obs', 'Entrega', 'Status', ''].map((head) => (
+                  {['', 'Arquivo', 'Obrigação', 'Tarefa', 'Competência', 'Vencimento', 'Valor (R$)', 'Recálculo', 'Obs', 'Entrega', 'Status', ''].map((head) => (
                     <th key={head} className="px-3 py-2">{head}</th>
                   ))}
                 </tr>
@@ -521,6 +518,7 @@ function Conference({ robots }) {
                       <td className="px-3 py-3"><input type="checkbox" checked={selectedIds.includes(doc.id)} onChange={() => toggleSelected(doc.id)} /></td>
                       <td className="px-3 py-3"><button onClick={() => setActiveDocument(doc)} className="font-semibold text-[#16829b]">{doc.fileName}</button></td>
                       <td className="px-3 py-3">{doc.obligation?.name || '-'}</td>
+                      <td className="px-3 py-3">{doc.demand?.title || '-'}</td>
                       <td className="px-3 py-3">{doc.reference || '-'}</td>
                       <td className="px-3 py-3 text-red-600">{doc.dueDate ? new Date(doc.dueDate).toLocaleDateString('pt-BR') : '-'}</td>
                       <td className="px-3 py-3">{doc.totalValue ? Number(doc.totalValue).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '-'}</td>
@@ -553,7 +551,8 @@ function Conference({ robots }) {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2 text-[#68737a]">
-                          <button title="Configurar Robô" onClick={() => window.alert(doc.robotIdentifier ? `Reconhecido pelo identificador: ${doc.robotIdentifier}` : 'Nenhum robô configurado para esta obrigação.')}><Bot size={16} /></button>
+                          <button title="Enviar por e-mail" onClick={() => sendByEmail(doc)} disabled={!doc.client?.email} className="disabled:cursor-not-allowed disabled:opacity-40"><Mail size={16} /></button>
+                          <button title="Registrar entrega física" onClick={() => markPhysical(doc)}><Send size={16} /></button>
                           <button title="Editar" onClick={() => setActiveDocument(doc)}><Pencil size={16} /></button>
                           <button title="Excluir" onClick={() => removeDocument(doc)}><Trash2 size={16} /></button>
                         </div>
@@ -577,6 +576,7 @@ function Conference({ robots }) {
           document={activeDocument}
           serverClients={serverClients}
           serverObligations={serverObligations}
+          serverDemands={serverDemands}
           onClose={() => setActiveDocument(null)}
           onSaved={(saved) => {
             setActiveDocument(null);
@@ -588,11 +588,12 @@ function Conference({ robots }) {
   );
 }
 
-function DocumentPanel({ document: doc, serverClients, serverObligations, onClose, onSaved }) {
+function DocumentPanel({ document: doc, serverClients, serverObligations, serverDemands, onClose, onSaved }) {
   const isNew = !doc.id;
   const [fileName, setFileName] = useState(doc.fileName || '');
   const [clientId, setClientId] = useState(doc.clientId || doc.client?.id || '');
   const [obligationId, setObligationId] = useState(doc.obligationId || doc.obligation?.id || '');
+  const [demandId, setDemandId] = useState(doc.demandId || doc.demand?.id || '');
   const [documentType, setDocumentType] = useState(doc.documentType || '');
   const [documentNumber, setDocumentNumber] = useState(doc.documentNumber || '');
   const [reference, setReference] = useState(doc.reference || '');
@@ -604,6 +605,7 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, onClos
   const [deliveryType, setDeliveryType] = useState(doc.deliveryType || 'PORTAL');
   const [protocolAs, setProtocolAs] = useState(doc.protocolAs || '');
   const [clientNote, setClientNote] = useState(doc.clientNote || '');
+  const [deliveryNote, setDeliveryNote] = useState(doc.deliveryNote || '');
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -617,6 +619,7 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, onClos
         ...(isNew ? { fileName: fileName.trim() } : {}),
         clientId: clientId || null,
         obligationId: obligationId || null,
+        demandId: demandId || null,
         documentType: documentType || null,
         documentNumber: documentNumber || null,
         reference: reference || null,
@@ -628,6 +631,7 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, onClos
         deliveryType,
         protocolAs: protocolAs || null,
         clientNote: clientNote || null,
+        deliveryNote: deliveryNote || null,
       };
       const { data } = isNew
         ? await api.post('/obligations/protocols', payload)
@@ -663,6 +667,9 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, onClos
             <SelectField label="Cliente" value={clientId} onChange={setClientId} options={[{ value: '', label: 'Não identificado' }, ...serverClients.map((c) => ({ value: c.id, label: c.name }))]} />
             <SelectField label="Obrigação" value={obligationId} onChange={setObligationId} options={[{ value: '', label: 'Não identificada' }, ...serverObligations.map((o) => ({ value: o.id, label: o.name }))]} />
           </div>
+          <div className="mt-4">
+            <SelectField label="Tarefa vinculada" value={demandId} onChange={setDemandId} options={[{ value: '', label: 'Sem tarefa vinculada' }, ...serverDemands.map((task) => ({ value: task.id, label: task.title }))]} />
+          </div>
           <h3 className="mb-3 mt-5 font-semibold">Informações do documento</h3>
           <div className="grid grid-cols-2 gap-4 text-sm">
             <TextField label="Tipo de documento" value={documentType} onChange={setDocumentType} placeholder="DARF, DAS..." />
@@ -697,6 +704,10 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, onClos
             <span className="mb-1 block">Informação para o cliente (opcional)</span>
             <textarea value={clientNote} onChange={(e) => setClientNote(e.target.value)} rows={3} className="w-full resize-y rounded border border-[#dfe5e8] p-2" />
           </label>
+          <label className="mt-4 block text-sm">
+            <span className="mb-1 block">Observação do envio físico/e-mail</span>
+            <textarea value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)} rows={2} className="w-full resize-y rounded border border-[#dfe5e8] p-2" />
+          </label>
 
           <div className="mt-8 flex justify-end gap-3">
             <button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button>
@@ -708,25 +719,46 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, onClos
   );
 }
 
-function Protocols({ protocols, setProtocols }) {
+function Protocols() {
   const [query, setQuery] = useState('');
   const [client, setClient] = useState('Todos');
-  const filtered = protocols.filter((item) => (client === 'Todos' || item.client === client) && `${item.document} ${item.fileName}`.toLowerCase().includes(query.toLowerCase()));
+  const [documents, setDocuments] = useState([]);
+  const protocolRows = documents.filter((item) => item.status === 'PROTOCOLADO' || item.protocolDate || item.sentAt);
+  const clientNames = Array.from(new Set(protocolRows.map((item) => item.client?.name).filter(Boolean)));
+  const filtered = protocolRows.filter((item) => {
+    const text = `${item.obligation?.name || ''} ${item.fileName || ''} ${item.client?.name || ''}`.toLowerCase();
+    return (client === 'Todos' || item.client?.name === client) && text.includes(query.toLowerCase());
+  });
+
+  useEffect(() => {
+    api.get('/obligations/protocols/list')
+      .then(({ data }) => setDocuments(data))
+      .catch(() => {});
+  }, []);
 
   return (
     <section className="p-5">
-      <div className="mb-4 flex items-center justify-between"><h2 className="text-2xl font-semibold">Protocolos ⓘ</h2><button onClick={() => setProtocols((current) => [{ ...protocolFromSeed(seedProtocols[0], Date.now()), id: `manual-${Date.now()}`, status: 'Protocolado' }, ...current])} className="rounded bg-[#2693d2] px-5 py-2.5 text-white">+ Novo protocolo</button></div>
+      <div className="mb-4 flex items-center justify-between"><h2 className="text-2xl font-semibold">Protocolos ⓘ</h2></div>
       <div className="mb-6 grid grid-cols-[250px_260px_260px_270px_auto] gap-4">
         <TextField label="Buscar por" value={query} onChange={setQuery} placeholder="Buscar" />
-        <SelectField label="Cliente" value={client} onChange={setClient} options={['Todos', ...clients]} />
+        <SelectField label="Cliente" value={client} onChange={setClient} options={['Todos', ...clientNames]} />
         <SelectField label="Obrigação" value="Todos" onChange={() => {}} options={['Todos', ...obligationNames]} />
         <TextField label="Período de vencimento" value="01/06/2026    30/06/2026" onChange={() => {}} />
         <button className="self-end rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Filtrar</button>
       </div>
       <DataTable
-        headings={['Documento', 'Cliente', 'Arquivo', 'Data', 'Responsável pela baixa', 'Status', '']}
-        rows={filtered.map((item) => [item.document, item.client, item.fileName, item.protocolDate, item.responsible, item.status, <button key={item.id} title="Mais opções" aria-label="Mais opções" className="rounded p-1 hover:bg-[#f2f2f2]"><MoreVertical size={17} /></button>])}
-        statusIndex={5}
+        headings={['Documento', 'Cliente', 'Arquivo', 'Envio', 'Data', 'Responsável pela baixa', 'Status', '']}
+        rows={filtered.map((item) => [
+          item.obligation?.name || item.documentType || 'Documento',
+          item.client?.name || '-',
+          item.fileName,
+          deliveryTypeLabels[item.deliveryType] || item.deliveryType,
+          item.protocolDate ? new Date(item.protocolDate).toLocaleDateString('pt-BR') : '-',
+          item.responsible?.name || '-',
+          item.emailStatus === 'ENVIADO' ? 'Enviado' : 'Protocolado',
+          <button key={item.id} title="Mais opções" aria-label="Mais opções" className="rounded p-1 hover:bg-[#f2f2f2]"><MoreVertical size={17} /></button>,
+        ])}
+        statusIndex={6}
       />
     </section>
   );
@@ -759,7 +791,7 @@ function Reports({ tasks, protocols }) {
   );
 }
 
-function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, robots, setRobots }) {
+function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients }) {
   const [section, setSection] = useState('Lista de obrigações');
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
@@ -790,17 +822,16 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
 
   return (
     <section className="grid grid-cols-[245px_1fr]">
-      <SideSubMenu items={['Lista de obrigações', 'Lista de robôs', 'Grupo de obrigações', 'Vínculos', 'Responsabilidades']} active={section} onChange={setSection} />
+      <SideSubMenu items={['Lista de obrigações', 'Grupo de obrigações', 'Vínculos', 'Responsabilidades']} active={section} onChange={setSection} />
       <div className="p-5">
         {section === 'Lista de obrigações' && (
           <>
             <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">Lista de obrigações</h2><button onClick={() => setEditing({ index: -1, row: ['Nova obrigação', 'Pagamento', departments[0], 'NOVO', 'Mensal', 'Ativo', 'Não'] })} className="rounded bg-[#2693d2] px-5 py-2.5 text-white">+ Nova obrigação</button></div>
             <div className="mb-6 flex items-end gap-5"><TextField label="Buscar por" value={query} onChange={setQuery} placeholder="Buscar" /><label className="pb-2"><input type="checkbox" /> Exibir itens inativos</label><button className="pb-2 text-[#16829b]">⌁ Filtro avancado⌄</button></div>
             {loadingObligations && <p className="mb-3 text-sm text-[#68737a]">Carregando obrigações cadastradas...</p>}
-            <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Robô padrão', 'Vencimento', '']} rows={filtered.map((row) => [...row.slice(0, 8), <ActionButtons key={row[8] || row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
+            <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Vencimento', '']} rows={filtered.map((row) => [...row.slice(0, 6), row[7], <ActionButtons key={row[8] || row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
           </>
         )}
-        {section === 'Lista de robôs' && <Robots robots={robots} setRobots={setRobots} obligationRows={obligationRows} />}
         {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} />}
         {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} />}
         {section === 'Responsabilidades' && <Responsibilities />}
@@ -873,7 +904,6 @@ function ObligationModal({ editing, onClose, onSave }) {
   const [nickname, setNickname] = useState(editing.row[3]);
   const [frequency, setFrequency] = useState(editing.row[4] || 'Mensal');
   const [status, setStatus] = useState(editing.row[5]);
-  const [robot, setRobot] = useState(editing.row[6]);
   const [ruleMonth, setRuleMonth] = useState('10');
   const [dueDay, setDueDay] = useState('31');
   const [nonBusinessDayRule, setNonBusinessDayRule] = useState('Dias Corridos - Antecipa');
@@ -919,7 +949,7 @@ function ObligationModal({ editing, onClose, onSave }) {
           <h3 className="mb-5 text-lg">Simular vencimento</h3>
           <div className="flex items-end gap-8"><TextField label="Competencia" value={competence} onChange={setCompetence} placeholder="mm/aaaa ou aaaa" /><button onClick={simulateDueDate} className="rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Simular vencimento</button><span>{simulationResult}</span></div>
         </div>
-        <div className="flex justify-end gap-3 border-t border-[#e7ecef] p-4"><button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button><button onClick={onClose} className="rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Excluir</button><button onClick={() => onSave({ index: editing.index, name, type, department, nickname, frequency, status, robot })} className="rounded bg-[#2693d2] px-5 py-2 text-white">Salvar</button></div>
+        <div className="flex justify-end gap-3 border-t border-[#e7ecef] p-4"><button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button><button onClick={onClose} className="rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Excluir</button><button onClick={() => onSave({ index: editing.index, name, type, department, nickname, frequency, status })} className="rounded bg-[#2693d2] px-5 py-2 text-white">Salvar</button></div>
       </div>
     </div>
   );
@@ -999,130 +1029,6 @@ function calculateDueDate({ competence, frequency, ruleMonth, dueDay, nonBusines
 function isNonBusinessDay(date, saturdayWorks) {
   const day = date.getDay();
   return day === 0 || (!saturdayWorks && day === 6);
-}
-
-function Robots({ robots, setRobots, obligationRows }) {
-  const [query, setQuery] = useState('');
-  const [editingRobot, setEditingRobot] = useState(null);
-  const [serverObligations, setServerObligations] = useState([]);
-  const filtered = robots.filter((robot) => `${robot.obligation} ${robot.identifiers.join(' ')}`.toLowerCase().includes(query.toLowerCase()));
-
-  useEffect(() => {
-    Promise.all([api.get('/obligations'), api.get('/obligations/robots/list')])
-      .then(([obligationsResponse, robotsResponse]) => {
-        setServerObligations(obligationsResponse.data);
-        setRobots(robotsResponse.data.map((item) => ({
-          id: item.id,
-          obligationId: item.obligationId,
-          obligation: item.obligation?.name || item.name,
-          identifiers: item.identifiers,
-          active: item.active,
-        })));
-      })
-      .catch(() => {});
-  }, [setRobots]);
-
-  async function saveRobot(robot) {
-    const obligationId = robot.obligationId || serverObligations.find((item) => item.name === robot.obligation)?.id;
-    try {
-      if (!obligationId) throw new Error('Crie a obrigação antes de configurar o robô.');
-      const payload = { obligationId, name: `Robô - ${robot.obligation}`, identifiers: robot.identifiers, active: true };
-      const { data } = robot.id
-        ? await api.put(`/obligations/robots/${robot.id}`, payload)
-        : await api.post('/obligations/robots', payload);
-      const saved = { id: data.id, obligationId: data.obligationId, obligation: data.obligation?.name || robot.obligation, identifiers: data.identifiers, active: data.active };
-      setRobots((current) => robot.id ? current.map((item) => item.id === robot.id ? saved : item) : [saved, ...current]);
-      setEditingRobot(null);
-    } catch (error) {
-      window.alert(error.response?.data?.error || error.message || 'Não foi possível salvar o robô.');
-    }
-  }
-
-  async function deleteRobot(robot) {
-    try {
-      await api.delete(`/obligations/robots/${robot.id}`);
-      setRobots((current) => current.filter((item) => item.id !== robot.id));
-    } catch (error) {
-      window.alert(error.response?.data?.error || 'Não foi possível excluir o robô.');
-    }
-  }
-
-  return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Lista de robôs</h2>
-        <button onClick={() => setEditingRobot({ id: null, obligation: obligationRows[0][0], identifiers: [] })} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo robô</button>
-      </div>
-      <TextField label="" value={query} onChange={setQuery} placeholder="Buscar por obrigacao ou identificador..." />
-      <div className="mt-5 space-y-4">
-        {filtered.map((robot) => (
-          <div key={robot.id} className="rounded border border-[#e7ecef]">
-            <div className="flex items-center justify-between p-3">
-              <h3 className="font-semibold">{robot.obligation}</h3>
-              <div className="flex gap-3 text-[#16829b]">
-                <button onClick={() => setEditingRobot(robot)} title="Editar robô" aria-label="Editar robô"><Pencil size={16} /></button>
-                <button onClick={() => deleteRobot(robot)} title="Excluir robô" aria-label="Excluir robô"><Trash2 size={16} /></button>
-              </div>
-            </div>
-            <div className="grid grid-cols-[1fr_180px_180px] bg-[#f1f1f1] p-3 text-sm"><span>Identificadores de PDF</span><span>Criado em</span><span>Atualizado em</span></div>
-            <div className="grid grid-cols-[1fr_180px_180px] p-3 text-sm">
-              <span>{robot.identifiers.join(', ') || '-'}</span>
-              <span>18/06/2026 as 09:00</span>
-              <span>-</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      {editingRobot && <RobotModal robot={editingRobot} obligationRows={obligationRows} serverObligations={serverObligations} onClose={() => setEditingRobot(null)} onSave={saveRobot} />}
-    </div>
-  );
-}
-
-function RobotModal({ robot, obligationRows, serverObligations, onClose, onSave }) {
-  const [obligation, setObligation] = useState(robot.obligation);
-  const [identifiers, setIdentifiers] = useState(robot.identifiers || []);
-  const [newIdentifier, setNewIdentifier] = useState('');
-
-  function addIdentifier() {
-    const value = newIdentifier.trim();
-    if (!value) return;
-    setIdentifiers((current) => Array.from(new Set([...current, value])));
-    setNewIdentifier('');
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40">
-      <div className="absolute left-1/2 top-8 grid h-[82vh] w-[1180px] -translate-x-1/2 grid-cols-[1fr_420px] overflow-hidden rounded bg-white shadow-xl">
-        <div className="bg-[#444] p-8">
-          <div className="mx-auto h-full max-w-[420px] bg-white p-8 text-[#12356d]">
-            <div className="mb-6 text-xl font-bold">Receita Federal</div>
-            <h3 className="text-center text-lg font-bold">Documento de Arrecadacao<br />de Receitas Federais</h3>
-            <div className="mt-8 grid grid-cols-3 gap-2 text-xs">
-              <div className="rounded border p-2">CNPJ<br />11.111.111/1111-11</div>
-              <div className="rounded border p-2">Periodo<br />30/06/2026</div>
-              <div className="rounded border p-2">Vencimento<br />20/07/2026</div>
-            </div>
-            <div className="mt-8 h-48 rounded border p-4 text-xs">Composicao do Documento de Arrecadacao<br /><br />Codigo 0561<br />Codigo 0588<br />Codigo 1082</div>
-          </div>
-        </div>
-        <div className="p-6">
-          <div className="mb-8 flex justify-end"><button onClick={onClose} className="text-2xl text-[#aaa]">×</button></div>
-          <div className="text-center"><Bot className="mx-auto h-16 w-16 text-[#287fba]" /><h2 className="mt-4 text-xl font-semibold">Robô de leitura de PDFs</h2><p className="mt-2 text-sm text-[#68737a]">Configure os identificadores que associam um PDF a uma obrigação.</p></div>
-          <div className="mt-8 space-y-4">
-            <SelectField label="Nome da obrigação" value={obligation} onChange={setObligation} options={(serverObligations.length ? serverObligations.map((item) => item.name) : obligationRows.map((row) => row[0]))} />
-            <div>
-              <label className="mb-1 block text-sm">Identificador do PDF</label>
-              <div className="flex gap-2"><input value={newIdentifier} onChange={(event) => setNewIdentifier(event.target.value)} onKeyDown={(event) => event.key === 'Enter' && addIdentifier()} placeholder="Ex.: 0561, DARF, Simples Nacional" className="h-10 flex-1 rounded border border-[#dfe5e8] px-3" /><button onClick={addIdentifier} className="rounded bg-[#f2f2f2] px-4">Adicionar</button></div>
-            </div>
-            <div className="max-h-56 space-y-2 overflow-auto">
-              {identifiers.map((identifier) => <div key={identifier} className="flex items-center justify-between rounded bg-[#f1f1f1] px-4 py-2"><span>{identifier}</span><button onClick={() => setIdentifiers((current) => current.filter((item) => item !== identifier))} className="text-[#16829b]">🗑</button></div>)}
-            </div>
-          </div>
-          <button onClick={() => onSave({ id: robot.id, obligationId: robot.obligationId, obligation, identifiers })} className="mt-6 w-full rounded bg-[#2693d2] px-5 py-3 text-white">Salvar configurações</button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkResponsibles }) {
@@ -1523,8 +1429,6 @@ function groupTasks(tasks, by) {
 export default function Obligations() {
   const [activeTab, setActiveTab] = useState('Calendário');
   const [tasks, setTasks] = useState(makeTasks);
-  const [protocols, setProtocols] = useState(seedProtocols.map(protocolFromSeed));
-  const [robots, setRobots] = useState(makeRobots);
   const [obligationRows, setObligationRows] = useState(seedObligations);
   const [linkedClients, setLinkedClients] = useState(() => ({
     '13o SALARIO 1a PARCELA': [clients[0], clients[1]],
@@ -1532,10 +1436,10 @@ export default function Obligations() {
   }));
   const content = {
     Calendário: <Calendar tasks={tasks} setTasks={setTasks} />,
-    Conferência: <Conference protocols={protocols} setProtocols={setProtocols} robots={robots} />,
-    Protocolos: <Protocols protocols={protocols} setProtocols={setProtocols} />,
-    Relatórios: <Reports tasks={tasks} protocols={protocols} />,
-    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} robots={robots} setRobots={setRobots} />,
+    Conferência: <Conference />,
+    Protocolos: <Protocols />,
+    Relatórios: <Reports tasks={tasks} protocols={[]} />,
+    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} />,
   };
 
   return (

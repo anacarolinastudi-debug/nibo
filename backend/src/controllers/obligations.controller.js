@@ -1,8 +1,10 @@
 const { z } = require('zod');
 const fs = require('fs/promises');
+const path = require('path');
 const pdfParse = require('pdf-parse');
 const prisma = require('../lib/prisma');
-const obligationCatalog = require('../data/obligationCatalog');
+const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
+const { sendEmail, missingEmailConfig } = require('../services/email.service');
 
 const obligationSchema = z.object({
   name: z.string().min(2),
@@ -67,101 +69,8 @@ async function createObligation(req, res) {
   res.status(201).json(obligation);
 }
 
-function normalizeKey(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]/gi, '')
-    .toLowerCase();
-}
-
-function catalogPayload(item, accountingFirmId) {
-  return {
-    name: item.name,
-    type: item.type,
-    department: item.department,
-    nickname: item.nickname,
-    frequency: item.frequency,
-    status: 'ATIVO',
-    defaultRobot: item.defaultRobot ?? false,
-    physicalOnly: item.physicalOnly ?? false,
-    dueControl: item.dueControl ?? true,
-    internalGoalDays: item.internalGoalDays ?? null,
-    ruleMonth: item.ruleMonth ?? null,
-    dueDay: item.dueDay ?? null,
-    dueDateRule: item.dueDateRule || 'ANTECIPA',
-    saturdayBusinessDay: item.saturdayBusinessDay ?? false,
-    accountingFirmId,
-  };
-}
-
 async function seedCatalog(req, res) {
-  const accountingFirmId = req.user.accountingFirmId;
-  const existing = await prisma.obligation.findMany({ where: { accountingFirmId } });
-  const byName = new Map(existing.map((item) => [normalizeKey(item.name), item]));
-  const byNickname = new Map(existing.filter((item) => item.nickname).map((item) => [normalizeKey(item.nickname), item]));
-  const obligationByNickname = new Map();
-  let created = 0;
-  let updated = 0;
-
-  for (const item of obligationCatalog.obligations) {
-    const match = byNickname.get(normalizeKey(item.nickname)) || byName.get(normalizeKey(item.name));
-    const payload = catalogPayload(item, accountingFirmId);
-
-    if (match) {
-      const obligation = await prisma.obligation.update({
-        where: { id: match.id },
-        data: { ...payload, accountingFirmId: undefined },
-      });
-      obligationByNickname.set(item.nickname, obligation);
-      updated += 1;
-    } else {
-      const obligation = await prisma.obligation.create({ data: payload });
-      obligationByNickname.set(item.nickname, obligation);
-      created += 1;
-    }
-  }
-
-  let groupsCreated = 0;
-  let groupsUpdated = 0;
-
-  for (const groupItem of obligationCatalog.groups) {
-    const obligationIds = groupItem.obligations
-      .map((nickname) => obligationByNickname.get(nickname)?.id)
-      .filter(Boolean);
-    const existingGroup = await prisma.obligationGroup.findUnique({
-      where: { accountingFirmId_nickname: { accountingFirmId, nickname: groupItem.nickname } },
-    });
-
-    if (existingGroup) {
-      await prisma.$transaction([
-        prisma.obligationGroupItem.deleteMany({ where: { groupId: existingGroup.id } }),
-        prisma.obligationGroup.update({
-          where: { id: existingGroup.id },
-          data: {
-            name: groupItem.name,
-            items: { create: obligationIds.map((obligationId) => ({ obligationId })) },
-          },
-        }),
-      ]);
-      groupsUpdated += 1;
-    } else {
-      await prisma.obligationGroup.create({
-        data: {
-          nickname: groupItem.nickname,
-          name: groupItem.name,
-          accountingFirmId,
-          items: { create: obligationIds.map((obligationId) => ({ obligationId })) },
-        },
-      });
-      groupsCreated += 1;
-    }
-  }
-
-  res.json({
-    obligations: { created, updated },
-    groups: { created: groupsCreated, updated: groupsUpdated },
-  });
+  res.json(await seedCatalogForFirm(req.user.accountingFirmId));
 }
 
 async function updateObligation(req, res) {
@@ -389,22 +298,17 @@ async function identifyClient(req, pdfText, requestedClientId) {
 
 async function uploadConferenceFile(req, res) {
   if (!req.file) return res.status(400).json({ error: 'Arquivo nao enviado.' });
-  const bodySchema = z.object({
+const bodySchema = z.object({
     clientId: z.string().optional().nullable(),
     obligationId: z.string().optional().nullable(),
+    demandId: z.string().optional().nullable(),
     deliveryType: z.enum(['PORTAL', 'EMAIL', 'FISICA']).default('PORTAL'),
     reference: z.string().optional().nullable(),
   });
   const data = bodySchema.parse(req.body);
-  const robots = await prisma.obligationRobot.findMany({
-    where: firmWhere(req),
-    include: { obligation: true },
-  });
   const pdfText = await extractPdfText(req.file);
-  const match = matchRobot(req.file.originalname, pdfText, robots);
-  const robot = match?.robot;
   const client = await identifyClient(req, pdfText, data.clientId);
-  const resolvedObligationId = robot?.obligationId || data.obligationId || null;
+  const resolvedObligationId = data.obligationId || null;
 
   if (client && resolvedObligationId) {
     await prisma.clientObligation.upsert({
@@ -424,18 +328,19 @@ async function uploadConferenceFile(req, res) {
       accountingFirmId: req.user.accountingFirmId,
       clientId: client?.id || null,
       obligationId: resolvedObligationId,
+      demandId: data.demandId || null,
       fileName: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       fileUrl: `/uploads/${req.file.filename}`,
       deliveryType: data.deliveryType,
       reference: data.reference || null,
-      status: robot ? 'RECONHECIDO_ROBO' : 'CONFERENCIA',
-      robotMatched: Boolean(robot),
-      robotIdentifier: match?.identifier || null,
+      status: 'CONFERENCIA',
+      robotMatched: false,
+      robotIdentifier: null,
       responsibleId: req.user.id,
     },
-    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+    include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
   });
 
   res.status(201).json(document);
@@ -445,18 +350,31 @@ async function listProtocols(req, res) {
   const protocols = await prisma.protocolDocument.findMany({
     where: firmWhere(req),
     orderBy: { createdAt: 'desc' },
-    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+    include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
   });
   res.json(protocols);
 }
 
+const confirmProtocolSchema = z.object({
+  deliveryType: z.enum(['PORTAL', 'EMAIL', 'FISICA']).optional(),
+  deliveryNote: z.string().optional().nullable(),
+});
+
 async function confirmProtocol(req, res) {
   const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
   if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
+  const data = confirmProtocolSchema.parse(req.body || {});
   const protocol = await prisma.protocolDocument.update({
     where: { id: existing.id },
-    data: { status: 'PROTOCOLADO', protocolDate: new Date(), responsibleId: req.user.id },
-    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+    data: {
+      status: 'PROTOCOLADO',
+      protocolDate: new Date(),
+      sentAt: new Date(),
+      deliveryType: data.deliveryType || existing.deliveryType,
+      deliveryNote: data.deliveryNote || null,
+      responsibleId: req.user.id,
+    },
+    include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
   });
   res.json(protocol);
 }
@@ -465,6 +383,7 @@ const createProtocolSchema = z.object({
   fileName: z.string().min(1),
   clientId: z.string().optional().nullable(),
   obligationId: z.string().optional().nullable(),
+  demandId: z.string().optional().nullable(),
   documentType: z.string().optional().nullable(),
   documentNumber: z.string().optional().nullable(),
   reference: z.string().optional().nullable(),
@@ -476,6 +395,7 @@ const createProtocolSchema = z.object({
   deliveryType: z.enum(['PORTAL', 'EMAIL', 'FISICA']).default('PORTAL'),
   protocolAs: z.enum(['CORRECAO', 'COMPLEMENTO']).optional().nullable(),
   clientNote: z.string().optional().nullable(),
+  deliveryNote: z.string().optional().nullable(),
 });
 
 async function createProtocolDocument(req, res) {
@@ -488,7 +408,7 @@ async function createProtocolDocument(req, res) {
       accountingFirmId: req.user.accountingFirmId,
       responsibleId: req.user.id,
     },
-    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+    include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
   });
   res.status(201).json(document);
 }
@@ -496,6 +416,7 @@ async function createProtocolDocument(req, res) {
 const updateProtocolSchema = z.object({
   clientId: z.string().optional().nullable(),
   obligationId: z.string().optional().nullable(),
+  demandId: z.string().optional().nullable(),
   documentType: z.string().optional().nullable(),
   documentNumber: z.string().optional().nullable(),
   reference: z.string().optional().nullable(),
@@ -507,6 +428,7 @@ const updateProtocolSchema = z.object({
   deliveryType: z.enum(['PORTAL', 'EMAIL', 'FISICA']).optional(),
   protocolAs: z.enum(['CORRECAO', 'COMPLEMENTO']).optional().nullable(),
   clientNote: z.string().optional().nullable(),
+  deliveryNote: z.string().optional().nullable(),
 });
 
 async function updateProtocolDocument(req, res) {
@@ -520,8 +442,64 @@ async function updateProtocolDocument(req, res) {
       dueDate: data.dueDate !== undefined ? (data.dueDate ? new Date(data.dueDate) : null) : undefined,
       payDate: data.payDate !== undefined ? (data.payDate ? new Date(data.payDate) : null) : undefined,
     },
-    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+    include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
   });
+  res.json(protocol);
+}
+
+async function sendProtocolByEmail(req, res) {
+  const existing = await prisma.protocolDocument.findFirst({
+    where: { id: req.params.id, ...firmWhere(req) },
+    include: { client: true, obligation: true, demand: true },
+  });
+  if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
+  if (!existing.client?.email) return res.status(400).json({ error: 'O cliente nao tem e-mail informado no cadastro.' });
+
+  const filePath = existing.fileUrl?.startsWith('/uploads/')
+    ? path.join(__dirname, '..', '..', 'uploads', path.basename(existing.fileUrl))
+    : null;
+
+  const result = await sendEmail({
+    to: existing.client.email,
+    subject: `Documento enviado: ${existing.obligation?.name || existing.documentType || existing.fileName}`,
+    text: [
+      `Olá, ${existing.client.name}.`,
+      '',
+      'Segue o documento/protocolo enviado pelo escritório.',
+      existing.reference ? `Competência: ${existing.reference}` : null,
+      existing.clientNote ? `Observação: ${existing.clientNote}` : null,
+    ].filter(Boolean).join('\n'),
+    attachments: filePath ? [{ filename: existing.fileName, path: filePath }] : [],
+  });
+
+  if (!result.sent) {
+    const protocol = await prisma.protocolDocument.update({
+      where: { id: existing.id },
+      data: {
+        deliveryType: 'EMAIL',
+        emailTo: existing.client.email,
+        emailStatus: result.status,
+        responsibleId: req.user.id,
+      },
+      include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
+    });
+    return res.status(400).json({ error: `Configure o e-mail do sistema antes de enviar. Faltando: ${missingEmailConfig().join(', ')}`, protocol });
+  }
+
+  const protocol = await prisma.protocolDocument.update({
+    where: { id: existing.id },
+    data: {
+      status: 'PROTOCOLADO',
+      deliveryType: 'EMAIL',
+      protocolDate: new Date(),
+      sentAt: new Date(),
+      emailTo: existing.client.email,
+      emailStatus: 'ENVIADO',
+      responsibleId: req.user.id,
+    },
+    include: { client: true, obligation: true, demand: true, responsible: { select: { id: true, name: true } } },
+  });
+
   res.json(protocol);
 }
 
@@ -553,6 +531,7 @@ module.exports = {
   uploadConferenceFile,
   listProtocols,
   confirmProtocol,
+  sendProtocolByEmail,
   createProtocolDocument,
   updateProtocolDocument,
   removeProtocolDocument,

@@ -330,6 +330,7 @@ model Demand {
 
   comments    DemandComment[]
   attachments DemandAttachment[]
+  protocolDocuments ProtocolDocument[]
 
   @@index([clientId])
   @@index([assignedToId])
@@ -598,6 +599,10 @@ model ProtocolDocument {
   recalculo      Boolean  @default(false)
   protocolAs     String?
   clientNote     String?
+  sentAt         DateTime?
+  emailTo        String?
+  emailStatus    String?
+  deliveryNote   String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -610,12 +615,16 @@ model ProtocolDocument {
   obligationId String?
   obligation   Obligation? @relation(fields: [obligationId], references: [id])
 
+  demandId String?
+  demand   Demand? @relation(fields: [demandId], references: [id], onDelete: SetNull)
+
   responsibleId String?
   responsible   User? @relation(fields: [responsibleId], references: [id])
 
   @@index([accountingFirmId])
   @@index([clientId])
   @@index([obligationId])
+  @@index([demandId])
   @@index([status])
   @@map("protocol_documents")
 }

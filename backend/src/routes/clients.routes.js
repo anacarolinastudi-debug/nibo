@@ -7,6 +7,7 @@ router.use(requireAuth);
 
 router.get('/', ctrl.list);
 router.get('/contacts/list', ctrl.listContacts);
+router.post('/setup/clear', requireRole('ADMIN'), ctrl.clearForSetup);
 router.post('/contacts', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createContact);
 router.put('/contacts/:contactId', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateContact);
 router.delete('/contacts/:contactId', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeContact);

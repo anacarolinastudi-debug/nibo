@@ -371,6 +371,13 @@ Atualização registrada em 03/09/2026:
 - Corrigido o cabeçalho da tela `Configurações`: agora exibe o nome real do escritório cadastrado, em vez de um texto fixo.
 - Limpeza executada no banco publicado: clientes, contatos, tarefas, processos, obrigações, documentos, financeiro, formulários, departamentos e demais cadastros foram apagados. Permaneceu apenas o usuário administrador `admin@exemplo.com`, com nome "Administrador teste". A rota administrativa usada para essa limpeza foi removida após a execução.
 - Revisados os cabeçalhos das telas principais. Obrigações, Clientes, Tarefas & Processos, Formulários, Editor de Formulários, Relacionamento, Radar e-CAC e Configurações agora exibem o nome real do escritório cadastrado, em vez do texto fixo com CNPJ/nome antigo.
+- Obrigações e grupos de obrigações passaram a ser base padrão de todo novo escritório: ao criar conta ou usar o login demo, o catálogo é sincronizado automaticamente sem criar clientes.
+- A Conferência foi simplificada para uso manual: retirada a interface de robôs, adicionados vínculos de arquivo com cliente, obrigação e tarefa, além de competência e tipo de entrega antes do upload.
+- Protocolos agora refletem envios reais registrados pela Conferência, incluindo envio por e-mail e entrega física.
+- Preparado envio de arquivos por e-mail com SMTP (`EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`). Se o e-mail não estiver configurado, o sistema avisa em vez de registrar envio falso.
+- Relacionamento/WhatsApp passou a exibir a URL do webhook e as variáveis faltantes de configuração. O backend aceita `WHATSAPP_API_VERSION` e usa a URL do escritório no webhook para receber mensagens.
+- Criada rotina administrativa protegida para zerar clientes e cadastros vinculados do escritório, mantendo usuário admin e obrigações/grupos padrão.
+- Limpeza local executada: clientes removidos, permanecendo apenas `admin@exemplo.com`; catálogo padrão recriado com 93 obrigações e 7 grupos.
 
 ## 10. Seguranca
 
