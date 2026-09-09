@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ExternalLink, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
-import { getStatus, connectEvolution, getEvolutionQr, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
+import { getStatus, connectEvolution, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -96,6 +96,7 @@ export default function Relationship() {
   const [qrCode, setQrCode] = useState(null);
   const [pairingCode, setPairingCode] = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const [webhookSynced, setWebhookSynced] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [clients, setClients] = useState([]);
@@ -161,16 +162,17 @@ export default function Relationship() {
 
   async function handleConnectEvolution() {
     setConnecting(true);
+    setWebhookSynced(false);
     try {
       await connectEvolution();
-      const qr = await getEvolutionQr();
-      setQrCode(qr.qrCode);
-      setPairingCode(qr.pairingCode);
+      setQrCode(null);
+      setPairingCode(null);
+      setWebhookSynced(true);
       const status = await getStatus();
       setConfigured(status.configured);
       setWhatsappStatus(status);
     } catch (error) {
-      window.alert(error?.response?.data?.error || 'Não foi possível conectar com a Evolution API.');
+      window.alert(error?.response?.data?.error || 'Não foi possível sincronizar a Evolution API.');
     } finally {
       setConnecting(false);
     }
@@ -222,7 +224,7 @@ export default function Relationship() {
                   <b>{whatsappStatus?.evolutionConfigured ? 'Evolution API configurada.' : configured ? 'WhatsApp conectado.' : 'WhatsApp Web ativado para envio manual.'}</b>
                   <p className="mt-1 max-w-3xl">
                     {whatsappStatus?.evolutionConfigured
-                      ? 'Clique em Conectar por QR Code para parear o aparelho e sincronizar o webhook da instância.'
+                      ? 'A instância já está configurada. Sincronize o webhook para as mensagens chegarem ao Young.'
                       : configured
                         ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
                         : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto. O envio acontece direto pelo WhatsApp.'}
@@ -245,9 +247,10 @@ export default function Relationship() {
                     </p>
                   </div>
                   <button onClick={handleConnectEvolution} disabled={connecting} className="rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50">
-                    {connecting ? 'Gerando QR Code...' : 'Conectar por QR Code'}
+                    {connecting ? 'Sincronizando...' : 'Sincronizar webhook'}
                   </button>
                 </div>
+                {webhookSynced && <p className="mt-3 rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Webhook sincronizado com a instância da Evolution.</p>}
                 {whatsappStatus.evolutionWebhookUrl && (
                   <div className="mt-3 grid gap-3 rounded border border-[#dfe5e8] bg-white p-3 md:grid-cols-[1fr_auto]">
                     <div>

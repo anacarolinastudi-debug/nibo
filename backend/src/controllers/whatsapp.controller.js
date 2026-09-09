@@ -248,32 +248,13 @@ async function connectEvolution(req, res) {
   if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
   const apiBase = getApiBase(req);
   const webhookUrl = `${apiBase}/api/whatsapp/evolution/webhook?firmId=${req.user.accountingFirmId}`;
-  const instance = process.env.EVOLUTION_INSTANCE_NAME;
 
-  try {
-    const result = await evolutionRequest(`/instance/create`, {
-      method: 'POST',
-      body: JSON.stringify({
-        instanceName: instance,
-        token: process.env.EVOLUTION_API_KEY,
-        integration: 'WHATSAPP-BAILEYS',
-        qrcode: true,
-        webhook: {
-          enabled: true,
-          url: webhookUrl,
-          events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
-        },
-      }),
-    });
-    await setEvolutionWebhook(webhookUrl).catch(() => null);
-    res.json({ webhookUrl, result });
-  } catch (error) {
-    if (!String(error.message).toLowerCase().includes('already')) {
-      return res.status(502).json({ error: `Não foi possível criar a instância: ${error.message}` });
-    }
-    const webhookResult = await setEvolutionWebhook(webhookUrl).catch((webhookError) => ({ error: webhookError.message }));
-    res.json({ webhookUrl, result: { message: 'Instância já existia.' }, webhookResult });
+  const webhookResult = await setEvolutionWebhook(webhookUrl).catch((error) => ({ error: error.message }));
+  if (webhookResult?.error) {
+    return res.status(502).json({ error: `Não foi possível sincronizar o webhook: ${webhookResult.error}` });
   }
+
+  res.json({ webhookUrl, result: { message: 'Webhook sincronizado.' }, webhookResult });
 }
 
 async function getEvolutionQr(req, res) {
