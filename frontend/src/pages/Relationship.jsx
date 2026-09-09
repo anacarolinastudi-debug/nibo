@@ -97,6 +97,7 @@ export default function Relationship() {
   const [pairingCode, setPairingCode] = useState(null);
   const [connecting, setConnecting] = useState(false);
   const [webhookSynced, setWebhookSynced] = useState(false);
+  const [manualWebhookRequired, setManualWebhookRequired] = useState(false);
   const [sending, setSending] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [clients, setClients] = useState([]);
@@ -163,11 +164,13 @@ export default function Relationship() {
   async function handleConnectEvolution() {
     setConnecting(true);
     setWebhookSynced(false);
+    setManualWebhookRequired(false);
     try {
-      await connectEvolution();
+      const result = await connectEvolution();
       setQrCode(null);
       setPairingCode(null);
-      setWebhookSynced(true);
+      setWebhookSynced(!result.manualWebhookRequired);
+      setManualWebhookRequired(Boolean(result.manualWebhookRequired));
       const status = await getStatus();
       setConfigured(status.configured);
       setWhatsappStatus(status);
@@ -251,6 +254,11 @@ export default function Relationship() {
                   </button>
                 </div>
                 {webhookSynced && <p className="mt-3 rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Webhook sincronizado com a instância da Evolution.</p>}
+                {manualWebhookRequired && (
+                  <p className="mt-3 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                    Essa Evolution não aceitou sincronização automática. Copie o webhook abaixo e cole no painel da Evolution, na instância {whatsappStatus.evolutionInstanceName}.
+                  </p>
+                )}
                 {whatsappStatus.evolutionWebhookUrl && (
                   <div className="mt-3 grid gap-3 rounded border border-[#dfe5e8] bg-white p-3 md:grid-cols-[1fr_auto]">
                     <div>

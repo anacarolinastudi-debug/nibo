@@ -237,37 +237,37 @@ async function receiveEvolutionWebhook(req, res) {
 async function setEvolutionWebhook(webhookUrl) {
   const instance = process.env.EVOLUTION_INSTANCE_NAME;
   const events = ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'SEND_MESSAGE', 'CONNECTION_UPDATE'];
+  const simpleBody = {
+    enabled: true,
+    url: webhookUrl,
+    events,
+    headers: {},
+    base64: true,
+  };
+  const camelBody = {
+    enabled: true,
+    url: webhookUrl,
+    webhookByEvents: false,
+    webhookBase64: true,
+    events,
+  };
+  const snakeBody = {
+    enabled: true,
+    url: webhookUrl,
+    webhook_by_events: false,
+    webhook_base64: true,
+    events,
+  };
   const attempts = [
-    {
-      path: `/webhook/set/${encodeURIComponent(instance)}`,
-      body: {
-        enabled: true,
-        url: webhookUrl,
-        events,
-        headers: {},
-        base64: true,
-      },
-    },
-    {
-      path: `/webhook/set/${encodeURIComponent(instance)}`,
-      body: {
-        enabled: true,
-        url: webhookUrl,
-        webhookByEvents: false,
-        webhookBase64: true,
-        events,
-      },
-    },
-    {
-      path: `/webhook/set?instanceName=${encodeURIComponent(instance)}`,
-      body: {
-        enabled: true,
-        url: webhookUrl,
-        webhookByEvents: false,
-        webhookBase64: true,
-        events,
-      },
-    },
+    { path: `/webhook/set/${encodeURIComponent(instance)}`, body: simpleBody },
+    { path: `/webhook/set/${encodeURIComponent(instance)}`, body: camelBody },
+    { path: `/webhook/set/${encodeURIComponent(instance)}`, body: snakeBody },
+    { path: `/webhook/set?instanceName=${encodeURIComponent(instance)}`, body: camelBody },
+    { path: `/webhook/instance/${encodeURIComponent(instance)}`, body: simpleBody },
+    { path: `/webhook/instance/${encodeURIComponent(instance)}`, body: camelBody },
+    { path: `/webhook/instance?instanceName=${encodeURIComponent(instance)}`, body: camelBody },
+    { path: `/webhook/instance`, body: { instanceName: instance, ...camelBody } },
+    { path: `/webhook/instance`, body: { instanceName: instance, ...snakeBody } },
   ];
 
   let lastError = null;
@@ -316,10 +316,14 @@ async function connectEvolution(req, res) {
 
   const webhookResult = await setEvolutionWebhook(webhookUrl).catch((error) => ({ error: error.message }));
   if (webhookResult?.error) {
-    return res.status(502).json({ error: `Não foi possível sincronizar o webhook: ${webhookResult.error}` });
+    return res.status(200).json({
+      webhookUrl,
+      manualWebhookRequired: true,
+      warning: `A Evolution não aceitou sincronização automática: ${webhookResult.error}`,
+    });
   }
 
-  res.json({ webhookUrl, result: { message: 'Webhook sincronizado.' }, webhookResult });
+  res.json({ webhookUrl, manualWebhookRequired: false, result: { message: 'Webhook sincronizado.' }, webhookResult });
 }
 
 async function getEvolutionQr(req, res) {
