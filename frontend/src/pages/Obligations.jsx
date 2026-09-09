@@ -816,7 +816,7 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
           </>
         )}
         {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} clientsData={clientsData} />}
-        {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} />}
+        {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} clientsData={clientsData} />}
         {section === 'Responsabilidades' && <Responsibilities />}
       </div>
       {editing && <ObligationModal editing={editing} onClose={() => setEditing(null)} onSave={saveObligation} />}
@@ -1296,15 +1296,36 @@ function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClien
   );
 }
 
-function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles, clientsList }) {
+function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles, clientsList, clientsData }) {
   const [query, setQuery] = useState('');
   const [department, setDepartment] = useState('Todos');
   const [cell, setCell] = useState(null);
+  const [linkIds, setLinkIds] = useState({});
   const availableClients = clientsList;
   const visibleClients = availableClients.filter((client) => client.toLowerCase().includes(query.toLowerCase()));
   const visibleObligations = obligationRows
-    .filter((row) => department === 'Todos' || row[2] === department)
-    .slice(0, 12);
+    .filter((row) => department === 'Todos' || row[2] === department);
+
+  useEffect(() => {
+    api.get('/obligations/links/matrix')
+      .then(({ data }) => {
+        const nextLinked = {};
+        const nextResponsibles = {};
+        const nextLinkIds = {};
+        (data.links || []).forEach((link) => {
+          if (!link.active || !link.client?.name || !link.obligation?.name) return;
+          const obligationName = link.obligation.name;
+          const clientName = link.client.name;
+          nextLinked[obligationName] = [...(nextLinked[obligationName] || []), clientName];
+          nextResponsibles[`${obligationName}::${clientName}`] = link.responsible?.name || 'Ana Carolina';
+          nextLinkIds[`${obligationName}::${clientName}`] = link.id;
+        });
+        setLinkedClients(nextLinked);
+        setLinkResponsibles(nextResponsibles);
+        setLinkIds(nextLinkIds);
+      })
+      .catch(() => {});
+  }, [setLinkedClients, setLinkResponsibles]);
 
   function isLinked(obligation, client) {
     return (linkedClients[obligation] || []).includes(client);
@@ -1331,25 +1352,26 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
         <button className="self-end rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Filtrar</button>
       </div>
       <div className="mb-3 text-sm text-[#68737a]">Clique em um quadradinho para atribuir, alterar responsavel ou remover a tarefa daquele cliente.</div>
-      <div className="overflow-auto rounded border border-[#e7ecef]">
-        <table className="w-full text-sm">
+      <div className="max-h-[620px] overflow-auto rounded border border-[#e7ecef]">
+        <table className="table-fixed text-sm" style={{ minWidth: `${360 + visibleObligations.length * 92}px` }}>
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 min-w-80 bg-[#eee] p-3 text-left">Cliente</th>
-              {visibleObligations.map((row) => <th key={row[0]} className="min-w-20 bg-[#eee] p-3 [writing-mode:vertical-rl]">{row[3] || row[0]}</th>)}
+              <th className="sticky left-0 top-0 z-30 w-[360px] bg-[#eee] p-3 text-left shadow-[4px_0_0_#e7ecef]">Cliente</th>
+              {visibleObligations.map((row) => <th key={row[0]} className="sticky top-0 z-20 h-36 w-[92px] bg-[#eee] p-3 align-bottom [writing-mode:vertical-rl]">{row[3] || row[0]}</th>)}
             </tr>
           </thead>
           <tbody>
             {visibleClients.map((client) => (
               <tr key={client} className="border-t">
-                <td className="sticky left-0 bg-white p-3 font-semibold">{client}</td>
+                <td className="sticky left-0 z-10 w-[360px] bg-white p-3 font-semibold shadow-[4px_0_0_#e7ecef]">{client}</td>
                 {visibleObligations.map((row) => {
                   const obligation = row[0];
                   const linked = isLinked(obligation, client);
+                  const clientId = clientsData.find((item) => item.name === client)?.id;
                   return (
-                    <td key={obligation} className="p-0 text-center">
+                    <td key={obligation} className="w-[92px] p-0 text-center">
                       <button
-                        onClick={() => setCell({ obligation, client })}
+                        onClick={() => setCell({ obligation, obligationId: row[8], client, clientId, linkId: linkIds[`${obligation}::${client}`] })}
                         className={`h-14 w-full border-l border-[#e7ecef] ${linked ? 'bg-emerald-50 text-[#2f3a42]' : 'bg-[#f8f8f8] text-[#b8c0c5] hover:bg-[#eef7fb]'}`}
                         title={`${linked ? 'Alterar' : 'Atribuir'} ${obligation} para ${client}`}
                       >
@@ -1362,18 +1384,36 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
             ))}
           </tbody>
         </table>
+        {visibleObligations.length === 0 && <p className="p-6 text-center text-sm text-[#68737a]">Nenhuma obrigação encontrada para o filtro selecionado.</p>}
       </div>
-      {cell && <LinkCellModal cell={cell} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} onClose={() => setCell(null)} />}
+      {cell && <LinkCellModal cell={cell} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} linkIds={linkIds} setLinkIds={setLinkIds} onClose={() => setCell(null)} />}
     </div>
   );
 }
 
-function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles, onClose }) {
+function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles, linkIds, setLinkIds, onClose }) {
   const responsibles = ['Ana Carolina', 'Mariana Fiscal', 'Carlos Contabil', 'Beatriz Registro'];
   const linked = (linkedClients[cell.obligation] || []).includes(cell.client);
   const [responsible, setResponsible] = useState(linkResponsibles[`${cell.obligation}::${cell.client}`] || responsibles[0]);
 
-  function saveLink() {
+  async function saveLink() {
+    if (!cell.clientId || !cell.obligationId) {
+      window.alert('Não foi possível identificar o cliente ou a obrigação.');
+      return;
+    }
+    let savedLink = null;
+    try {
+      const { data } = await api.post('/obligations/links', {
+        clientId: cell.clientId,
+        obligationId: cell.obligationId,
+        active: true,
+      });
+      savedLink = data;
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar o vínculo.');
+      return;
+    }
+
     setLinkedClients((current) => {
       const currentClients = current[cell.obligation] || [];
       return currentClients.includes(cell.client)
@@ -1381,15 +1421,30 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
         : { ...current, [cell.obligation]: [...currentClients, cell.client] };
     });
     setLinkResponsibles((current) => ({ ...current, [`${cell.obligation}::${cell.client}`]: responsible }));
+    if (savedLink?.id) setLinkIds((current) => ({ ...current, [`${cell.obligation}::${cell.client}`]: savedLink.id }));
     onClose();
   }
 
-  function removeLink() {
+  async function removeLink() {
+    const linkId = cell.linkId || linkIds[`${cell.obligation}::${cell.client}`];
+    if (!linkId) return;
+    try {
+      await api.delete(`/obligations/links/${linkId}`);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível remover o vínculo.');
+      return;
+    }
+
     setLinkedClients((current) => ({
       ...current,
       [cell.obligation]: (current[cell.obligation] || []).filter((client) => client !== cell.client),
     }));
     setLinkResponsibles((current) => {
+      const next = { ...current };
+      delete next[`${cell.obligation}::${cell.client}`];
+      return next;
+    });
+    setLinkIds((current) => {
       const next = { ...current };
       delete next[`${cell.obligation}::${cell.client}`];
       return next;
