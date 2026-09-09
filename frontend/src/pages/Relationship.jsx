@@ -222,7 +222,7 @@ export default function Relationship() {
                   <b>{whatsappStatus?.evolutionConfigured ? 'Evolution API configurada.' : configured ? 'WhatsApp conectado.' : 'WhatsApp Web ativado para envio manual.'}</b>
                   <p className="mt-1 max-w-3xl">
                     {whatsappStatus?.evolutionConfigured
-                      ? 'Clique em conectar para gerar o QR Code, escaneie com o celular e use a aba como caixa de entrada.'
+                      ? 'Clique em Conectar por QR Code para parear o aparelho e sincronizar o webhook da instância.'
                       : configured
                         ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
                         : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto. O envio acontece direto pelo WhatsApp.'}
@@ -239,9 +239,9 @@ export default function Relationship() {
               <div className="mt-4 rounded border border-white/70 bg-white/70 p-3 text-[#3f4548]">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold">Evolution conectada ao Young</p>
+                    <p className="font-semibold">Evolution configurada no Young</p>
                     <p className="text-xs text-[#68737a]">
-                      Instância: <b>{whatsappStatus.evolutionInstanceName}</b>. Use o QR Code apenas se o aparelho ainda não estiver pareado.
+                      Instância: <b>{whatsappStatus.evolutionInstanceName}</b>. Clique no botão ao lado para confirmar a conexão e atualizar o webhook.
                     </p>
                   </div>
                   <button onClick={handleConnectEvolution} disabled={connecting} className="rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50">

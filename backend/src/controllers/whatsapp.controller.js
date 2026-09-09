@@ -14,7 +14,8 @@ function isEvolutionConfigured() {
 }
 
 function getApiBase(req) {
-  return process.env.PUBLIC_API_URL || 'https://nibo-clone-api.onrender.com';
+  const configuredUrl = process.env.PUBLIC_API_URL || 'https://nibo-clone-api.onrender.com';
+  return configuredUrl.replace(/^http:\/\//, 'https://').replace(/\/+$/, '');
 }
 
 function getEvolutionBaseUrl() {
@@ -228,6 +229,21 @@ async function receiveEvolutionWebhook(req, res) {
   }
 }
 
+async function setEvolutionWebhook(webhookUrl) {
+  const instance = process.env.EVOLUTION_INSTANCE_NAME;
+  return evolutionRequest(`/webhook/set/${encodeURIComponent(instance)}`, {
+    method: 'POST',
+    body: JSON.stringify({
+      enabled: true,
+      url: webhookUrl,
+      webhookByEvents: false,
+      webhookBase64: true,
+      base64: true,
+      events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+    }),
+  });
+}
+
 async function connectEvolution(req, res) {
   if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
   const apiBase = getApiBase(req);
@@ -239,6 +255,7 @@ async function connectEvolution(req, res) {
       method: 'POST',
       body: JSON.stringify({
         instanceName: instance,
+        token: process.env.EVOLUTION_API_KEY,
         integration: 'WHATSAPP-BAILEYS',
         qrcode: true,
         webhook: {
@@ -248,12 +265,14 @@ async function connectEvolution(req, res) {
         },
       }),
     });
+    await setEvolutionWebhook(webhookUrl).catch(() => null);
     res.json({ webhookUrl, result });
   } catch (error) {
     if (!String(error.message).toLowerCase().includes('already')) {
       return res.status(502).json({ error: `Não foi possível criar a instância: ${error.message}` });
     }
-    res.json({ webhookUrl, result: { message: 'Instância já existia.' } });
+    const webhookResult = await setEvolutionWebhook(webhookUrl).catch((webhookError) => ({ error: webhookError.message }));
+    res.json({ webhookUrl, result: { message: 'Instância já existia.' }, webhookResult });
   }
 }
 
