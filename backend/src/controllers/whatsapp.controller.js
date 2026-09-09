@@ -26,6 +26,53 @@ function normalizeEvolutionPhone(phoneNumber) {
   return phoneNumber.replace(/\D/g, '');
 }
 
+function firstText(...values) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return null;
+}
+
+function getEvolutionMessageContainer(data) {
+  return data.message?.message || data.message || data.messageData?.message || data;
+}
+
+function extractEvolutionBody(data) {
+  const message = getEvolutionMessageContainer(data);
+  return firstText(
+    data.text,
+    data.body,
+    data.messageText,
+    data.content,
+    message.conversation,
+    message.extendedTextMessage?.text,
+    message.imageMessage?.caption,
+    message.videoMessage?.caption,
+    message.documentMessage?.caption,
+    message.buttonsResponseMessage?.selectedDisplayText,
+    message.buttonsResponseMessage?.selectedButtonId,
+    message.listResponseMessage?.title,
+    message.listResponseMessage?.description,
+    message.templateButtonReplyMessage?.selectedDisplayText,
+    message.templateButtonReplyMessage?.selectedId,
+    message.editedMessage?.message?.protocolMessage?.editedMessage?.conversation,
+    message.editedMessage?.message?.protocolMessage?.editedMessage?.extendedTextMessage?.text
+  );
+}
+
+function extractEvolutionMediaUrl(data) {
+  const message = getEvolutionMessageContainer(data);
+  return (
+    message.imageMessage?.url ||
+    message.videoMessage?.url ||
+    message.documentMessage?.url ||
+    message.audioMessage?.url ||
+    data.mediaUrl ||
+    data.url ||
+    null
+  );
+}
+
 async function evolutionRequest(path, options = {}) {
   const baseUrl = getEvolutionBaseUrl();
   if (!baseUrl) throw new Error('Evolution API não configurada.');
@@ -185,14 +232,7 @@ async function receiveEvolutionWebhook(req, res) {
     const phoneNumber = normalizeEvolutionPhone(String(remoteJid || '').split('@')[0]);
     if (!phoneNumber) return;
 
-    const messageBody =
-      data.message?.conversation ||
-      data.message?.extendedTextMessage?.text ||
-      data.message?.imageMessage?.caption ||
-      data.message?.documentMessage?.caption ||
-      data.text ||
-      data.body ||
-      null;
+    const messageBody = extractEvolutionBody(data);
     const waMessageId = key.id || data.messageId || data.id || null;
 
     if (event === 'messages.update' || event === 'MESSAGES_UPDATE') {
@@ -211,7 +251,8 @@ async function receiveEvolutionWebhook(req, res) {
       return;
     }
 
-    if (!messageBody && !data.message) return;
+    const mediaUrl = extractEvolutionMediaUrl(data);
+    if (!messageBody && !mediaUrl) return;
     const conversation = await findOrCreateConversation(accountingFirmId, phoneNumber, data.pushName || data.senderName);
 
     await prisma.whatsAppMessage.create({
@@ -219,7 +260,7 @@ async function receiveEvolutionWebhook(req, res) {
         conversationId: conversation.id,
         direction: isOutgoing ? 'SAIDA' : 'ENTRADA',
         body: messageBody,
-        mediaUrl: data.message?.imageMessage?.url || data.message?.documentMessage?.url || null,
+        mediaUrl,
         waMessageId,
         status: isOutgoing ? 'ENVIADA' : 'RECEBIDA',
       },

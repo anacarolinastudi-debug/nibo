@@ -123,7 +123,7 @@ export default function Relationship() {
 
   useEffect(() => {
     if (!activeId) return;
-    getConversationMessages(activeId).then(({ messages }) => setMessages(messages)).catch(() => {});
+    getConversationMessages(activeId).then(({ messages }) => setMessages(messages.filter((message) => message.body || message.mediaUrl))).catch(() => {});
   }, [activeId]);
 
   useEffect(() => {
@@ -319,7 +319,7 @@ export default function Relationship() {
               <div className="flex-1 overflow-y-auto">
                 {filtered.length === 0 && <p className="p-4 text-center text-sm text-[#9aa5ad]">Nenhuma conversa ainda.</p>}
                 {filtered.map((conv) => {
-                  const lastMessage = conv.messages?.[0];
+                  const lastMessage = conv.messages?.find((message) => message.body || message.mediaUrl);
                   return (
                     <button key={conv.id} onClick={() => setActiveId(conv.id)} className={`block w-full border-b border-[#f0f3f5] px-4 py-3 text-left ${activeId === conv.id ? 'bg-[#eaf6ff]' : 'hover:bg-[#fafbfc]'}`}>
                       <div className="flex items-center justify-between">
