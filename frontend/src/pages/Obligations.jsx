@@ -8,13 +8,6 @@ import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
 const tabs = ['Calendário', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
-const clients = [
-  'ANA CAROLINA CARPINE AGUIAR',
-  'IVANI SEVERINA SOARES DE ALMEIDA',
-  'SILVIA HELENA CARPINE RODRIGUES',
-  'THIAGO SANTOS OLIVEIRA',
-  'BOARDEN MARKETING DIGITAL LTDA',
-];
 const departments = ['Departamento Fiscal', 'Departamento Contabil', 'Departamento Pessoal', 'Departamento de Registro', 'Departamento Financeiro'];
 const obligationNames = seedObligations.map((item) => item[0]);
 const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -785,7 +778,7 @@ function Reports({ tasks, protocols }) {
   );
 }
 
-function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients }) {
+function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, clientsList }) {
   const [section, setSection] = useState('Lista de obrigações');
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
@@ -822,12 +815,12 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
             <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Vencimento', '']} rows={filtered.map((row) => [...row.slice(0, 6), row[7], <ActionButtons key={row[8] || row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
           </>
         )}
-        {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} />}
-        {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} />}
+        {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} />}
+        {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} />}
         {section === 'Responsabilidades' && <Responsibilities />}
       </div>
       {editing && <ObligationModal editing={editing} onClose={() => setEditing(null)} onSave={saveObligation} />}
-      {linking && <LinkClientsModal obligation={linking} linkedClients={linkedClients} setLinkedClients={setLinkedClients} onClose={() => setLinking(null)} />}
+      {linking && <LinkClientsModal obligation={linking} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} onClose={() => setLinking(null)} />}
     </section>
   );
 }
@@ -986,9 +979,10 @@ function ObligationModal({ editing, onClose, onSave }) {
   );
 }
 
-function LinkClientsModal({ obligation, linkedClients, setLinkedClients, onClose }) {
+function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clientsList, onClose }) {
   const obligationName = obligation[0];
   const selected = linkedClients[obligationName] || [];
+  const visibleClients = clientsList;
 
   function toggleClient(client) {
     setLinkedClients((current) => {
@@ -1018,12 +1012,13 @@ function LinkClientsModal({ obligation, linkedClients, setLinkedClients, onClose
             </div>
           </div>
           <div className="overflow-hidden rounded border border-[#e7ecef]">
-            {clients.map((client) => (
+            {visibleClients.map((client) => (
               <label key={client} className="flex cursor-pointer items-center justify-between border-b border-[#e7ecef] px-4 py-3 last:border-b-0">
                 <span>{client}</span>
                 <input type="checkbox" checked={selected.includes(client)} onChange={() => toggleClient(client)} />
               </label>
             ))}
+            {visibleClients.length === 0 && <p className="px-4 py-6 text-center text-sm text-[#68737a]">Nenhum cliente cadastrado.</p>}
           </div>
         </div>
         <div className="flex justify-end gap-3 border-t border-[#e7ecef] p-4">
@@ -1062,7 +1057,7 @@ function isNonBusinessDay(date, saturdayWorks) {
   return day === 0 || (!saturdayWorks && day === 6);
 }
 
-function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkResponsibles }) {
+function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkResponsibles, clientsList }) {
   const [groups, setGroups] = useState([]);
   const [query, setQuery] = useState('');
   const [editingGroup, setEditingGroup] = useState(null);
@@ -1130,7 +1125,7 @@ function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkRespon
         </table>
       </div>
       {editingGroup && <GroupEditorModal group={editingGroup} obligationRows={obligationRows} onClose={() => setEditingGroup(null)} onSave={saveGroup} />}
-      {linkingGroup && <GroupLinkModal group={linkingGroup} groups={groups} setGroup={setLinkingGroup} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} onClose={() => setLinkingGroup(null)} />}
+      {linkingGroup && <GroupLinkModal group={linkingGroup} groups={groups} setGroup={setLinkingGroup} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} onClose={() => setLinkingGroup(null)} />}
     </div>
   );
 }
@@ -1182,8 +1177,9 @@ function GroupEditorModal({ group, obligationRows, onClose, onSave }) {
   );
 }
 
-function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClients, setLinkResponsibles, onClose }) {
-  const [selectedClients, setSelectedClients] = useState(() => clients.filter((client) => group.obligations.some((obligation) => (linkedClients[obligation] || []).includes(client))));
+function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClients, setLinkResponsibles, clientsList, onClose }) {
+  const visibleClients = clientsList;
+  const [selectedClients, setSelectedClients] = useState(() => visibleClients.filter((client) => group.obligations.some((obligation) => (linkedClients[obligation] || []).includes(client))));
   const [selectedGroupId, setSelectedGroupId] = useState(group.id);
   const activeGroup = groups.find((item) => item.id === selectedGroupId) || group;
 
@@ -1224,7 +1220,7 @@ function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClien
         </div>
         <div className="grid grid-cols-[1fr_1fr] gap-6 p-5">
           <div>
-            <SelectField label="Grupo de obrigacoes" value={selectedGroupId} onChange={(id) => { setSelectedGroupId(id); setGroup(groups.find((item) => item.id === id)); }} options={groups.map((item) => item.id)} />
+            <SelectField label="Grupo de obrigacoes" value={selectedGroupId} onChange={(id) => { setSelectedGroupId(id); setGroup(groups.find((item) => item.id === id)); }} options={groups.map((item) => ({ value: item.id, label: item.name }))} />
             <div className="mt-4 rounded border border-[#e7ecef]">
               <div className="bg-[#f3f3f3] px-4 py-3 font-semibold">{activeGroup.name}</div>
               <div className="max-h-72 overflow-auto">
@@ -1240,12 +1236,13 @@ function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClien
               <span className="text-sm text-[#68737a]">{selectedClients.length} selecionado(s)</span>
             </div>
             <div className="overflow-hidden rounded border border-[#e7ecef]">
-              {clients.map((client) => (
+              {visibleClients.map((client) => (
                 <label key={client} className="flex cursor-pointer items-center justify-between border-b border-[#e7ecef] px-4 py-3 last:border-b-0">
                   <span>{client}</span>
                   <input type="checkbox" checked={selectedClients.includes(client)} onChange={() => toggleClient(client)} />
                 </label>
               ))}
+              {visibleClients.length === 0 && <p className="px-4 py-6 text-center text-sm text-[#68737a]">Nenhum cliente cadastrado.</p>}
             </div>
           </div>
         </div>
@@ -1258,11 +1255,12 @@ function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClien
   );
 }
 
-function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles }) {
+function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles, clientsList }) {
   const [query, setQuery] = useState('');
   const [department, setDepartment] = useState('Todos');
   const [cell, setCell] = useState(null);
-  const visibleClients = clients.filter((client) => client.toLowerCase().includes(query.toLowerCase()));
+  const availableClients = clientsList;
+  const visibleClients = availableClients.filter((client) => client.toLowerCase().includes(query.toLowerCase()));
   const visibleObligations = obligationRows
     .filter((row) => department === 'Todos' || row[2] === department)
     .slice(0, 12);
@@ -1462,12 +1460,21 @@ export default function Obligations() {
   const [tasks, setTasks] = useState([]);
   const [obligationRows, setObligationRows] = useState(seedObligations);
   const [linkedClients, setLinkedClients] = useState({});
+  const [serverClients, setServerClients] = useState([]);
+
+  useEffect(() => {
+    api.get('/clients')
+      .then(({ data }) => setServerClients(data.filter((client) => client.active !== false)))
+      .catch(() => setServerClients([]));
+  }, []);
+
+  const clientsList = serverClients.map((client) => client.name);
   const content = {
     Calendário: <Calendar tasks={tasks} setTasks={setTasks} />,
     Conferência: <Conference />,
     Protocolos: <Protocols />,
     Relatórios: <Reports tasks={tasks} protocols={[]} />,
-    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} />,
+    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} />,
   };
 
   return (
