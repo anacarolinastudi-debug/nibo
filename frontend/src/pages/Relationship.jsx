@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ExternalLink, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
-import { getStatus, listConversations, createConversation, getConversationMessages } from '../api/whatsapp';
+import { getStatus, connectEvolution, getEvolutionQr, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -93,6 +93,10 @@ export default function Relationship() {
   const [configured, setConfigured] = useState(true);
   const [whatsappStatus, setWhatsappStatus] = useState(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+  const [qrCode, setQrCode] = useState(null);
+  const [pairingCode, setPairingCode] = useState(null);
+  const [connecting, setConnecting] = useState(false);
+  const [sending, setSending] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
@@ -131,19 +135,20 @@ export default function Relationship() {
 
   const active = conversations.find((conv) => conv.id === activeId);
   const missingLabels = {
-    WHATSAPP_ACCESS_TOKEN: 'Token de acesso da Meta',
-    WHATSAPP_PHONE_NUMBER_ID: 'ID do número do WhatsApp',
-    WHATSAPP_VERIFY_TOKEN: 'Token de verificação do webhook',
+    EVOLUTION_API_URL: 'URL da Evolution API',
+    EVOLUTION_API_KEY: 'Chave da Evolution API',
+    EVOLUTION_INSTANCE_NAME: 'Nome da instância',
   };
 
   async function copyWebhook() {
-    if (!whatsappStatus?.webhookUrl) return;
+    const webhookUrl = whatsappStatus?.evolutionWebhookUrl || whatsappStatus?.webhookUrl;
+    if (!webhookUrl) return;
     try {
-      await navigator.clipboard.writeText(whatsappStatus.webhookUrl);
+      await navigator.clipboard.writeText(webhookUrl);
       setCopiedWebhook(true);
       setTimeout(() => setCopiedWebhook(false), 1800);
     } catch {
-      window.prompt('Copie a URL do webhook:', whatsappStatus.webhookUrl);
+      window.prompt('Copie a URL do webhook:', webhookUrl);
     }
   }
 
@@ -154,11 +159,45 @@ export default function Relationship() {
     window.open(url, 'young-whatsapp-web', 'noopener,noreferrer,width=1120,height=760,left=120,top=60');
   }
 
+  async function handleConnectEvolution() {
+    setConnecting(true);
+    try {
+      await connectEvolution();
+      const qr = await getEvolutionQr();
+      setQrCode(qr.qrCode);
+      setPairingCode(qr.pairingCode);
+      const status = await getStatus();
+      setConfigured(status.configured);
+      setWhatsappStatus(status);
+    } catch (error) {
+      window.alert(error?.response?.data?.error || 'Não foi possível conectar com a Evolution API.');
+    } finally {
+      setConnecting(false);
+    }
+  }
+
   async function handleSend() {
     if (!draft.trim() || !activeId) return;
     const messageText = draft.trim();
-    if (active) openWhatsAppWeb(active.phoneNumber, messageText);
-    setDraft('');
+    if (whatsappStatus?.evolutionConfigured) {
+      setSending(true);
+      try {
+        const message = await sendMessage(activeId, messageText);
+        setMessages((current) => [...current, message]);
+        setDraft('');
+        loadConversations();
+      } catch (error) {
+        window.alert(error?.response?.data?.error || 'Não foi possível enviar pela Evolution API.');
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
+    if (active) {
+      openWhatsAppWeb(active.phoneNumber, messageText);
+      setDraft('');
+    }
   }
 
   return (
@@ -180,25 +219,52 @@ export default function Relationship() {
               <div className="flex items-start gap-3">
                 {configured ? <CheckCircle2 size={19} className="mt-0.5 shrink-0" /> : <TriangleAlert size={19} className="mt-0.5 shrink-0" />}
                 <div>
-                  <b>{configured ? 'WhatsApp conectado.' : 'WhatsApp Web ativado para envio manual.'}</b>
+                  <b>{whatsappStatus?.evolutionConfigured ? 'Evolution API configurada.' : configured ? 'WhatsApp conectado.' : 'WhatsApp Web ativado para envio manual.'}</b>
                   <p className="mt-1 max-w-3xl">
-                    {configured
-                      ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
-                      : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto. O envio acontece direto pelo WhatsApp.'}
+                    {whatsappStatus?.evolutionConfigured
+                      ? 'Clique em conectar para gerar o QR Code, escaneie com o celular e use a aba como caixa de entrada.'
+                      : configured
+                        ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
+                        : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto. O envio acontece direto pelo WhatsApp.'}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 text-xs">
+                <span className={`rounded-full px-3 py-1 ${whatsappStatus?.evolutionConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Evolution {whatsappStatus?.evolutionConfigured ? 'configurada' : 'pendente'}</span>
                 <span className={`rounded-full px-3 py-1 ${whatsappStatus?.sendConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Envio {whatsappStatus?.sendConfigured ? 'automático' : 'via WhatsApp Web'}</span>
-                <span className={`rounded-full px-3 py-1 ${whatsappStatus?.webhookConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Webhook {whatsappStatus?.webhookConfigured ? 'ativo' : 'pendente'}</span>
               </div>
             </div>
 
-            {whatsappStatus?.webhookUrl && (
+            {whatsappStatus?.evolutionConfigured && (
+              <div className="mt-4 rounded border border-white/70 bg-white/70 p-3 text-[#3f4548]">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">Conectar aparelho</p>
+                    <p className="text-xs text-[#68737a]">Escaneie o QR Code em WhatsApp &gt; Aparelhos conectados.</p>
+                  </div>
+                  <button onClick={handleConnectEvolution} disabled={connecting} className="rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50">
+                    {connecting ? 'Gerando QR Code...' : 'Gerar QR Code'}
+                  </button>
+                </div>
+                {(qrCode || pairingCode) && (
+                  <div className="mt-4 flex flex-wrap items-center gap-4">
+                    {qrCode && <img src={qrCode} alt="QR Code do WhatsApp" className="h-48 w-48 rounded border border-[#dfe5e8] bg-white p-2" />}
+                    {pairingCode && (
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-[#68737a]">Código de pareamento</p>
+                        <p className="mt-1 rounded bg-white px-3 py-2 text-lg font-semibold text-[#005ea8]">{pairingCode}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!whatsappStatus?.evolutionConfigured && whatsappStatus?.evolutionWebhookUrl && (
               <div className="mt-4 grid gap-3 rounded border border-white/70 bg-white/70 p-3 text-[#3f4548] md:grid-cols-[1fr_auto]">
                 <div>
-                  <p className="mb-1 text-xs font-semibold uppercase text-[#68737a]">URL do webhook para cadastrar na Meta</p>
-                  <code className="block break-all rounded bg-white px-3 py-2 text-xs text-[#005ea8]">{whatsappStatus.webhookUrl}</code>
+                  <p className="mb-1 text-xs font-semibold uppercase text-[#68737a]">Webhook para Evolution API</p>
+                  <code className="block break-all rounded bg-white px-3 py-2 text-xs text-[#005ea8]">{whatsappStatus.evolutionWebhookUrl}</code>
                 </div>
                 <button onClick={copyWebhook} className="inline-flex h-10 items-center justify-center gap-2 self-end rounded border border-[#b8d8ec] bg-white px-4 text-[#006da8] hover:bg-[#f1f9ff]">
                   <Copy size={15} /> {copiedWebhook ? 'Copiado' : 'Copiar'}
@@ -265,7 +331,7 @@ export default function Relationship() {
                           <p>{message.body}</p>
                           <p className="mt-1 text-right text-[10px] text-[#9aa5ad]">
                             {new Date(message.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                            {message.direction === 'SAIDA' && message.status === 'NAO_CONFIGURADO' && ' · enviado manualmente pelo WhatsApp Web'}
+                            {message.direction === 'SAIDA' && message.status === 'NAO_CONFIGURADO' && ' · aguardando configuração'}
                             {message.direction === 'SAIDA' && message.status === 'FALHA' && ' · falha no envio'}
                           </p>
                         </div>
@@ -281,7 +347,7 @@ export default function Relationship() {
                       placeholder="Digite uma mensagem"
                       className="h-10 flex-1 rounded border border-[#dfe5e8] px-3 text-sm"
                     />
-                    <button onClick={handleSend} disabled={!draft.trim()} className="inline-flex h-10 items-center gap-2 rounded bg-[#2693d2] px-4 text-sm text-white disabled:opacity-50">
+                    <button onClick={handleSend} disabled={sending || !draft.trim()} className="inline-flex h-10 items-center gap-2 rounded bg-[#2693d2] px-4 text-sm text-white disabled:opacity-50">
                       <Send size={16} /> Enviar
                     </button>
                   </div>

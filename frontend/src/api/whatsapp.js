@@ -4,6 +4,14 @@ export function getStatus() {
   return api.get('/whatsapp/status').then((res) => res.data);
 }
 
+export function connectEvolution() {
+  return api.post('/whatsapp/evolution/connect').then((res) => res.data);
+}
+
+export function getEvolutionQr() {
+  return api.get('/whatsapp/evolution/qr').then((res) => res.data);
+}
+
 export function listConversations() {
   return api.get('/whatsapp/conversations').then((res) => res.data);
 }

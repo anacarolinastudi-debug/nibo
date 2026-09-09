@@ -6,10 +6,13 @@ const { requireAuth } = require('../middleware/auth');
 // Endpoints públicos exigidos pela Meta (sem autenticação de usuário).
 router.get('/webhook', ctrl.verifyWebhook);
 router.post('/webhook', ctrl.receiveWebhook);
+router.post('/evolution/webhook', ctrl.receiveEvolutionWebhook);
 
 router.use(requireAuth);
 
 router.get('/status', ctrl.getStatus);
+router.post('/evolution/connect', ctrl.connectEvolution);
+router.get('/evolution/qr', ctrl.getEvolutionQr);
 router.get('/conversations', ctrl.listConversations);
 router.post('/conversations', ctrl.createConversation);
 router.get('/conversations/:id/messages', ctrl.getConversationMessages);

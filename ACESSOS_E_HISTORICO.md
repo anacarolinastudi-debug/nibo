@@ -74,8 +74,11 @@ Variaveis configuradas no Render:
 | `WHATSAPP_PHONE_NUMBER_ID` | ID do numero de telefone do WhatsApp Cloud API | Valor informado pela Meta |
 | `WHATSAPP_VERIFY_TOKEN` | Token escolhido no sistema e repetido na tela de webhook da Meta | Valor secreto definido pelo escritorio |
 | `WHATSAPP_API_VERSION` | Versao da API da Meta usada no envio | `v21.0` |
+| `EVOLUTION_API_URL` | URL publica da Evolution API usada para conectar WhatsApp por QR Code | URL do servidor Evolution |
+| `EVOLUTION_API_KEY` | Chave de acesso da Evolution API | Valor secreto gerado na Evolution |
+| `EVOLUTION_INSTANCE_NAME` | Nome da instancia do WhatsApp usada pelo escritorio | `young-contabil` |
 
-Nao registrar neste documento os valores completos de `DATABASE_URL`, `JWT_SECRET`, `CERT_ENCRYPTION_KEY`, `WHATSAPP_ACCESS_TOKEN` ou `WHATSAPP_VERIFY_TOKEN`.
+Nao registrar neste documento os valores completos de `DATABASE_URL`, `JWT_SECRET`, `CERT_ENCRYPTION_KEY`, `WHATSAPP_ACCESS_TOKEN`, `WHATSAPP_VERIFY_TOKEN` ou `EVOLUTION_API_KEY`.
 
 Observacao sobre o build: o passo `playwright install --with-deps` (que instala dependencias de sistema via apt-get) **quebra o build no Render free**, porque exige privilegios de root que o ambiente de build nao concede. Usar sempre `playwright install chromium` sem `--with-deps`.
 
@@ -287,6 +290,7 @@ Observacao: no repositorio do GitHub, a pasta do frontend foi publicada com o no
 - Tela de Relacionamento exibe status separado de envio e webhook, URL para copiar e variaveis pendentes com nomes amigaveis.
 - Envio real de mensagem so funciona com `WHATSAPP_ACCESS_TOKEN` e `WHATSAPP_PHONE_NUMBER_ID` configurados. Sem isso, a mensagem fica salva localmente como "nao enviada", sem quebrar o restante do sistema.
 - Enquanto a integracao oficial com a Meta nao estiver configurada, o modulo Relacionamento usa fluxo manual via WhatsApp Web: o botao de envio abre `web.whatsapp.com/send` com a mensagem pronta, sem gravar a mensagem no historico do sistema.
+- Adicionado suporte a Evolution API como alternativa principal por QR Code. Com `EVOLUTION_API_URL`, `EVOLUTION_API_KEY` e `EVOLUTION_INSTANCE_NAME` configurados, a tela Relacionamento cria/conecta a instancia, mostra QR Code e envia mensagens pela API.
 - O webhook atualiza mensagens enviadas para `ENVIADA`, `ENTREGUE`, `LIDA` ou `FALHA` quando a Meta retorna status.
 - **Pendente:** criar a conta Meta Business / WhatsApp Cloud API, gerar as credenciais, preencher as variaveis no Render e configurar o webhook apontando para a URL exibida na tela de Relacionamento.
 

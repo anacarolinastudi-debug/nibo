@@ -9,18 +9,64 @@ function isSendConfigured() {
   return Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
 }
 
+function isEvolutionConfigured() {
+  return Boolean(process.env.EVOLUTION_API_URL && process.env.EVOLUTION_API_KEY && process.env.EVOLUTION_INSTANCE_NAME);
+}
+
+function getApiBase(req) {
+  return process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
+}
+
+function getEvolutionBaseUrl() {
+  return process.env.EVOLUTION_API_URL?.replace(/\/+$/, '');
+}
+
+function normalizeEvolutionPhone(phoneNumber) {
+  return phoneNumber.replace(/\D/g, '');
+}
+
+async function evolutionRequest(path, options = {}) {
+  const baseUrl = getEvolutionBaseUrl();
+  if (!baseUrl) throw new Error('Evolution API não configurada.');
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    ...options,
+    headers: {
+      apikey: process.env.EVOLUTION_API_KEY,
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    },
+  });
+
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    const detail = data?.message || data?.error || `HTTP ${response.status}`;
+    throw new Error(Array.isArray(detail) ? detail.join(', ') : detail);
+  }
+  return data;
+}
+
 function getStatus(req, res) {
   const sendMissing = ['WHATSAPP_ACCESS_TOKEN', 'WHATSAPP_PHONE_NUMBER_ID'].filter((key) => !process.env[key]);
   const webhookMissing = ['WHATSAPP_VERIFY_TOKEN'].filter((key) => !process.env[key]);
-  const missing = [...sendMissing, ...webhookMissing];
-  const apiBase = process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
+  const evolutionMissing = ['EVOLUTION_API_URL', 'EVOLUTION_API_KEY', 'EVOLUTION_INSTANCE_NAME'].filter((key) => !process.env[key]);
+  const apiBase = getApiBase(req);
+  const evolutionConfigured = isEvolutionConfigured();
+  const metaConfigured = [...sendMissing, ...webhookMissing].length === 0;
   res.json({
-    configured: missing.length === 0,
-    sendConfigured: sendMissing.length === 0,
-    webhookConfigured: webhookMissing.length === 0,
-    missing,
+    provider: evolutionConfigured ? 'evolution' : 'meta',
+    configured: evolutionConfigured || metaConfigured,
+    sendConfigured: evolutionConfigured || sendMissing.length === 0,
+    webhookConfigured: evolutionConfigured || webhookMissing.length === 0,
+    evolutionConfigured,
+    evolutionMissing,
+    evolutionInstanceName: process.env.EVOLUTION_INSTANCE_NAME || null,
+    missing: evolutionConfigured ? [] : evolutionMissing,
+    metaMissing: [...sendMissing, ...webhookMissing],
     apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
     webhookUrl: `${apiBase}/api/whatsapp/webhook?firmId=${req.user.accountingFirmId}`,
+    evolutionWebhookUrl: `${apiBase}/api/whatsapp/evolution/webhook?firmId=${req.user.accountingFirmId}`,
   });
 }
 
@@ -116,6 +162,117 @@ async function receiveWebhook(req, res) {
   }
 }
 
+async function receiveEvolutionWebhook(req, res) {
+  res.sendStatus(200);
+
+  try {
+    const fallbackFirm = await prisma.accountingFirm.findFirst({ select: { id: true }, orderBy: { createdAt: 'asc' } });
+    const accountingFirmId = req.query.firmId || fallbackFirm?.id;
+    if (!accountingFirmId) return;
+
+    const payload = req.body || {};
+    const event = payload.event || payload.type;
+    const data = payload.data || payload;
+    const key = data.key || {};
+    const isOutgoing = Boolean(key.fromMe || data.fromMe);
+    const remoteJid = key.remoteJid || data.remoteJid || data.chatId || data.from || data.sender;
+    const phoneNumber = normalizeEvolutionPhone(String(remoteJid || '').split('@')[0]);
+    if (!phoneNumber) return;
+
+    const messageBody =
+      data.message?.conversation ||
+      data.message?.extendedTextMessage?.text ||
+      data.message?.imageMessage?.caption ||
+      data.message?.documentMessage?.caption ||
+      data.text ||
+      data.body ||
+      null;
+    const waMessageId = key.id || data.messageId || data.id || null;
+
+    if (event === 'messages.update' || event === 'MESSAGES_UPDATE') {
+      const status = data.status || data.update?.status;
+      const nextStatus = {
+        PENDING: 'PENDENTE',
+        SERVER_ACK: 'ENVIADA',
+        DELIVERY_ACK: 'ENTREGUE',
+        READ: 'LIDA',
+        PLAYED: 'LIDA',
+        ERROR: 'FALHA',
+      }[status];
+      if (nextStatus && waMessageId) {
+        await prisma.whatsAppMessage.updateMany({ where: { waMessageId }, data: { status: nextStatus } });
+      }
+      return;
+    }
+
+    if (!messageBody && !data.message) return;
+    const conversation = await findOrCreateConversation(accountingFirmId, phoneNumber, data.pushName || data.senderName);
+
+    await prisma.whatsAppMessage.create({
+      data: {
+        conversationId: conversation.id,
+        direction: isOutgoing ? 'SAIDA' : 'ENTRADA',
+        body: messageBody,
+        mediaUrl: data.message?.imageMessage?.url || data.message?.documentMessage?.url || null,
+        waMessageId,
+        status: isOutgoing ? 'ENVIADA' : 'RECEBIDA',
+      },
+    });
+
+    await prisma.whatsAppConversation.update({
+      where: { id: conversation.id },
+      data: { lastMessageAt: new Date(), status: 'ABERTA' },
+    });
+  } catch {
+    // O webhook precisa responder rápido; falhas ficam isoladas.
+  }
+}
+
+async function connectEvolution(req, res) {
+  if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
+  const apiBase = getApiBase(req);
+  const webhookUrl = `${apiBase}/api/whatsapp/evolution/webhook?firmId=${req.user.accountingFirmId}`;
+  const instance = process.env.EVOLUTION_INSTANCE_NAME;
+
+  try {
+    const result = await evolutionRequest(`/instance/create`, {
+      method: 'POST',
+      body: JSON.stringify({
+        instanceName: instance,
+        integration: 'WHATSAPP-BAILEYS',
+        qrcode: true,
+        webhook: {
+          enabled: true,
+          url: webhookUrl,
+          events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
+        },
+      }),
+    });
+    res.json({ webhookUrl, result });
+  } catch (error) {
+    if (!String(error.message).toLowerCase().includes('already')) {
+      return res.status(502).json({ error: `Não foi possível criar a instância: ${error.message}` });
+    }
+    res.json({ webhookUrl, result: { message: 'Instância já existia.' } });
+  }
+}
+
+async function getEvolutionQr(req, res) {
+  if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
+  const instance = process.env.EVOLUTION_INSTANCE_NAME;
+
+  try {
+    const result = await evolutionRequest(`/instance/connect/${encodeURIComponent(instance)}`);
+    res.json({
+      pairingCode: result?.pairingCode || null,
+      qrCode: result?.base64 || result?.qrcode?.base64 || result?.data?.code || result?.data?.qrcode || result?.code || null,
+      raw: result,
+    });
+  } catch (error) {
+    res.status(502).json({ error: `Não foi possível gerar o QR Code: ${error.message}` });
+  }
+}
+
 async function listConversations(req, res) {
   const conversations = await prisma.whatsAppConversation.findMany({
     where: firmWhere(req),
@@ -167,7 +324,22 @@ async function sendMessage(req, res) {
   let status = 'NAO_CONFIGURADO';
   let waMessageId = null;
 
-  if (isSendConfigured()) {
+  if (isEvolutionConfigured()) {
+    try {
+      const instance = process.env.EVOLUTION_INSTANCE_NAME;
+      const result = await evolutionRequest(`/message/sendText/${encodeURIComponent(instance)}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          number: normalizeEvolutionPhone(conversation.phoneNumber),
+          text: body,
+        }),
+      });
+      status = 'ENVIADA';
+      waMessageId = result?.key?.id || result?.messageId || result?.id || null;
+    } catch {
+      status = 'FALHA';
+    }
+  } else if (isSendConfigured()) {
     try {
       const apiVersion = process.env.WHATSAPP_API_VERSION || 'v21.0';
       const response = await fetch(`https://graph.facebook.com/${apiVersion}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
@@ -207,6 +379,9 @@ module.exports = {
   getStatus,
   verifyWebhook,
   receiveWebhook,
+  receiveEvolutionWebhook,
+  connectEvolution,
+  getEvolutionQr,
   listConversations,
   createConversation,
   getConversationMessages,
