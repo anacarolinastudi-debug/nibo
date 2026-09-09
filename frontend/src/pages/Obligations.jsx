@@ -26,19 +26,6 @@ const statusColors = {
   doneLate: 'bg-rose-300 text-ink',
 };
 
-function makeTasks() {
-  return [
-    { id: 1, day: 5, client: clients[1], department: 'Departamento Fiscal', obligation: 'PGDAS - Declaracao Original', status: 'doneLate', responsible: 'Ana Carolina' },
-    { id: 2, day: 10, client: clients[0], department: 'Departamento Fiscal', obligation: 'DAS - Documento de Arrecadacao do Simples Nacional', status: 'overdue', responsible: 'Ana Carolina' },
-    { id: 3, day: 17, client: clients[0], department: 'Departamento Pessoal', obligation: 'ADIANTAMENTO SALARIAL (Vencimento dia 15)', status: 'dueToday', responsible: 'Ana Carolina' },
-    { id: 4, day: 17, client: clients[1], department: 'Departamento Fiscal', obligation: 'PGDAS - Recibo de Entrega da Apuracao', status: 'doneOnTime', responsible: 'Ana Carolina' },
-    { id: 5, day: 18, client: clients[2], department: 'Departamento Fiscal', obligation: 'DAS Mei do Parcelamento PARCMEI', status: 'dueToday', responsible: 'Ana Carolina' },
-    { id: 6, day: 23, client: clients[3], department: 'Departamento Fiscal', obligation: 'DeSTDA SIMPLES NACIONAL', status: 'openOnTime', responsible: 'Ana Carolina' },
-    { id: 7, day: 25, client: clients[4], department: 'Departamento Contabil', obligation: 'BALANCETE DE VERIFICACAO', status: 'openOnTime', responsible: 'Ana Carolina' },
-    { id: 8, day: 25, client: clients[0], department: 'Departamento Fiscal', obligation: 'NOTAS FISCAIS DE ENTRADA', status: 'openOnTime', responsible: 'Ana Carolina' },
-  ];
-}
-
 function AppShell({ activeTab, setActiveTab, children }) {
   const [openSection, setOpenSection] = useState('obrigacoes');
   const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
@@ -796,11 +783,7 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
   const [loadingObligations, setLoadingObligations] = useState(false);
-  const [linkResponsibles, setLinkResponsibles] = useState(() => ({
-    '13o SALARIO 1a PARCELA::ANA CAROLINA CARPINE AGUIAR': 'Ana Carolina',
-    '13o SALARIO 1a PARCELA::IVANI SEVERINA SOARES DE ALMEIDA': 'Ana Carolina',
-    'ADIANTAMENTO SALARIAL (Vencimento dia 15)::ANA CAROLINA CARPINE AGUIAR': 'Ana Carolina',
-  }));
+  const [linkResponsibles, setLinkResponsibles] = useState({});
   const [query, setQuery] = useState('');
   const filtered = obligationRows.filter((row) => row[0].toLowerCase().includes(query.toLowerCase()));
 
@@ -1428,12 +1411,9 @@ function groupTasks(tasks, by) {
 
 export default function Obligations() {
   const [activeTab, setActiveTab] = useState('Calendário');
-  const [tasks, setTasks] = useState(makeTasks);
+  const [tasks, setTasks] = useState([]);
   const [obligationRows, setObligationRows] = useState(seedObligations);
-  const [linkedClients, setLinkedClients] = useState(() => ({
-    '13o SALARIO 1a PARCELA': [clients[0], clients[1]],
-    'ADIANTAMENTO SALARIAL (Vencimento dia 15)': [clients[0]],
-  }));
+  const [linkedClients, setLinkedClients] = useState({});
   const content = {
     Calendário: <Calendar tasks={tasks} setTasks={setTasks} />,
     Conferência: <Conference />,

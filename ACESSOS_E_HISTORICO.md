@@ -378,6 +378,7 @@ Atualização registrada em 03/09/2026:
 - Relacionamento/WhatsApp passou a exibir a URL do webhook e as variáveis faltantes de configuração. O backend aceita `WHATSAPP_API_VERSION` e usa a URL do escritório no webhook para receber mensagens.
 - Criada rotina administrativa protegida para zerar clientes e cadastros vinculados do escritório, mantendo usuário admin e obrigações/grupos padrão.
 - Limpeza local executada: clientes removidos, permanecendo apenas `admin@exemplo.com`; catálogo padrão recriado com 93 obrigações e 7 grupos.
+- Corrigido o Calendário de Obrigações para não exibir tarefas de demonstração quando o escritório não possui clientes ou vínculos cadastrados. Os vínculos/responsáveis de exemplo também foram removidos da tela de Configurações.
 
 ## 10. Seguranca
 
