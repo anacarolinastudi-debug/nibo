@@ -804,9 +804,9 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
   }
 
   return (
-    <section className="grid grid-cols-[245px_1fr]">
+    <section className="grid grid-cols-[245px_minmax(0,1fr)]">
       <SideSubMenu items={['Lista de obrigações', 'Grupo de obrigações', 'Vínculos', 'Responsabilidades']} active={section} onChange={setSection} />
-      <div className="p-5">
+      <div className="min-w-0 p-5">
         {section === 'Lista de obrigações' && (
           <>
             <div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-semibold">Lista de obrigações</h2><button onClick={() => setEditing({ index: -1, row: ['Nova obrigação', 'Pagamento', departments[0], 'NOVO', 'Mensal', 'Ativo', 'Não'] })} className="rounded bg-[#2693d2] px-5 py-2.5 text-white">+ Nova obrigação</button></div>
@@ -1336,7 +1336,7 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
   }
 
   return (
-    <div>
+    <div className="min-w-0">
       <div className="mb-7 flex justify-between">
         <h2 className="text-2xl font-semibold">Vincular</h2>
         <div className="flex gap-2">
@@ -1352,7 +1352,7 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
         <button className="self-end rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Filtrar</button>
       </div>
       <div className="mb-3 text-sm text-[#68737a]">Clique em um quadradinho para atribuir, alterar responsavel ou remover a tarefa daquele cliente.</div>
-      <div className="max-h-[620px] overflow-auto rounded border border-[#e7ecef]">
+      <div className="max-h-[620px] w-full max-w-full overflow-auto rounded border border-[#e7ecef]">
         <table className="table-fixed text-sm" style={{ minWidth: `${360 + visibleObligations.length * 92}px` }}>
           <thead>
             <tr>
