@@ -1,4 +1,5 @@
 const prisma = require('../lib/prisma');
+const { seedCatalogForFirm } = require('./obligationCatalog.service');
 
 const YOUNG_FIRM_ID = 'b1fcab83-23fd-4b1d-bbcd-404bd5653ac3';
 
@@ -35,6 +36,8 @@ async function seedYoungClients() {
 
   if (!firm) return;
 
+  await seedCatalogForFirm(firm.id);
+
   let changed = 0;
   for (const client of clients) {
     const result = await prisma.client.upsert({
@@ -55,7 +58,50 @@ async function seedYoungClients() {
     if (result.accountingFirmId === firm.id) changed += 1;
   }
 
-  console.log(`Clientes Young sincronizados: ${changed} registro(s) em ${firm.name}.`);
+  const linked = await linkDefaultObligations(firm.id);
+
+  console.log(`Clientes Young sincronizados: ${changed} registro(s) e ${linked} obrigacao(oes) vinculada(s) em ${firm.name}.`);
+}
+
+async function linkDefaultObligations(accountingFirmId) {
+  const [firmClients, groups, admin] = await Promise.all([
+    prisma.client.findMany({
+      where: { accountingFirmId, active: true },
+      select: { id: true, taxRegime: true },
+    }),
+    prisma.obligationGroup.findMany({
+      where: { accountingFirmId, nickname: { in: ['MEI', 'SN-SERV'] } },
+      include: { items: { select: { obligationId: true } } },
+    }),
+    prisma.user.findFirst({
+      where: { accountingFirmId, role: 'ADMIN', active: true },
+      select: { id: true },
+    }),
+  ]);
+
+  const groupByNickname = new Map(groups.map((group) => [group.nickname, group]));
+  const operations = [];
+
+  for (const client of firmClients) {
+    const group = client.taxRegime === 'MEI' ? groupByNickname.get('MEI') : groupByNickname.get('SN-SERV');
+    if (!group) continue;
+
+    for (const item of group.items) {
+      operations.push(prisma.clientObligation.upsert({
+        where: { clientId_obligationId: { clientId: client.id, obligationId: item.obligationId } },
+        update: { active: true, responsibleId: admin?.id || undefined },
+        create: {
+          clientId: client.id,
+          obligationId: item.obligationId,
+          responsibleId: admin?.id || undefined,
+        },
+      }));
+    }
+  }
+
+  if (operations.length === 0) return 0;
+  await prisma.$transaction(operations);
+  return operations.length;
 }
 
 module.exports = { seedYoungClients };
