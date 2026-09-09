@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ExternalLink, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
 import { getStatus, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
@@ -148,11 +148,19 @@ export default function Relationship() {
     }
   }
 
+  function openWhatsAppWeb(phoneNumber, text = '') {
+    const digits = phoneNumber.replace(/\D/g, '');
+    const message = encodeURIComponent(text);
+    window.open(`https://wa.me/${digits}${message ? `?text=${message}` : ''}`, '_blank', 'noopener,noreferrer');
+  }
+
   async function handleSend() {
     if (!draft.trim() || !activeId) return;
+    const messageText = draft.trim();
+    if (active) openWhatsAppWeb(active.phoneNumber, messageText);
     setSending(true);
     try {
-      const message = await sendMessage(activeId, draft.trim());
+      const message = await sendMessage(activeId, messageText);
       setMessages((current) => [...current, message]);
       setDraft('');
       loadConversations();
@@ -180,16 +188,16 @@ export default function Relationship() {
               <div className="flex items-start gap-3">
                 {configured ? <CheckCircle2 size={19} className="mt-0.5 shrink-0" /> : <TriangleAlert size={19} className="mt-0.5 shrink-0" />}
                 <div>
-                  <b>{configured ? 'WhatsApp conectado.' : 'WhatsApp aguardando configuração.'}</b>
+                  <b>{configured ? 'WhatsApp conectado.' : 'WhatsApp Web ativado para envio manual.'}</b>
                   <p className="mt-1 max-w-3xl">
                     {configured
                       ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
-                      : 'A caixa de entrada já pode organizar conversas internas. Para enviar e receber mensagens reais, preencha as credenciais no Render e cadastre o webhook na Meta Business.'}
+                      : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto e salva o registro no histórico da conversa.'}
                   </p>
                 </div>
               </div>
               <div className="flex gap-2 text-xs">
-                <span className={`rounded-full px-3 py-1 ${whatsappStatus?.sendConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Envio {whatsappStatus?.sendConfigured ? 'ativo' : 'pendente'}</span>
+                <span className={`rounded-full px-3 py-1 ${whatsappStatus?.sendConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Envio {whatsappStatus?.sendConfigured ? 'automático' : 'via WhatsApp Web'}</span>
                 <span className={`rounded-full px-3 py-1 ${whatsappStatus?.webhookConfigured ? 'bg-emerald-100 text-emerald-800' : 'bg-white text-amber-800'}`}>Webhook {whatsappStatus?.webhookConfigured ? 'ativo' : 'pendente'}</span>
               </div>
             </div>
@@ -208,7 +216,7 @@ export default function Relationship() {
 
             {!configured && whatsappStatus?.missing?.length > 0 && (
               <div className="mt-3 text-[#7a5a00]">
-                <b>Falta preencher:</b>
+                <b>Para automatizar futuramente, ainda faltam:</b>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {whatsappStatus.missing.map((key) => (
                     <span key={key} className="rounded-full bg-white px-3 py-1 text-xs">{missingLabels[key] || key}</span>
@@ -248,8 +256,15 @@ export default function Relationship() {
               {active && (
                 <>
                   <div className="border-b border-[#dfe5e8] px-5 py-3">
-                    <b>{active.contactName || active.phoneNumber}</b>
-                    <p className="text-xs text-[#68737a]">{active.phoneNumber}{active.client ? ` · ${active.client.name}` : ''}</p>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <b>{active.contactName || active.phoneNumber}</b>
+                        <p className="text-xs text-[#68737a]">{active.phoneNumber}{active.client ? ` · ${active.client.name}` : ''}</p>
+                      </div>
+                      <button onClick={() => openWhatsAppWeb(active.phoneNumber)} className="inline-flex items-center gap-2 rounded border border-[#b8d8ec] px-3 py-2 text-sm text-[#006da8] hover:bg-[#f1f9ff]">
+                        <ExternalLink size={15} /> Abrir WhatsApp
+                      </button>
+                    </div>
                   </div>
                   <div className="flex-1 space-y-3 overflow-y-auto bg-[#f7f9fa] p-5">
                     {messages.map((message) => (
@@ -258,7 +273,7 @@ export default function Relationship() {
                           <p>{message.body}</p>
                           <p className="mt-1 text-right text-[10px] text-[#9aa5ad]">
                             {new Date(message.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                            {message.direction === 'SAIDA' && message.status === 'NAO_CONFIGURADO' && ' · não enviada (WhatsApp não conectado)'}
+                            {message.direction === 'SAIDA' && message.status === 'NAO_CONFIGURADO' && ' · enviado manualmente pelo WhatsApp Web'}
                             {message.direction === 'SAIDA' && message.status === 'FALHA' && ' · falha no envio'}
                           </p>
                         </div>
@@ -274,8 +289,8 @@ export default function Relationship() {
                       placeholder="Digite uma mensagem"
                       className="h-10 flex-1 rounded border border-[#dfe5e8] px-3 text-sm"
                     />
-                    <button onClick={handleSend} disabled={sending || !draft.trim()} className="grid h-10 w-10 place-items-center rounded bg-[#2693d2] text-white disabled:opacity-50">
-                      <Send size={16} />
+                    <button onClick={handleSend} disabled={sending || !draft.trim()} className="inline-flex h-10 items-center gap-2 rounded bg-[#2693d2] px-4 text-sm text-white disabled:opacity-50">
+                      <Send size={16} /> Enviar
                     </button>
                   </div>
                 </>
