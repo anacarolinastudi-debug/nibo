@@ -14,7 +14,7 @@ function isEvolutionConfigured() {
 }
 
 function getApiBase(req) {
-  return process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
+  return process.env.PUBLIC_API_URL || 'https://nibo-clone-api.onrender.com';
 }
 
 function getEvolutionBaseUrl() {

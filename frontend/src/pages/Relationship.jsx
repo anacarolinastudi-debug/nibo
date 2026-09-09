@@ -239,13 +239,26 @@ export default function Relationship() {
               <div className="mt-4 rounded border border-white/70 bg-white/70 p-3 text-[#3f4548]">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="font-semibold">Conectar aparelho</p>
-                    <p className="text-xs text-[#68737a]">Escaneie o QR Code em WhatsApp &gt; Aparelhos conectados.</p>
+                    <p className="font-semibold">Evolution conectada ao Young</p>
+                    <p className="text-xs text-[#68737a]">
+                      Instância: <b>{whatsappStatus.evolutionInstanceName}</b>. Use o QR Code apenas se o aparelho ainda não estiver pareado.
+                    </p>
                   </div>
                   <button onClick={handleConnectEvolution} disabled={connecting} className="rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50">
-                    {connecting ? 'Gerando QR Code...' : 'Gerar QR Code'}
+                    {connecting ? 'Gerando QR Code...' : 'Conectar por QR Code'}
                   </button>
                 </div>
+                {whatsappStatus.evolutionWebhookUrl && (
+                  <div className="mt-3 grid gap-3 rounded border border-[#dfe5e8] bg-white p-3 md:grid-cols-[1fr_auto]">
+                    <div>
+                      <p className="mb-1 text-xs font-semibold uppercase text-[#68737a]">Webhook da Evolution</p>
+                      <code className="block break-all rounded bg-[#f7f9fa] px-3 py-2 text-xs text-[#005ea8]">{whatsappStatus.evolutionWebhookUrl}</code>
+                    </div>
+                    <button onClick={copyWebhook} className="inline-flex h-10 items-center justify-center gap-2 self-end rounded border border-[#b8d8ec] bg-white px-4 text-[#006da8] hover:bg-[#f1f9ff]">
+                      <Copy size={15} /> {copiedWebhook ? 'Copiado' : 'Copiar'}
+                    </button>
+                  </div>
+                )}
                 {(qrCode || pairingCode) && (
                   <div className="mt-4 flex flex-wrap items-center gap-4">
                     {qrCode && <img src={qrCode} alt="QR Code do WhatsApp" className="h-48 w-48 rounded border border-[#dfe5e8] bg-white p-2" />}
