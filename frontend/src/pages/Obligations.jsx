@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Settings, Trash2, Users, X } from 'lucide-react';
-import { departmentStats, obligations as seedObligations } from '../data/niboMockData';
+import { obligations as seedObligations } from '../data/niboMockData';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -755,7 +755,14 @@ function Reports({ tasks, protocols }) {
   const [section, setSection] = useState('Produtividade');
   const [filter, setFilter] = useState('Todos');
   const [month, setMonth] = useState(5);
+  const [reportProtocols, setReportProtocols] = useState(protocols);
   const filteredTasks = tasks.filter((task) => filter === 'Todos' || (filter === 'Concluídas' ? isDoneStatus(task.status) : !isDoneStatus(task.status)));
+
+  useEffect(() => {
+    api.get('/obligations/protocols/list')
+      .then(({ data }) => setReportProtocols(data.filter((item) => item.status === 'PROTOCOLADO' || item.protocolDate || item.sentAt)))
+      .catch(() => setReportProtocols(protocols));
+  }, [protocols]);
 
   return (
     <section className="grid grid-cols-[205px_1fr]">
@@ -771,8 +778,8 @@ function Reports({ tasks, protocols }) {
         </div>
         {section === 'Produtividade' && <Productivity tasks={filteredTasks} />}
         {section === 'Mapa de pendências' && <PendingMap tasks={filteredTasks} />}
-        {section === 'Auditoria' && <Audit protocols={protocols} />}
-        {section === 'Completa' && <CompleteReport tasks={filteredTasks} protocols={protocols} />}
+        {section === 'Auditoria' && <Audit protocols={reportProtocols} />}
+        {section === 'Completa' && <CompleteReport tasks={filteredTasks} protocols={reportProtocols} />}
       </div>
     </section>
   );
@@ -847,19 +854,35 @@ function DataTable({ headings, rows, statusIndex }) {
 function Productivity({ tasks }) {
   const done = tasks.filter((task) => isDoneStatus(task.status)).length;
   const open = tasks.length - done;
-  return <div className="grid grid-cols-[260px_1fr] gap-10"><BigDonut open={open} done={done} /><div><h3 className="mb-5 text-xl font-semibold">Por departamento</h3><div className="grid grid-cols-2 gap-6">{departmentStats.map((stat) => <DepartmentCard key={stat.title} stat={stat} />)}</div></div></div>;
+  const stats = departmentReport(tasks);
+
+  return (
+    <div className="grid grid-cols-[260px_1fr] gap-10">
+      <BigDonut open={open} done={done} />
+      <div>
+        <h3 className="mb-5 text-xl font-semibold">Por departamento</h3>
+        {stats.length === 0 ? (
+          <EmptyReport title="Nenhum dado para exibir" description="Cadastre clientes, vínculos e tarefas para formar os relatórios." />
+        ) : (
+          <div className="grid grid-cols-2 gap-6">{stats.map((stat) => <DepartmentCard key={stat.title} stat={stat} />)}</div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function PendingMap({ tasks }) {
+  if (!tasks.length) return <EmptyReport title="Sem pendências" description="As pendências aparecerão aqui quando houver tarefas em aberto." />;
   return <DataTable headings={['Cliente', 'Obrigação', 'Departamento', 'Status']} rows={tasks.map((task) => [task.client, task.obligation, task.department, statusLabel(task.status)])} statusIndex={3} />;
 }
 
 function Audit({ protocols }) {
+  if (!protocols.length) return <EmptyReport title="Sem auditoria" description="Os protocolos e envios registrados aparecerão aqui." />;
   return <DataTable headings={['Data', 'Arquivo', 'Cliente', 'Responsável', 'Status']} rows={protocols.map((item) => [item.protocolDate, item.fileName, item.client, item.responsible, item.status])} statusIndex={4} />;
 }
 
 function CompleteReport({ tasks, protocols }) {
-  return <div className="grid grid-cols-3 gap-4"><Stat label="Tarefas filtradas" value={tasks.length} /><Stat label="Protocolos" value={protocols.length} /><Stat label="Baixas concluidas" value={tasks.filter((task) => isDoneStatus(task.status)).length} /></div>;
+  return <div className="grid grid-cols-3 gap-4"><Stat label="Tarefas filtradas" value={tasks.length} /><Stat label="Protocolos" value={protocols.length} /><Stat label="Baixas concluídas" value={tasks.filter((task) => isDoneStatus(task.status)).length} /></div>;
 }
 
 function Stat({ label, value }) {
@@ -867,13 +890,38 @@ function Stat({ label, value }) {
 }
 
 function BigDonut({ open, done }) {
-  const total = Math.max(open + done, 1);
-  const donePercent = Math.round((done / total) * 100);
-  return <div><h3 className="mb-5 text-xl font-semibold">Escritorio</h3><div className="mx-auto h-48 w-48 rounded-full" style={{ background: `conic-gradient(#91d9a7 0 ${donePercent}%, #f8d66d ${donePercent}% 78%, #ef4444 78% 100%)` }}><div className="relative left-12 top-12 h-24 w-24 rounded-full bg-white" /></div><div className="mx-auto mt-6 w-44 space-y-2 text-sm"><b className="flex justify-between">EM ABERTO <span>{open}</span></b><Legend label="Vence hoje" color="bg-amber-300" /><Legend label="Fora do prazo" color="bg-red-500" /><b className="flex justify-between pt-3">CONCLUIDO <span>{done}</span></b><Legend label="Dentro do prazo" color="bg-emerald-300" /></div></div>;
+  const total = open + done;
+  const donePercent = total ? Math.round((done / total) * 100) : 0;
+  const background = total ? `conic-gradient(#91d9a7 0 ${donePercent}%, #f8d66d ${donePercent}% 100%)` : '#e5e7eb';
+  return <div><h3 className="mb-5 text-xl font-semibold">Escritório</h3><div className="mx-auto h-48 w-48 rounded-full" style={{ background }}><div className="relative left-12 top-12 grid h-24 w-24 place-items-center rounded-full bg-white text-sm text-[#68737a]">{total ? `${donePercent}%` : '0'}</div></div><div className="mx-auto mt-6 w-44 space-y-2 text-sm"><b className="flex justify-between">EM ABERTO <span>{open}</span></b><Legend label="Vence hoje" color="bg-amber-300" /><Legend label="Fora do prazo" color="bg-red-500" /><b className="flex justify-between pt-3">CONCLUÍDO <span>{done}</span></b><Legend label="Dentro do prazo" color="bg-emerald-300" /></div></div>;
 }
 
 function DepartmentCard({ stat }) {
-  return <article className="rounded border border-[#e7ecef] p-4"><h4 className="mb-5 text-lg font-semibold text-[#16829b]">{stat.title}</h4><div className="grid grid-cols-[150px_1fr] gap-4"><div className="h-32 w-32 rounded-full" style={{ background: `conic-gradient(${stat.accent} 0 76%, #f2a5b1 76% 87%, #ef4444 87% 100%)` }}><div className="relative left-8 top-8 grid h-16 w-16 place-items-center rounded-full bg-white text-sm">{stat.percent}</div></div><div className="space-y-2 bg-[#f7f7f7] p-3 text-sm"><b className="flex justify-between">EM ABERTO <span>{stat.open}</span></b><Legend label="Vence hoje" color="bg-amber-300" /><Legend label="Fora do prazo" color="bg-red-500" /><b className="flex justify-between pt-3">CONCLUIDO <span>{stat.done}</span></b><Legend label="Fora do prazo" color="bg-rose-300" /></div></div></article>;
+  return <article className="rounded border border-[#e7ecef] p-4"><h4 className="mb-5 text-lg font-semibold text-[#16829b]">{stat.title}</h4><div className="grid grid-cols-[150px_1fr] gap-4"><div className="h-32 w-32 rounded-full" style={{ background: `conic-gradient(#91d9a7 0 ${stat.donePercent}%, #f8d66d ${stat.donePercent}% 100%)` }}><div className="relative left-8 top-8 grid h-16 w-16 place-items-center rounded-full bg-white text-sm">{stat.donePercent}%</div></div><div className="space-y-2 bg-[#f7f7f7] p-3 text-sm"><b className="flex justify-between">EM ABERTO <span>{stat.open}</span></b><Legend label="Vence hoje" color="bg-amber-300" /><Legend label="Fora do prazo" color="bg-red-500" /><b className="flex justify-between pt-3">CONCLUÍDO <span>{stat.done}</span></b><Legend label="Dentro do prazo" color="bg-emerald-300" /></div></div></article>;
+}
+
+function EmptyReport({ title, description }) {
+  return (
+    <div className="rounded border border-dashed border-[#cfd8dd] bg-[#fafbfc] p-10 text-center text-sm text-[#68737a]">
+      <b className="block text-base text-[#3f4548]">{title}</b>
+      <span className="mt-2 block">{description}</span>
+    </div>
+  );
+}
+
+function departmentReport(tasks) {
+  const grouped = tasks.reduce((acc, task) => {
+    const key = task.department || 'Sem departamento';
+    const current = acc[key] || { title: key, open: 0, done: 0 };
+    if (isDoneStatus(task.status)) current.done += 1;
+    else current.open += 1;
+    return { ...acc, [key]: current };
+  }, {});
+
+  return Object.values(grouped).map((stat) => {
+    const total = stat.open + stat.done;
+    return { ...stat, donePercent: total ? Math.round((stat.done / total) * 100) : 0 };
+  });
 }
 
 function ActionButtons({ onEdit, onLink, onDelete }) {
