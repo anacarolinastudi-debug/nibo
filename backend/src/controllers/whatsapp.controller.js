@@ -40,7 +40,12 @@ async function evolutionRequest(path, options = {}) {
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = { message: text };
+  }
   if (!response.ok) {
     const detail = data?.message || data?.error || `HTTP ${response.status}`;
     throw new Error(Array.isArray(detail) ? detail.join(', ') : detail);
@@ -231,17 +236,77 @@ async function receiveEvolutionWebhook(req, res) {
 
 async function setEvolutionWebhook(webhookUrl) {
   const instance = process.env.EVOLUTION_INSTANCE_NAME;
-  return evolutionRequest(`/webhook/set/${encodeURIComponent(instance)}`, {
-    method: 'POST',
-    body: JSON.stringify({
-      enabled: true,
-      url: webhookUrl,
-      webhookByEvents: false,
-      webhookBase64: true,
-      base64: true,
-      events: ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'CONNECTION_UPDATE', 'QRCODE_UPDATED'],
-    }),
-  });
+  const events = ['MESSAGES_UPSERT', 'MESSAGES_UPDATE', 'SEND_MESSAGE', 'CONNECTION_UPDATE'];
+  const attempts = [
+    {
+      path: `/webhook/set/${encodeURIComponent(instance)}`,
+      body: {
+        enabled: true,
+        url: webhookUrl,
+        events,
+        headers: {},
+        base64: true,
+      },
+    },
+    {
+      path: `/webhook/set/${encodeURIComponent(instance)}`,
+      body: {
+        enabled: true,
+        url: webhookUrl,
+        webhookByEvents: false,
+        webhookBase64: true,
+        events,
+      },
+    },
+    {
+      path: `/webhook/set?instanceName=${encodeURIComponent(instance)}`,
+      body: {
+        enabled: true,
+        url: webhookUrl,
+        webhookByEvents: false,
+        webhookBase64: true,
+        events,
+      },
+    },
+  ];
+
+  let lastError = null;
+  for (const attempt of attempts) {
+    try {
+      return await evolutionRequest(attempt.path, {
+        method: 'POST',
+        body: JSON.stringify(attempt.body),
+      });
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error('Webhook recusado pela Evolution API.');
+}
+
+async function getEvolutionWebhook(req, res) {
+  if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
+  const instance = process.env.EVOLUTION_INSTANCE_NAME;
+
+  try {
+    const result = await evolutionRequest(`/webhook/find/${encodeURIComponent(instance)}`);
+    res.json(result);
+  } catch (error) {
+    res.status(502).json({ error: `Não foi possível consultar o webhook: ${error.message}` });
+  }
+}
+
+async function testEvolutionConnection(req, res) {
+  if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
+  const instance = process.env.EVOLUTION_INSTANCE_NAME;
+
+  try {
+    const result = await evolutionRequest(`/instance/connectionState/${encodeURIComponent(instance)}`);
+    res.json(result);
+  } catch (error) {
+    res.status(502).json({ error: `Não foi possível consultar a instância: ${error.message}` });
+  }
 }
 
 async function connectEvolution(req, res) {
@@ -381,6 +446,8 @@ module.exports = {
   receiveWebhook,
   receiveEvolutionWebhook,
   connectEvolution,
+  getEvolutionWebhook,
+  testEvolutionConnection,
   getEvolutionQr,
   listConversations,
   createConversation,

@@ -12,6 +12,8 @@ router.use(requireAuth);
 
 router.get('/status', ctrl.getStatus);
 router.post('/evolution/connect', ctrl.connectEvolution);
+router.get('/evolution/state', ctrl.testEvolutionConnection);
+router.get('/evolution/webhook', ctrl.getEvolutionWebhook);
 router.get('/evolution/qr', ctrl.getEvolutionQr);
 router.get('/conversations', ctrl.listConversations);
 router.post('/conversations', ctrl.createConversation);
