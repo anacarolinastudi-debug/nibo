@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ExternalLink, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
-import { getStatus, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
+import { getStatus, listConversations, createConversation, getConversationMessages } from '../api/whatsapp';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -100,7 +100,6 @@ export default function Relationship() {
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [sending, setSending] = useState(false);
   const bottomRef = useRef(null);
 
   function loadConversations() {
@@ -159,15 +158,7 @@ export default function Relationship() {
     if (!draft.trim() || !activeId) return;
     const messageText = draft.trim();
     if (active) openWhatsAppWeb(active.phoneNumber, messageText);
-    setSending(true);
-    try {
-      const message = await sendMessage(activeId, messageText);
-      setMessages((current) => [...current, message]);
-      setDraft('');
-      loadConversations();
-    } finally {
-      setSending(false);
-    }
+    setDraft('');
   }
 
   return (
@@ -193,7 +184,7 @@ export default function Relationship() {
                   <p className="mt-1 max-w-3xl">
                     {configured
                       ? 'A caixa de entrada está pronta para receber e enviar mensagens pelo WhatsApp Business.'
-                      : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto e salva o registro no histórico da conversa.'}
+                      : 'Ao enviar uma mensagem, o sistema abre o WhatsApp Web com o texto pronto. O envio acontece direto pelo WhatsApp.'}
                   </p>
                 </div>
               </div>
@@ -290,7 +281,7 @@ export default function Relationship() {
                       placeholder="Digite uma mensagem"
                       className="h-10 flex-1 rounded border border-[#dfe5e8] px-3 text-sm"
                     />
-                    <button onClick={handleSend} disabled={sending || !draft.trim()} className="inline-flex h-10 items-center gap-2 rounded bg-[#2693d2] px-4 text-sm text-white disabled:opacity-50">
+                    <button onClick={handleSend} disabled={!draft.trim()} className="inline-flex h-10 items-center gap-2 rounded bg-[#2693d2] px-4 text-sm text-white disabled:opacity-50">
                       <Send size={16} /> Enviar
                     </button>
                   </div>

@@ -286,7 +286,7 @@ Observacao: no repositorio do GitHub, a pasta do frontend foi publicada com o no
 - Webhook `GET`/`POST /api/whatsapp/webhook` pronto para a verificacao e recebimento de mensagens da Meta Cloud API (WhatsApp Business).
 - Tela de Relacionamento exibe status separado de envio e webhook, URL para copiar e variaveis pendentes com nomes amigaveis.
 - Envio real de mensagem so funciona com `WHATSAPP_ACCESS_TOKEN` e `WHATSAPP_PHONE_NUMBER_ID` configurados. Sem isso, a mensagem fica salva localmente como "nao enviada", sem quebrar o restante do sistema.
-- Enquanto a integracao oficial com a Meta nao estiver configurada, o modulo Relacionamento usa fluxo manual via WhatsApp Web: o botao de envio abre `wa.me` com a mensagem pronta e salva a mensagem no historico da conversa.
+- Enquanto a integracao oficial com a Meta nao estiver configurada, o modulo Relacionamento usa fluxo manual via WhatsApp Web: o botao de envio abre `web.whatsapp.com/send` com a mensagem pronta, sem gravar a mensagem no historico do sistema.
 - O webhook atualiza mensagens enviadas para `ENVIADA`, `ENTREGUE`, `LIDA` ou `FALHA` quando a Meta retorna status.
 - **Pendente:** criar a conta Meta Business / WhatsApp Cloud API, gerar as credenciais, preencher as variaveis no Render e configurar o webhook apontando para a URL exibida na tela de Relacionamento.
 
