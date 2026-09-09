@@ -1179,7 +1179,7 @@ function GroupEditorModal({ group, obligationRows, onClose, onSave }) {
 
 function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClients, setLinkResponsibles, clientsList, onClose }) {
   const visibleClients = clientsList;
-  const [selectedClients, setSelectedClients] = useState(() => visibleClients.filter((client) => group.obligations.some((obligation) => (linkedClients[obligation] || []).includes(client))));
+  const [selectedClients, setSelectedClients] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(group.id);
   const activeGroup = groups.find((item) => item.id === selectedGroupId) || group;
 
@@ -1235,7 +1235,7 @@ function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClien
               <h3 className="font-semibold">Clientes</h3>
               <span className="text-sm text-[#68737a]">{selectedClients.length} selecionado(s)</span>
             </div>
-            <div className="overflow-hidden rounded border border-[#e7ecef]">
+            <div className="max-h-[390px] overflow-y-auto rounded border border-[#e7ecef]">
               {visibleClients.map((client) => (
                 <label key={client} className="flex cursor-pointer items-center justify-between border-b border-[#e7ecef] px-4 py-3 last:border-b-0">
                   <span>{client}</span>

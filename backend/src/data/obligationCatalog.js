@@ -118,6 +118,11 @@ const groups = [
     obligations: ['DAS', 'PGDAS', 'DEFIS', 'PARCSN', 'ISS', 'DMS', 'NFSE', 'REINF', 'DCTFWEB', 'FOLHA', 'ESOCIALPER', 'FGTS', 'DARFPREV', 'CNDFED', 'CNDMUN'],
   },
   {
+    nickname: 'FOLHA',
+    name: 'Folha de pagamento',
+    obligations: ['FOLHA', 'ESOCIALPER', 'DCTFPREV', 'DARFPREV', 'FGTS', 'FERIAS', '13P1', '13P2', 'INFORME', 'DIRF', 'ADMISSAO', 'ALTERESOC', 'AFAST', 'DESLIG', 'FGTSRESC', 'SST', 'CAT', 'PPP', 'PROCTrab', 'CONSIG'],
+  },
+  {
     nickname: 'LP',
     name: 'Lucro Presumido',
     obligations: ['IRRF', 'PCC', 'PIS', 'COFINS', 'REINF', 'DCTFWEB', 'EFDCONT', 'ECF', 'ECD', 'ESCRIT', 'CONCILIACAO', 'BAL', 'DRE', 'BP', 'FOLHA', 'ESOCIALPER', 'FGTS', 'DARFPREV', 'ISS', 'ICMS', 'IPI', 'EFDICMS', 'NFE', 'NFSE'],
