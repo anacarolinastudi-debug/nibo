@@ -151,7 +151,8 @@ export default function Relationship() {
   function openWhatsAppWeb(phoneNumber, text = '') {
     const digits = phoneNumber.replace(/\D/g, '');
     const message = encodeURIComponent(text);
-    window.open(`https://wa.me/${digits}${message ? `?text=${message}` : ''}`, '_blank', 'noopener,noreferrer');
+    const url = `https://web.whatsapp.com/send?phone=${digits}${message ? `&text=${message}` : ''}`;
+    window.open(url, 'young-whatsapp-web', 'noopener,noreferrer,width=1120,height=760,left=120,top=60');
   }
 
   async function handleSend() {
@@ -262,7 +263,7 @@ export default function Relationship() {
                         <p className="text-xs text-[#68737a]">{active.phoneNumber}{active.client ? ` · ${active.client.name}` : ''}</p>
                       </div>
                       <button onClick={() => openWhatsAppWeb(active.phoneNumber)} className="inline-flex items-center gap-2 rounded border border-[#b8d8ec] px-3 py-2 text-sm text-[#006da8] hover:bg-[#f1f9ff]">
-                        <ExternalLink size={15} /> Abrir WhatsApp
+                        <ExternalLink size={15} /> Abrir WhatsApp Web
                       </button>
                     </div>
                   </div>
