@@ -778,7 +778,7 @@ function Reports({ tasks, protocols }) {
   );
 }
 
-function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, clientsList }) {
+function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, clientsList, clientsData }) {
   const [section, setSection] = useState('Lista de obrigações');
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
@@ -815,7 +815,7 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
             <DataTable headings={['Obrigação', 'Tipo', 'Departamento', 'Apelido', 'Frequência', 'Status', 'Vencimento', '']} rows={filtered.map((row) => [...row.slice(0, 6), row[7], <ActionButtons key={row[8] || row[0]} onEdit={() => setEditing({ index: obligationRows.indexOf(row), row })} onLink={() => setLinking(row)} onDelete={() => setObligationRows((current) => current.filter((item) => item !== row))} />])} />
           </>
         )}
-        {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} />}
+        {section === 'Grupo de obrigações' && <Groups obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} clientsData={clientsData} />}
         {section === 'Vínculos' && <LinksMatrix obligationRows={obligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} linkResponsibles={linkResponsibles} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} />}
         {section === 'Responsabilidades' && <Responsibilities />}
       </div>
@@ -1057,7 +1057,7 @@ function isNonBusinessDay(date, saturdayWorks) {
   return day === 0 || (!saturdayWorks && day === 6);
 }
 
-function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkResponsibles, clientsList }) {
+function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkResponsibles, clientsList, clientsData }) {
   const [groups, setGroups] = useState([]);
   const [query, setQuery] = useState('');
   const [editingGroup, setEditingGroup] = useState(null);
@@ -1074,22 +1074,48 @@ function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkRespon
           nickname: group.nickname,
           name: group.name,
           obligations: (group.items || []).map((item) => item.obligation?.name).filter(Boolean),
+          obligationIds: (group.items || []).map((item) => item.obligation?.id).filter(Boolean),
         })));
       })
       .catch(() => {})
       .finally(() => setLoadingGroups(false));
   }, []);
 
-  function saveGroup(nextGroup) {
-    setGroups((current) => {
-      if (!nextGroup.id) return [{ ...nextGroup, id: `grp-${Date.now()}` }, ...current];
-      return current.map((group) => group.id === nextGroup.id ? nextGroup : group);
-    });
-    setEditingGroup(null);
+  async function saveGroup(nextGroup) {
+    const obligationIds = nextGroup.obligations
+      .map((obligationName) => obligationRows.find((row) => row[0] === obligationName)?.[8])
+      .filter(Boolean);
+
+    try {
+      const payload = { nickname: nextGroup.nickname, name: nextGroup.name, obligationIds };
+      const { data } = nextGroup.id
+        ? await api.put(`/obligations/groups/${nextGroup.id}`, payload)
+        : await api.post('/obligations/groups', payload);
+      const savedGroup = {
+        id: data.id,
+        nickname: data.nickname,
+        name: data.name,
+        obligations: (data.items || []).map((item) => item.obligation?.name).filter(Boolean),
+        obligationIds: (data.items || []).map((item) => item.obligation?.id).filter(Boolean),
+      };
+      setGroups((current) => {
+        if (!nextGroup.id) return [savedGroup, ...current];
+        return current.map((group) => group.id === savedGroup.id ? savedGroup : group);
+      });
+      setEditingGroup(null);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar o grupo.');
+    }
   }
 
-  function deleteGroup(groupId) {
-    setGroups((current) => current.filter((group) => group.id !== groupId));
+  async function deleteGroup(groupId) {
+    if (!window.confirm('Excluir este grupo de obrigações?')) return;
+    try {
+      await api.delete(`/obligations/groups/${groupId}`);
+      setGroups((current) => current.filter((group) => group.id !== groupId));
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível excluir o grupo.');
+    }
   }
 
   return (
@@ -1125,7 +1151,7 @@ function Groups({ obligationRows, linkedClients, setLinkedClients, setLinkRespon
         </table>
       </div>
       {editingGroup && <GroupEditorModal group={editingGroup} obligationRows={obligationRows} onClose={() => setEditingGroup(null)} onSave={saveGroup} />}
-      {linkingGroup && <GroupLinkModal group={linkingGroup} groups={groups} setGroup={setLinkingGroup} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} onClose={() => setLinkingGroup(null)} />}
+      {linkingGroup && <GroupLinkModal group={linkingGroup} groups={groups} setGroup={setLinkingGroup} linkedClients={linkedClients} setLinkedClients={setLinkedClients} setLinkResponsibles={setLinkResponsibles} clientsList={clientsList} clientsData={clientsData} onClose={() => setLinkingGroup(null)} />}
     </div>
   );
 }
@@ -1177,7 +1203,7 @@ function GroupEditorModal({ group, obligationRows, onClose, onSave }) {
   );
 }
 
-function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClients, setLinkResponsibles, clientsList, onClose }) {
+function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClients, setLinkResponsibles, clientsList, clientsData, onClose }) {
   const visibleClients = clientsList;
   const [selectedClients, setSelectedClients] = useState([]);
   const [selectedGroupId, setSelectedGroupId] = useState(group.id);
@@ -1187,7 +1213,22 @@ function GroupLinkModal({ group, groups, setGroup, linkedClients, setLinkedClien
     setSelectedClients((current) => current.includes(client) ? current.filter((item) => item !== client) : [...current, client]);
   }
 
-  function applyGroupLink() {
+  async function applyGroupLink() {
+    const clientIds = selectedClients
+      .map((clientName) => clientsData.find((client) => client.name === clientName)?.id)
+      .filter(Boolean);
+    if (!clientIds.length) {
+      window.alert('Selecione ao menos um cliente.');
+      return;
+    }
+
+    try {
+      await api.post(`/obligations/groups/${activeGroup.id}/link-clients`, { clientIds });
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar os vínculos.');
+      return;
+    }
+
     setLinkedClients((current) => {
       const next = { ...current };
       activeGroup.obligations.forEach((obligation) => {
@@ -1474,7 +1515,7 @@ export default function Obligations() {
     Conferência: <Conference />,
     Protocolos: <Protocols />,
     Relatórios: <Reports tasks={tasks} protocols={[]} />,
-    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} />,
+    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} clientsData={serverClients} />,
   };
 
   return (
