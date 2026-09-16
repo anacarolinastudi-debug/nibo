@@ -1,4 +1,6 @@
 const { z } = require('zod');
+const fs = require('fs');
+const path = require('path');
 const { chromium } = require('playwright');
 const prisma = require('../lib/prisma');
 
@@ -25,6 +27,16 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
+}
+
+function logoDataUri(logoUrl) {
+  if (!logoUrl?.startsWith('/uploads/')) return '';
+  const filePath = path.join(__dirname, '..', '..', 'uploads', path.basename(logoUrl));
+  if (!fs.existsSync(filePath)) return '';
+  const ext = path.extname(filePath).toLowerCase();
+  const mime = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.bmp' ? 'image/bmp' : '';
+  if (!mime) return '';
+  return `data:${mime};base64,${fs.readFileSync(filePath).toString('base64')}`;
 }
 
 // ---------- Contas bancárias ----------
@@ -212,8 +224,44 @@ async function createReceipt(req, res) {
   res.status(201).json(receipt);
 }
 
+async function updateReceipt(req, res) {
+  const data = receiptSchema.partial().parse(req.body);
+
+  const existing = await prisma.financialReceipt.findFirst({
+    where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Recibo não encontrado.' });
+
+  let clientId = existing.clientId;
+  if (data.clientId) {
+    const client = await prisma.client.findFirst({
+      where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
+    });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    clientId = client.id;
+  }
+
+  const receipt = await prisma.financialReceipt.update({
+    where: { id: existing.id },
+    data: {
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.amount !== undefined ? { amount: data.amount } : {}),
+      ...(data.issueDate !== undefined ? { issueDate: data.issueDate ? new Date(data.issueDate) : existing.issueDate } : {}),
+      ...(data.dueDate !== undefined ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
+      ...(data.paymentDate !== undefined ? { paymentDate: data.paymentDate ? new Date(data.paymentDate) : null } : {}),
+      ...(data.paymentMethod !== undefined ? { paymentMethod: data.paymentMethod || null } : {}),
+      ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
+      clientId,
+    },
+    include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+  });
+
+  res.json(receipt);
+}
+
 function receiptHtml(receipt) {
   const firm = receipt.accountingFirm;
+  const logoSrc = logoDataUri(firm.logoUrl);
   const firmAddress = [firm.street, firm.number, firm.neighborhood, firm.city, firm.state].filter(Boolean).join(', ');
   const clientAddress = [receipt.client.street, receipt.client.number, receipt.client.neighborhood, receipt.client.city, receipt.client.state].filter(Boolean).join(', ');
   return `<!doctype html>
@@ -225,6 +273,8 @@ function receiptHtml(receipt) {
     body { margin: 0; padding: 36px; color: #33383b; font-family: Arial, sans-serif; font-size: 13px; }
     .page { border: 1px solid #d7dde2; min-height: 100%; padding: 32px; }
     .header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #0b4f8f; padding-bottom: 22px; }
+    .brand { display: flex; gap: 16px; align-items: flex-start; }
+    .logo { width: 86px; height: 86px; object-fit: contain; border: 1px solid #e1e6ea; border-radius: 6px; padding: 6px; }
     h1 { margin: 0; color: #0b4f8f; font-size: 34px; letter-spacing: 1px; }
     .muted { color: #69747b; line-height: 1.45; }
     .number { text-align: right; font-size: 14px; }
@@ -247,9 +297,12 @@ function receiptHtml(receipt) {
 <body>
   <div class="page">
     <div class="header">
-      <div>
-        <h1>RECIBO</h1>
-        <p class="muted"><strong>${escapeHtml(firm.name)}</strong><br>${escapeHtml(firm.cnpj || '')}<br>${escapeHtml(firm.email || '')}<br>${escapeHtml(firmAddress)}</p>
+      <div class="brand">
+        ${logoSrc ? `<img class="logo" src="${logoSrc}" alt="Logotipo" />` : ''}
+        <div>
+          <h1>RECIBO</h1>
+          <p class="muted"><strong>${escapeHtml(firm.name)}</strong><br>${escapeHtml(firm.cnpj || '')}<br>${escapeHtml(firm.email || '')}<br>${escapeHtml(firmAddress)}</p>
+        </div>
       </div>
       <div class="number">
         <p><strong>Nº do recibo</strong><br>${escapeHtml(receipt.number)}</p>
@@ -366,6 +419,6 @@ module.exports = {
   listAccounts, createAccount,
   listCategories, createCategory,
   listTransactions, createTransaction, markPaid,
-  listReceipts, createReceipt, receiptPdf,
+  listReceipts, createReceipt, updateReceipt, receiptPdf,
   summary,
 };

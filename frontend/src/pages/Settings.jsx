@@ -15,6 +15,13 @@ import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
 const TABS = ['Atalhos', 'Escritório', 'Equipe', 'Departamentos', 'Responsabilidades'];
+const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
+
+function assetUrl(url) {
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  return `${apiOrigin}${url.startsWith('/') ? url : `/${url}`}`;
+}
 
 function SettingsMenu({ tab, setTab }) {
   const [openSection, setOpenSection] = useState('configuracoes');
@@ -155,10 +162,11 @@ function EscritorioTab() {
       <section className="grid grid-cols-3 gap-6 border-t border-[#eef0f2] pt-8">
         <div className="col-span-1">
           <h2 className="font-semibold">Logotipo</h2>
+          <p className="mt-1 text-sm text-[#78838a]">Essa logo aparecerá nos recibos emitidos pelo Financeiro.</p>
         </div>
         <div className="col-span-2">
           <div className="mb-2 grid h-16 w-16 place-items-center overflow-hidden rounded border border-[#dfe5e8] bg-[#fafbfc]">
-            {firm.logoUrl ? <img src={firm.logoUrl} alt="Logotipo" className="h-full w-full object-cover" /> : <Upload size={20} className="text-[#9aa5ad]" />}
+            {firm.logoUrl ? <img src={assetUrl(firm.logoUrl)} alt="Logotipo" className="h-full w-full object-contain" /> : <Upload size={20} className="text-[#9aa5ad]" />}
           </div>
           <input ref={logoFileRef} type="file" accept=".jpg,.jpeg,.png,.bmp" className="hidden" onChange={handleLogoChange} />
           <button onClick={() => logoFileRef.current?.click()} className="text-sm text-[#16829b]">Selecionar arquivo</button>

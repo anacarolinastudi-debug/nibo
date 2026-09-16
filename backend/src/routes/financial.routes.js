@@ -19,6 +19,7 @@ router.patch('/transactions/:id/pay', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.m
 
 router.get('/receipts', ctrl.listReceipts);
 router.post('/receipts', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createReceipt);
+router.put('/receipts/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateReceipt);
 router.get('/receipts/:id/pdf', ctrl.receiptPdf);
 
 module.exports = router;

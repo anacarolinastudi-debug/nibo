@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Plus, Search, Settings, Users, WalletCards, X } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Pencil, Plus, Search, Settings, Users, WalletCards, X } from 'lucide-react';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -50,16 +50,20 @@ function FinancialMenu() {
   );
 }
 
-function ReceiptDrawer({ clients, onClose, onSaved }) {
+function inputDate(value) {
+  return value ? new Date(value).toISOString().slice(0, 10) : '';
+}
+
+function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
   const [form, setForm] = useState({
-    clientId: clients[0]?.id || '',
-    description: 'HONORÁRIOS CONTÁBEIS',
-    amount: '',
-    issueDate: new Date().toISOString().slice(0, 10),
-    dueDate: '',
-    paymentDate: '',
-    paymentMethod: '',
-    notes: 'Obrigado por fazer negócios conosco.',
+    clientId: receipt?.client?.id || receipt?.clientId || clients[0]?.id || '',
+    description: receipt?.description || 'HONORÁRIOS CONTÁBEIS',
+    amount: receipt?.amount ? String(receipt.amount) : '',
+    issueDate: inputDate(receipt?.issueDate) || new Date().toISOString().slice(0, 10),
+    dueDate: inputDate(receipt?.dueDate),
+    paymentDate: inputDate(receipt?.paymentDate),
+    paymentMethod: receipt?.paymentMethod || '',
+    notes: receipt?.notes || 'Obrigado por fazer negócios conosco.',
   });
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -74,13 +78,16 @@ function ReceiptDrawer({ clients, onClose, onSaved }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const response = await api.post('/financial/receipts', {
+      const payload = {
         ...form,
         amount: Number(String(form.amount).replace(',', '.')),
         issueDate: toIsoDate(form.issueDate),
         dueDate: toIsoDate(form.dueDate),
         paymentDate: toIsoDate(form.paymentDate),
-      });
+      };
+      const response = receipt
+        ? await api.put(`/financial/receipts/${receipt.id}`, payload)
+        : await api.post('/financial/receipts', payload);
       onSaved(response.data);
     } catch (error) {
       window.alert(error.response?.data?.error || 'Não foi possível salvar o recibo.');
@@ -93,7 +100,7 @@ function ReceiptDrawer({ clients, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 bg-black/40">
       <form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(820px,92vw)] flex-col bg-white shadow-xl">
         <header className="flex h-16 items-center justify-between border-b px-6">
-          <h2 className="text-2xl font-semibold">Novo recibo</h2>
+          <h2 className="text-2xl font-semibold">{receipt ? 'Editar recibo' : 'Novo recibo'}</h2>
           <button type="button" onClick={onClose}><X /></button>
         </header>
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -141,7 +148,7 @@ export default function Financial() {
   const [clients, setClients] = useState([]);
   const [receipts, setReceipts] = useState([]);
   const [query, setQuery] = useState('');
-  const [drawer, setDrawer] = useState(false);
+  const [drawer, setDrawer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [clientsError, setClientsError] = useState('');
@@ -210,7 +217,7 @@ export default function Financial() {
               <h1 className="text-2xl font-semibold">Financeiro</h1>
               <p className="mt-1 text-sm text-[#68737a]">Cadastre valores por cliente e emita recibos em PDF.</p>
             </div>
-            <button disabled={clientsLoading || clients.length === 0} onClick={() => setDrawer(true)} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50">
+            <button disabled={clientsLoading || clients.length === 0} onClick={() => setDrawer({ type: 'new' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50">
               <Plus size={17} /> {clientsLoading ? 'Carregando clientes...' : 'Novo recibo'}
             </button>
           </div>
@@ -246,7 +253,7 @@ export default function Financial() {
                   <th className="px-5 py-3">Emissão</th>
                   <th className="px-5 py-3">Vencimento</th>
                   <th className="px-5 py-3 text-right">Valor</th>
-                  <th className="w-36 px-5 py-3"></th>
+                  <th className="w-48 px-5 py-3"></th>
                 </tr>
               </thead>
               <tbody>
@@ -258,10 +265,15 @@ export default function Financial() {
                     <td className="px-5 py-4">{datePt(receipt.issueDate)}</td>
                     <td className="px-5 py-4">{datePt(receipt.dueDate)}</td>
                     <td className="px-5 py-4 text-right font-semibold">{money(receipt.amount)}</td>
-                    <td className="px-5 py-4 text-right">
-                      <button onClick={() => openReceipt(receipt)} className="inline-flex items-center gap-2 rounded bg-[#eef8fc] px-3 py-2 text-[#16829b] hover:bg-[#dff1f8]">
-                        <FileText size={16} /> Emitir
-                      </button>
+                    <td className="px-5 py-4">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => setDrawer({ type: 'edit', receipt })} className="inline-flex items-center gap-2 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-[#f5fafc]">
+                          <Pencil size={16} /> Editar
+                        </button>
+                        <button onClick={() => openReceipt(receipt)} className="inline-flex items-center gap-2 rounded bg-[#eef8fc] px-3 py-2 text-[#16829b] hover:bg-[#dff1f8]">
+                          <FileText size={16} /> Emitir
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -273,7 +285,7 @@ export default function Financial() {
           </div>
         </section>
       </main>
-      {drawer && <ReceiptDrawer clients={clients} onClose={() => setDrawer(false)} onSaved={(receipt) => { setDrawer(false); load(); openReceipt(receipt); }} />}
+      {drawer && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); load(); if (drawer.type === 'new') openReceipt(saved); }} />}
     </div>
   );
 }
