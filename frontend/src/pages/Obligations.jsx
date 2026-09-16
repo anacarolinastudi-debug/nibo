@@ -18,6 +18,25 @@ const statusColors = {
   doneOnTime: 'bg-emerald-300 text-ink',
   doneLate: 'bg-rose-300 text-ink',
 };
+const movementStorageKey = 'youngTaskMovementStatus';
+
+function getStoredMovementStatuses() {
+  try {
+    return JSON.parse(localStorage.getItem(movementStorageKey) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function storeMovementStatus(id, taskStatus) {
+  const current = getStoredMovementStatuses();
+  if (taskStatus === 'SEM_MOVIMENTO' || taskStatus === 'COM_MOVIMENTO') {
+    current[id] = taskStatus;
+  } else {
+    delete current[id];
+  }
+  localStorage.setItem(movementStorageKey, JSON.stringify(current));
+}
 
 function AppShell({ activeTab, setActiveTab, children }) {
   const [openSection, setOpenSection] = useState('obrigacoes');
@@ -136,7 +155,19 @@ async function setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, mont
 
   try {
     await api.put(`/obligations/links/${id}/status`, { taskStatus });
+    storeMovementStatus(id, taskStatus);
   } catch (error) {
+    const canFallback = error.response?.status === 400 && ['SEM_MOVIMENTO', 'COM_MOVIMENTO'].includes(taskStatus);
+    if (canFallback) {
+      try {
+        await api.put(`/obligations/links/${id}/status`, { taskStatus: 'CONCLUIDA' });
+        storeMovementStatus(id, taskStatus);
+        return;
+      } catch {
+        // Se a baixa simples também falhar, volta ao estado anterior abaixo.
+      }
+    }
+    storeMovementStatus(id, target.taskStatus);
     setTasks((current) => current.map((task) => (task.id === id ? target : task)));
     window.alert(error.response?.data?.error || 'Não foi possível salvar a baixa da tarefa.');
   }
@@ -1784,11 +1815,13 @@ function buildMonth(year, month) {
 }
 
 function buildCalendarTasks(links, year, month) {
+  const storedMovements = getStoredMovementStatuses();
   return links
     .filter((link) => link.active && link.client && link.obligation?.status === 'ATIVO')
     .map((link) => {
       const dueDate = getObligationDueDate(link.obligation, year, month);
       if (!dueDate) return null;
+      const taskStatus = storedMovements[link.id] || link.taskStatus;
       return {
         id: link.id,
         client: link.client.name,
@@ -1800,8 +1833,8 @@ function buildCalendarTasks(links, year, month) {
         department: link.obligation.department,
         day: dueDate.getDate(),
         dueDate,
-        taskStatus: link.taskStatus,
-        status: calendarStatusFromTaskStatus(link.taskStatus, 'openOnTime'),
+        taskStatus,
+        status: calendarStatusFromTaskStatus(taskStatus, 'openOnTime'),
       };
     })
     .filter(Boolean);
