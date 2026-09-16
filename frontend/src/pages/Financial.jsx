@@ -64,6 +64,12 @@ function ReceiptDrawer({ clients, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
+  useEffect(() => {
+    if (!form.clientId && clients[0]?.id) {
+      set('clientId', clients[0].id);
+    }
+  }, [clients, form.clientId]);
+
   async function save(e) {
     e.preventDefault();
     setSaving(true);
@@ -95,6 +101,7 @@ function ReceiptDrawer({ clients, onClose, onSaved }) {
             <label className="block text-sm">
               <span className="mb-1 block font-medium">Cliente</span>
               <select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3">
+                <option value="" disabled>{clients.length === 0 ? 'Nenhum cliente ativo encontrado' : 'Selecione...'}</option>
                 {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
               </select>
             </label>
@@ -136,19 +143,39 @@ export default function Financial() {
   const [query, setQuery] = useState('');
   const [drawer, setDrawer] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [clientsLoading, setClientsLoading] = useState(true);
+  const [clientsError, setClientsError] = useState('');
 
   async function load() {
     setLoading(true);
-    const [clientsRes, receiptsRes] = await Promise.all([
-      api.get('/clients'),
-      api.get('/financial/receipts'),
-    ]);
-    setClients(clientsRes.data.filter((client) => client.active));
-    setReceipts(receiptsRes.data);
-    setLoading(false);
+    try {
+      const receiptsRes = await api.get('/financial/receipts');
+      setReceipts(receiptsRes.data);
+    } catch {
+      setReceipts([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { load().catch(() => setLoading(false)); }, []);
+  async function loadClients() {
+    setClientsLoading(true);
+    setClientsError('');
+    try {
+      const clientsRes = await api.get('/clients');
+      setClients(clientsRes.data.filter((client) => client.active));
+    } catch {
+      setClientsError('Não foi possível carregar os clientes. Atualize a página e tente novamente.');
+      setClients([]);
+    } finally {
+      setClientsLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    load();
+    loadClients();
+  }, []);
 
   const visibleReceipts = useMemo(() => receipts.filter((receipt) => {
     const text = `${receipt.number} ${receipt.client?.name || ''} ${receipt.client?.cnpj || ''} ${receipt.description}`.toLowerCase();
@@ -183,10 +210,13 @@ export default function Financial() {
               <h1 className="text-2xl font-semibold">Financeiro</h1>
               <p className="mt-1 text-sm text-[#68737a]">Cadastre valores por cliente e emita recibos em PDF.</p>
             </div>
-            <button onClick={() => setDrawer(true)} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white">
-              <Plus size={17} /> Novo recibo
+            <button disabled={clientsLoading || clients.length === 0} onClick={() => setDrawer(true)} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50">
+              <Plus size={17} /> {clientsLoading ? 'Carregando clientes...' : 'Novo recibo'}
             </button>
           </div>
+
+          {clientsError && <p className="mb-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">{clientsError}</p>}
+          {!clientsLoading && clients.length === 0 && !clientsError && <p className="mb-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">Cadastre ou reative um cliente antes de emitir recibos.</p>}
 
           <div className="mb-6 grid grid-cols-[minmax(320px,480px)_180px_180px] gap-4">
             <label className="block text-sm">
