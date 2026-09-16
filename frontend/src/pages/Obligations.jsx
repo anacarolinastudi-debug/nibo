@@ -450,20 +450,20 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
       ) : (
         <div className="space-y-8">
           {sections.map((section) => (
-            <div key={section.name} className="overflow-hidden rounded border border-[#dfe5e8]">
+            <div key={section.name} className="rounded border border-[#dfe5e8]">
               <div className="bg-[#f2f2f2] px-3 py-2 text-sm font-bold uppercase text-[#202427]">
                 {section.name} - vencimentos de {monthLabels[month]}/{year}
               </div>
-              <div className="overflow-auto">
+              <div className="max-h-[calc(100vh-285px)] overflow-auto">
                 <table className="min-w-full border-collapse text-sm">
                   <thead>
                     <tr className="bg-white">
-                      <th className="sticky left-0 z-20 w-16 min-w-16 border border-[#cfd8dd] bg-white px-2 py-2 text-left">COD</th>
-                      <th className="sticky left-16 z-20 w-72 min-w-72 border border-[#cfd8dd] bg-white px-2 py-2 text-left">Empresa</th>
-                      <th className="w-40 min-w-40 border border-[#cfd8dd] px-2 py-2 text-left">CNPJ</th>
-                      <th className="w-28 min-w-28 border border-[#cfd8dd] px-2 py-2 text-left">Tributação</th>
+                      <th className="sticky left-0 top-0 z-30 w-16 min-w-16 border border-[#cfd8dd] bg-white px-2 py-2 text-left">COD</th>
+                      <th className="sticky left-16 top-0 z-30 w-72 min-w-72 border border-[#cfd8dd] bg-white px-2 py-2 text-left">Empresa</th>
+                      <th className="sticky top-0 z-20 w-40 min-w-40 border border-[#cfd8dd] bg-white px-2 py-2 text-left">CNPJ</th>
+                      <th className="sticky top-0 z-20 w-28 min-w-28 border border-[#cfd8dd] bg-white px-2 py-2 text-left">Tributação</th>
                       {section.columns.map((column) => (
-                        <th key={column.key} className="w-44 min-w-44 border border-[#cfd8dd] px-2 py-2 text-center">
+                        <th key={column.key} className="sticky top-0 z-20 w-44 min-w-44 border border-[#cfd8dd] bg-white px-2 py-2 text-center">
                           <span className="block font-semibold">{column.obligation}</span>
                           <span className="text-xs font-normal text-[#68737a]">Dia {column.day}</span>
                         </th>
