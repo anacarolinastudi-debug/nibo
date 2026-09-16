@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Send, Settings, Trash2, Users, X } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Send, Settings, Trash2, Users, WalletCards, X } from 'lucide-react';
 import { obligations as seedObligations } from '../data/niboMockData';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
@@ -78,6 +78,7 @@ function AppShell({ activeTab, setActiveTab, children }) {
           <Link to="/radar-ecac" className="mb-5 flex items-center gap-2 text-[#69747b]">
             Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b>
           </Link>
+          <Link to="/financeiro" className="mb-5 flex items-center gap-2 text-[#69747b]"><WalletCards size={16} /> Financeiro</Link>
           <MenuSection title="CADASTROS" />
           <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
             {['Meus clientes', 'Contatos'].map((item) => (

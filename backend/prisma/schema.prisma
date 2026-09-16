@@ -57,6 +57,7 @@ model AccountingFirm {
   taskTemplates      TaskTemplate[]
   taskProcesses      TaskProcess[]
   processTemplates   ProcessTemplate[]
+  financialReceipts  FinancialReceipt[]
   auditLogs          AuditLog[]
   forms              Form[]
   whatsappConversations WhatsAppConversation[]
@@ -173,6 +174,7 @@ model Client {
   protocolDocuments  ProtocolDocument[]
   financialAccounts  FinancialAccount[]
   financialTransactions FinancialTransaction[]
+  financialReceipts  FinancialReceipt[]
   invoices           Invoice[]
   employees          Employee[]
   contacts           ClientContact[]
@@ -830,6 +832,31 @@ model FinancialTransaction {
   @@index([clientId])
   @@index([accountId])
   @@map("financial_transactions")
+}
+
+model FinancialReceipt {
+  id            String   @id @default(uuid())
+  number        String
+  description   String
+  amount        Decimal  @db.Decimal(14, 2)
+  issueDate     DateTime @default(now())
+  dueDate       DateTime?
+  paymentDate   DateTime?
+  paymentMethod String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  @@unique([accountingFirmId, number])
+  @@index([accountingFirmId])
+  @@index([clientId])
+  @@map("financial_receipts")
 }
 
 // ---------------------------------------------------------------------

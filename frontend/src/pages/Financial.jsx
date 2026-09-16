@@ -1,236 +1,249 @@
-import React, { useEffect, useState } from 'react';
-import Layout from '../components/Layout';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Plus, Search, Settings, Users, WalletCards, X } from 'lucide-react';
 import api from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import FirmHeader from '../components/FirmHeader';
+import NiboRail from '../components/NiboRail';
+import SideMenuSection from '../components/SideMenuSection';
 
 function money(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-function NewTransactionModal({ clients, accounts, categories, onClose, onCreated }) {
+function datePt(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+}
+
+function toIsoDate(value) {
+  return value ? new Date(`${value}T00:00:00`).toISOString() : null;
+}
+
+function FinancialMenu() {
+  const [openSection, setOpenSection] = useState('financeiro');
+  const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
+
+  return (
+    <aside className="fixed inset-y-0 left-[46px] z-20 flex w-[236px] flex-col border-r border-[#dfe5e8] bg-[#f4f7fb]">
+      <div className="flex h-[58px] shrink-0 items-center border-b border-[#dfe5e8] px-5 text-xl">Contador</div>
+      <nav className="flex-1 overflow-y-auto px-5 py-5 text-sm">
+        <p className="mb-4 text-xs font-semibold text-[#7b858c]">OPERAÇÃO</p>
+        <Link to="/" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardCheck size={16} /> Obrigações</Link>
+        <SideMenuSection icon={ListChecks} label="Tarefas & Processos" to="/demandas" open={openSection === 'tarefas'} onToggle={() => toggleSection('tarefas')}>
+          {['Tarefas', 'Processos', 'Configurações'].map((item) => (
+            <Link key={item} to="/demandas" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+          ))}
+        </SideMenuSection>
+        <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#68737a]"><MessageCircle size={16} /> Relacionamento</Link>
+        <Link to="/radar-ecac" className="mb-4 flex items-center gap-2 text-[#68737a]">Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></Link>
+        <Link to="/financeiro" className="mb-4 flex items-center gap-2 rounded bg-[#dce5ef] px-3 py-2 font-semibold text-[#3f4548]"><WalletCards size={16} /> Financeiro</Link>
+        <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
+        <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
+          {['Meus clientes', 'Contatos'].map((item) => (
+            <Link key={item} to="/clientes" className="block rounded px-3 py-2 text-[#68737a] hover:bg-white">{item}</Link>
+          ))}
+        </SideMenuSection>
+        <Link to="/formularios" className="mb-4 flex items-center gap-2 text-[#68737a]"><ClipboardList size={16} /> Formulários</Link>
+        <Link to="/configuracoes" className="flex items-center gap-2 text-[#68737a]"><Settings size={16} /> Configurações</Link>
+      </nav>
+    </aside>
+  );
+}
+
+function ReceiptDrawer({ clients, onClose, onSaved }) {
   const [form, setForm] = useState({
-    description: '', amount: '', type: 'DESPESA', dueDate: '',
-    clientId: clients[0]?.id || '', accountId: accounts[0]?.id || '', categoryId: categories[0]?.id || '',
+    clientId: clients[0]?.id || '',
+    description: 'HONORÁRIOS CONTÁBEIS',
+    amount: '',
+    issueDate: new Date().toISOString().slice(0, 10),
+    dueDate: '',
+    paymentDate: '',
+    paymentMethod: '',
+    notes: 'Obrigado por fazer negócios conosco.',
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
 
-  async function handleSubmit(e) {
+  async function save(e) {
     e.preventDefault();
     setSaving(true);
-    setError('');
     try {
-      await api.post('/financial/transactions', {
+      const response = await api.post('/financial/receipts', {
         ...form,
-        amount: Number(form.amount),
-        dueDate: new Date(form.dueDate).toISOString(),
+        amount: Number(String(form.amount).replace(',', '.')),
+        issueDate: toIsoDate(form.issueDate),
+        dueDate: toIsoDate(form.dueDate),
+        paymentDate: toIsoDate(form.paymentDate),
       });
-      onCreated();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Não foi possível salvar o lançamento.');
+      onSaved(response.data);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar o recibo.');
     } finally {
       setSaving(false);
     }
   }
 
-  const filteredCategories = categories.filter((c) => c.type === form.type);
-
   return (
-    <div className="fixed inset-0 bg-ink/40 flex items-center justify-center p-4 z-50">
-      <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 w-full max-w-md space-y-4">
-        <h2 className="text-lg font-semibold">Novo lançamento</h2>
-        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
-
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={() => setForm({ ...form, type: 'RECEITA' })}
-            className={`py-2 rounded-lg text-sm font-medium border ${form.type === 'RECEITA' ? 'bg-brand-500 text-white border-brand-500' : 'border-ink/15 text-ink/60'}`}>
-            Receita
-          </button>
-          <button type="button" onClick={() => setForm({ ...form, type: 'DESPESA' })}
-            className={`py-2 rounded-lg text-sm font-medium border ${form.type === 'DESPESA' ? 'bg-red-500 text-white border-red-500' : 'border-ink/15 text-ink/60'}`}>
-            Despesa
-          </button>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Descrição</label>
-          <input required value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-            className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm" />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Valor (R$)</label>
-            <input required type="number" step="0.01" min="0.01" value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm" />
+    <div className="fixed inset-0 z-50 bg-black/40">
+      <form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(820px,92vw)] flex-col bg-white shadow-xl">
+        <header className="flex h-16 items-center justify-between border-b px-6">
+          <h2 className="text-2xl font-semibold">Novo recibo</h2>
+          <button type="button" onClick={onClose}><X /></button>
+        </header>
+        <div className="flex-1 space-y-6 overflow-y-auto p-6">
+          <div className="grid grid-cols-2 gap-5">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Cliente</span>
+              <select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3">
+                {clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium">Valor</span>
+              <input required type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => set('amount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 outline-none focus:border-[#16829b]" />
+            </label>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Vencimento</label>
-            <input required type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm" />
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Descrição do serviço</span>
+            <input required value={form.description} onChange={(e) => set('description', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 outline-none focus:border-[#16829b]" />
+          </label>
+          <div className="grid grid-cols-3 gap-5">
+            <label className="block text-sm"><span className="mb-1 block font-medium">Data de emissão</span><input required type="date" value={form.issueDate} onChange={(e) => set('issueDate', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+            <label className="block text-sm"><span className="mb-1 block font-medium">Vencimento</span><input type="date" value={form.dueDate} onChange={(e) => set('dueDate', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+            <label className="block text-sm"><span className="mb-1 block font-medium">Pagamento</span><input type="date" value={form.paymentDate} onChange={(e) => set('paymentDate', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
           </div>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Forma de pagamento</span>
+            <input value={form.paymentMethod} onChange={(e) => set('paymentMethod', e.target.value)} placeholder="Pix, boleto, transferência..." className="h-10 w-full rounded border border-[#d8dfe3] px-3 outline-none focus:border-[#16829b]" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium">Observações</span>
+            <textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={4} className="w-full rounded border border-[#d8dfe3] px-3 py-2 outline-none focus:border-[#16829b]" />
+          </label>
         </div>
-
-        {clients.length > 0 && (
-          <div>
-            <label className="block text-sm font-medium mb-1">Cliente</label>
-            <select value={form.clientId} onChange={(e) => setForm({ ...form, clientId: e.target.value })}
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm">
-              {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">Conta</label>
-            <select value={form.accountId} onChange={(e) => setForm({ ...form, accountId: e.target.value })}
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm">
-              {accounts.map((a) => <option key={a.id} value={a.id}>{a.bankName}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoria</label>
-            <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-              className="w-full rounded-lg border border-ink/15 px-3 py-2 text-sm">
-              {filteredCategories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="px-4 py-2 text-sm rounded-lg text-ink/60 hover:bg-ink/5">Cancelar</button>
-          <button type="submit" disabled={saving} className="px-4 py-2 text-sm rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-60">
-            {saving ? 'Salvando...' : 'Salvar lançamento'}
-          </button>
-        </div>
+        <footer className="flex justify-end gap-3 border-t p-4">
+          <button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button>
+          <button disabled={saving || clients.length === 0} className="rounded bg-[#2693d2] px-6 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar recibo'}</button>
+        </footer>
       </form>
     </div>
   );
 }
 
 export default function Financial() {
-  const { user } = useAuth();
-  const [summary, setSummary] = useState(null);
-  const [transactions, setTransactions] = useState([]);
-  const [accounts, setAccounts] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [clients, setClients] = useState([]);
+  const [receipts, setReceipts] = useState([]);
+  const [query, setQuery] = useState('');
+  const [drawer, setDrawer] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
 
   async function load() {
     setLoading(true);
-    const [summaryRes, txRes, accRes, catRes, clientsRes] = await Promise.all([
-      api.get('/financial/summary'),
-      api.get('/financial/transactions'),
-      api.get('/financial/accounts'),
-      api.get('/financial/categories'),
-      user.role !== 'CLIENT' ? api.get('/clients') : Promise.resolve({ data: [] }),
+    const [clientsRes, receiptsRes] = await Promise.all([
+      api.get('/clients'),
+      api.get('/financial/receipts'),
     ]);
-    setSummary(summaryRes.data);
-    setTransactions(txRes.data);
-    setAccounts(accRes.data);
-    setCategories(catRes.data);
-    setClients(clientsRes.data);
+    setClients(clientsRes.data.filter((client) => client.active));
+    setReceipts(receiptsRes.data);
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load().catch(() => setLoading(false)); }, []);
 
-  async function handleMarkPaid(id) {
-    await api.patch(`/financial/transactions/${id}/pay`);
-    load();
+  const visibleReceipts = useMemo(() => receipts.filter((receipt) => {
+    const text = `${receipt.number} ${receipt.client?.name || ''} ${receipt.client?.cnpj || ''} ${receipt.description}`.toLowerCase();
+    return text.includes(query.toLowerCase());
+  }), [receipts, query]);
+
+  const total = useMemo(() => visibleReceipts.reduce((sum, receipt) => sum + Number(receipt.amount || 0), 0), [visibleReceipts]);
+
+  async function openReceipt(receipt) {
+    try {
+      const response = await api.get(`/financial/receipts/${receipt.id}/pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível emitir o recibo.');
+    }
   }
 
   return (
-    <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Financeiro</h1>
-          <p className="text-ink/50 text-sm">Contas, lançamentos e conciliação.</p>
+    <div className="min-h-screen bg-white text-[#3f4548]">
+      <NiboRail />
+      <FinancialMenu />
+      <main className="ml-[282px]">
+        <FirmHeader className="px-6" />
+        <div className="flex h-[45px] items-end gap-14 border-b px-6 text-sm">
+          <b className="border-b-2 border-[#003f82] pb-3">Financeiro</b>
         </div>
-        <button onClick={() => setShowModal(true)} disabled={accounts.length === 0 || categories.length === 0}
-          className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-medium px-4 py-2.5 rounded-lg disabled:opacity-50">
-          + Novo lançamento
-        </button>
-      </div>
+        <section className="p-6">
+          <div className="mb-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold">Financeiro</h1>
+              <p className="mt-1 text-sm text-[#68737a]">Cadastre valores por cliente e emita recibos em PDF.</p>
+            </div>
+            <button onClick={() => setDrawer(true)} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white">
+              <Plus size={17} /> Novo recibo
+            </button>
+          </div>
 
-      {!loading && (accounts.length === 0 || categories.length === 0) && (
-        <p className="text-sm text-amber-500 bg-amber-500/10 rounded-lg px-3 py-2 mb-6">
-          Cadastre ao menos uma conta bancária e uma categoria (plano de contas) pela API para começar a lançar — telas de cadastro rápido podem ser adicionadas depois.
-        </p>
-      )}
+          <div className="mb-6 grid grid-cols-[minmax(320px,480px)_180px_180px] gap-4">
+            <label className="block text-sm">
+              <span className="mb-1 block">Buscar por</span>
+              <span className="flex h-10 items-center gap-2 rounded border px-3">
+                <Search size={16} />
+                <input value={query} onChange={(e) => setQuery(e.target.value)} className="w-full outline-none" placeholder="Cliente, CNPJ, número ou descrição" />
+              </span>
+            </label>
+            <div className="rounded border bg-[#fbfcfd] px-4 py-2">
+              <p className="text-xs text-[#78838a]">Recibos</p>
+              <strong>{visibleReceipts.length}</strong>
+            </div>
+            <div className="rounded border bg-[#fbfcfd] px-4 py-2">
+              <p className="text-xs text-[#78838a]">Total listado</p>
+              <strong>{money(total)}</strong>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-xl p-5 border border-ink/10">
-          <p className="text-xs text-ink/50 uppercase tracking-wide">Receitas do mês</p>
-          <p className="text-2xl font-display font-semibold mt-2 text-brand-600">{loading ? '—' : money(summary?.receitasMes)}</p>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-ink/10">
-          <p className="text-xs text-ink/50 uppercase tracking-wide">Despesas do mês</p>
-          <p className="text-2xl font-display font-semibold mt-2 text-red-600">{loading ? '—' : money(summary?.despesasMes)}</p>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-ink/10">
-          <p className="text-xs text-ink/50 uppercase tracking-wide">Saldo em contas</p>
-          <p className="text-2xl font-display font-semibold mt-2">{loading ? '—' : money(summary?.saldoTotal)}</p>
-        </div>
-        <div className="bg-white rounded-xl p-5 border border-ink/10">
-          <p className="text-xs text-ink/50 uppercase tracking-wide">A vencer</p>
-          <p className="text-2xl font-display font-semibold mt-2 text-amber-500">{loading ? '—' : summary?.pendentesAVencer}</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-ink/10 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-ink/5 text-ink/50 text-xs uppercase">
-            <tr>
-              <th className="text-left px-4 py-3">Descrição</th>
-              <th className="text-left px-4 py-3">Categoria</th>
-              <th className="text-left px-4 py-3">Vencimento</th>
-              <th className="text-right px-4 py-3">Valor</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-ink/5">
-            {transactions.map((t) => (
-              <tr key={t.id}>
-                <td className="px-4 py-3">{t.description}</td>
-                <td className="px-4 py-3 text-ink/60">{t.category?.name}</td>
-                <td className="px-4 py-3 text-ink/60">{new Date(t.dueDate).toLocaleDateString('pt-BR')}</td>
-                <td className={`px-4 py-3 text-right font-mono ${t.type === 'RECEITA' ? 'text-brand-600' : 'text-red-600'}`}>
-                  {t.type === 'RECEITA' ? '+' : '-'} {money(t.amount)}
-                </td>
-                <td className="px-4 py-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${t.status === 'PAID' ? 'bg-brand-50 text-brand-700' : 'bg-amber-500/15 text-amber-500'}`}>
-                    {t.status === 'PAID' ? 'Pago' : 'Pendente'}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {t.status === 'PENDING' && (
-                    <button onClick={() => handleMarkPaid(t.id)} className="text-xs text-brand-600 hover:text-brand-700 font-medium">
-                      Marcar como pago
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {!loading && transactions.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-ink/40">Nenhum lançamento ainda.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {showModal && (
-        <NewTransactionModal
-          clients={clients} accounts={accounts} categories={categories}
-          onClose={() => setShowModal(false)}
-          onCreated={() => { setShowModal(false); load(); }}
-        />
-      )}
-    </Layout>
+          <div className="overflow-x-auto rounded border">
+            <table className="w-full min-w-[980px] text-left text-sm">
+              <thead className="bg-[#f3f3f3]">
+                <tr>
+                  <th className="px-5 py-3">Número</th>
+                  <th className="px-5 py-3">Cliente</th>
+                  <th className="px-5 py-3">Descrição</th>
+                  <th className="px-5 py-3">Emissão</th>
+                  <th className="px-5 py-3">Vencimento</th>
+                  <th className="px-5 py-3 text-right">Valor</th>
+                  <th className="w-36 px-5 py-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleReceipts.map((receipt) => (
+                  <tr key={receipt.id} className="border-t">
+                    <td className="px-5 py-4 font-semibold text-[#16829b]">{receipt.number}</td>
+                    <td className="px-5 py-4">{receipt.client?.name}<small className="block text-[#68737a]">{receipt.client?.cnpj}</small></td>
+                    <td className="px-5 py-4">{receipt.description}</td>
+                    <td className="px-5 py-4">{datePt(receipt.issueDate)}</td>
+                    <td className="px-5 py-4">{datePt(receipt.dueDate)}</td>
+                    <td className="px-5 py-4 text-right font-semibold">{money(receipt.amount)}</td>
+                    <td className="px-5 py-4 text-right">
+                      <button onClick={() => openReceipt(receipt)} className="inline-flex items-center gap-2 rounded bg-[#eef8fc] px-3 py-2 text-[#16829b] hover:bg-[#dff1f8]">
+                        <FileText size={16} /> Emitir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {!loading && visibleReceipts.length === 0 && (
+                  <tr><td colSpan={7} className="px-5 py-10 text-center text-[#78838a]">Nenhum recibo cadastrado ainda.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+      {drawer && <ReceiptDrawer clients={clients} onClose={() => setDrawer(false)} onSaved={(receipt) => { setDrawer(false); load(); openReceipt(receipt); }} />}
+    </div>
   );
 }
