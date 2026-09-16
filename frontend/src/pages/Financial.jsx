@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownCircle, ArrowUpCircle, ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Pencil, Plus, Search, Settings, Users, WalletCards, X } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Pencil, Plus, Search, Settings, Trash2, Users, WalletCards, X } from 'lucide-react';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -216,6 +216,21 @@ export default function Financial() {
     loadTransactions();
   }
 
+  async function removeTransaction(transaction) {
+    const linkedText = transaction.receipt ? ' Essa movimentação tem um recibo vinculado, que também será excluído.' : '';
+    if (!window.confirm(`Excluir a movimentação "${transaction.description}"?${linkedText}`)) return;
+    await api.delete(`/financial/transactions/${transaction.id}`);
+    loadTransactions();
+    loadReceipts();
+  }
+
+  async function removeReceipt(receipt) {
+    if (!window.confirm(`Excluir o recibo ${receipt.number}? A movimentação vinculada também será excluída.`)) return;
+    await api.delete(`/financial/receipts/${receipt.id}`);
+    loadReceipts();
+    loadTransactions();
+  }
+
   async function openReceipt(receipt) {
     try {
       const response = await api.get(`/financial/receipts/${receipt.id}/pdf`, { responseType: 'blob' });
@@ -265,7 +280,7 @@ export default function Financial() {
               </div>
               <div className="overflow-x-auto rounded border">
                 <table className="w-full min-w-[1050px] text-left text-sm">
-                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Data</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Categoria</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Valor</th><th className="w-36 px-5 py-3"></th></tr></thead>
+                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Data</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Categoria</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Valor</th><th className="w-44 px-5 py-3"></th></tr></thead>
                   <tbody>
                     {filteredTransactions.map((item) => (
                       <tr key={item.id} className="border-t">
@@ -273,7 +288,12 @@ export default function Financial() {
                         <td className="px-5 py-4"><span className={`rounded px-2 py-1 text-xs ${item.type === 'RECEITA' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{item.type === 'RECEITA' ? 'Entrada' : 'Saída'}</span></td>
                         <td className="px-5 py-4">{item.status === 'PAID' ? 'Pago' : 'Pendente'}</td>
                         <td className={`px-5 py-4 text-right font-semibold ${item.type === 'RECEITA' ? 'text-emerald-700' : 'text-red-700'}`}>{item.type === 'RECEITA' ? '+' : '-'} {money(item.amount)}</td>
-                        <td className="px-5 py-4 text-right">{item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Baixar</button>}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex justify-end gap-2">
+                            {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Baixar</button>}
+                            <button onClick={() => removeTransaction(item)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                     {!loading && filteredTransactions.length === 0 && <tr><td colSpan={8} className="px-5 py-10 text-center text-[#78838a]">Nenhuma movimentação encontrada.</td></tr>}
@@ -292,10 +312,10 @@ export default function Financial() {
               </div>
               <div className="overflow-x-auto rounded border">
                 <table className="w-full min-w-[980px] text-left text-sm">
-                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Número</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Emissão</th><th className="px-5 py-3">Vencimento</th><th className="px-5 py-3 text-right">Valor</th><th className="w-48 px-5 py-3"></th></tr></thead>
+                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Número</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Emissão</th><th className="px-5 py-3">Vencimento</th><th className="px-5 py-3 text-right">Valor</th><th className="w-56 px-5 py-3"></th></tr></thead>
                   <tbody>
                     {filteredReceipts.map((receipt) => (
-                      <tr key={receipt.id} className="border-t"><td className="px-5 py-4 font-semibold text-[#16829b]">{receipt.number}</td><td className="px-5 py-4">{receipt.client?.name}<small className="block text-[#68737a]">{receipt.client?.cnpj}</small></td><td className="px-5 py-4">{receipt.description}</td><td className="px-5 py-4">{datePt(receipt.issueDate)}</td><td className="px-5 py-4">{datePt(receipt.dueDate)}</td><td className="px-5 py-4 text-right font-semibold">{money(receipt.amount)}</td><td className="px-5 py-4"><div className="flex justify-end gap-2"><button onClick={() => setDrawer({ type: 'receipt-edit', receipt })} className="inline-flex items-center gap-2 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /> Editar</button><button onClick={() => openReceipt(receipt)} className="inline-flex items-center gap-2 rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]"><FileText size={16} /> Emitir</button></div></td></tr>
+                      <tr key={receipt.id} className="border-t"><td className="px-5 py-4 font-semibold text-[#16829b]">{receipt.number}</td><td className="px-5 py-4">{receipt.client?.name}<small className="block text-[#68737a]">{receipt.client?.cnpj}</small></td><td className="px-5 py-4">{receipt.description}</td><td className="px-5 py-4">{datePt(receipt.issueDate)}</td><td className="px-5 py-4">{datePt(receipt.dueDate)}</td><td className="px-5 py-4 text-right font-semibold">{money(receipt.amount)}</td><td className="px-5 py-4"><div className="flex justify-end gap-2"><button onClick={() => setDrawer({ type: 'receipt-edit', receipt })} className="inline-flex items-center gap-2 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /> Editar</button><button onClick={() => openReceipt(receipt)} className="inline-flex items-center gap-2 rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]"><FileText size={16} /> Emitir</button><button onClick={() => removeReceipt(receipt)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></td></tr>
                     ))}
                     {!loading && filteredReceipts.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-[#78838a]">Nenhum recibo cadastrado ainda.</td></tr>}
                   </tbody>

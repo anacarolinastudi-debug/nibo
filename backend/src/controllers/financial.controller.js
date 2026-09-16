@@ -202,6 +202,7 @@ async function listTransactions(req, res) {
       client: { select: { name: true } },
       category: { select: { name: true } },
       account: { select: { bankName: true } },
+      receipt: { select: { id: true, number: true } },
     },
     orderBy: { dueDate: 'asc' },
   });
@@ -272,6 +273,23 @@ async function markPaid(req, res) {
   });
 
   res.json(transaction);
+}
+
+async function removeTransaction(req, res) {
+  const existing = await prisma.financialTransaction.findFirst({
+    where: { id: req.params.id, ...clientScope(req.user) },
+    include: { receipt: true },
+  });
+  if (!existing) return res.status(404).json({ error: 'Movimentação não encontrada.' });
+
+  await prisma.$transaction(async (tx) => {
+    if (existing.receipt) {
+      await tx.financialReceipt.delete({ where: { id: existing.receipt.id } });
+    }
+    await tx.financialTransaction.delete({ where: { id: existing.id } });
+  });
+
+  res.status(204).send();
 }
 
 // ---------- Recibos ----------
@@ -449,6 +467,22 @@ async function updateReceipt(req, res) {
   res.json(receipt);
 }
 
+async function removeReceipt(req, res) {
+  const existing = await prisma.financialReceipt.findFirst({
+    where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Recibo não encontrado.' });
+
+  await prisma.$transaction(async (tx) => {
+    await tx.financialReceipt.delete({ where: { id: existing.id } });
+    if (existing.transactionId) {
+      await tx.financialTransaction.delete({ where: { id: existing.transactionId } });
+    }
+  });
+
+  res.status(204).send();
+}
+
 function receiptHtml(receipt, req) {
   const firm = receipt.accountingFirm;
   const logoSrc = logoSource(firm.logoUrl, req);
@@ -608,7 +642,7 @@ async function summary(req, res) {
 module.exports = {
   listAccounts, createAccount,
   listCategories, createCategory,
-  listTransactions, createTransaction, markPaid,
-  listReceipts, createReceipt, updateReceipt, receiptPdf,
+  listTransactions, createTransaction, markPaid, removeTransaction,
+  listReceipts, createReceipt, updateReceipt, removeReceipt, receiptPdf,
   summary,
 };
