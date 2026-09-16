@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, Pencil, Pin, Send, Settings, Trash2, Users, X } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Send, Settings, Trash2, Users, X } from 'lucide-react';
 import { obligations as seedObligations } from '../data/niboMockData';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
@@ -40,16 +40,25 @@ function storeMovementStatus(id, taskStatus) {
 
 function AppShell({ activeTab, setActiveTab, children }) {
   const [openSection, setOpenSection] = useState('obrigacoes');
+  const [sidebarHidden, setSidebarHidden] = useState(() => localStorage.getItem('obligationsSidebarHidden') === 'true');
   const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
+  const toggleSidebar = () => {
+    setSidebarHidden((current) => {
+      localStorage.setItem('obligationsSidebarHidden', String(!current));
+      return !current;
+    });
+  };
 
   return (
     <div className="nibo-ui min-h-screen bg-white text-[#3f4548]">
       <NiboRail />
 
-      <aside className="fixed inset-y-0 left-[46px] z-10 flex w-[236px] flex-col border-r border-[#dfe5e8] bg-[#f4f7fb]">
+      <aside className={`fixed inset-y-0 left-[46px] z-10 flex w-[236px] flex-col border-r border-[#dfe5e8] bg-[#f4f7fb] transition-transform duration-200 ${sidebarHidden ? '-translate-x-[236px]' : 'translate-x-0'}`}>
         <div className="flex h-[58px] shrink-0 items-center justify-between border-b border-[#dfe5e8] px-5">
           <h1 className="text-xl text-[#444]">Contador</h1>
-          <Pin size={16} className="text-[#9aa5ad]" />
+          <button onClick={toggleSidebar} title="Ocultar menu lateral" aria-label="Ocultar menu lateral" className="rounded p-1 text-[#8b98a1] hover:bg-white hover:text-[#16829b]">
+            <PanelLeftClose size={17} />
+          </button>
         </div>
         <nav className="flex-1 overflow-y-auto px-5 py-4 text-sm">
           <MenuSection title="OPERAÇÃO" />
@@ -80,7 +89,18 @@ function AppShell({ activeTab, setActiveTab, children }) {
         </nav>
       </aside>
 
-      <main className="ml-[282px] min-h-screen">
+      {sidebarHidden && (
+        <button
+          onClick={toggleSidebar}
+          title="Mostrar menu lateral"
+          aria-label="Mostrar menu lateral"
+          className="fixed left-[54px] top-[72px] z-20 rounded-r border border-l-0 border-[#dfe5e8] bg-white px-2 py-2 text-[#16829b] shadow-sm hover:bg-[#eef7fb]"
+        >
+          <PanelLeftOpen size={18} />
+        </button>
+      )}
+
+      <main className={`${sidebarHidden ? 'ml-[46px]' : 'ml-[282px]'} min-h-screen transition-[margin] duration-200`}>
         <FirmHeader />
         <div className="flex h-[45px] items-end gap-14 border-b border-[#dfe5e8] px-5 text-sm">
           <span className="pb-3 font-semibold">Obrigações</span>
