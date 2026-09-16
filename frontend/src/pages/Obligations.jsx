@@ -502,11 +502,11 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
                           const taskStatus = task?.calendarStatus || task?.status;
                           const isInvoiceTask = task && isInvoiceMovementTask(task);
                           return (
-                            <td key={column.key} className={`border border-[#dfe5e8] px-2 py-2 text-center ${isDoneStatus(taskStatus) ? 'bg-emerald-50' : ''}`}>
+                            <td key={column.key} className={`border border-[#dfe5e8] px-2 py-2 text-center ${taskStatus === 'noMovement' ? 'bg-zinc-100' : isDoneStatus(taskStatus) ? 'bg-emerald-50' : ''}`}>
                               {task ? (
                                 <div className="flex flex-col items-center gap-1">
                                   {isDoneStatus(taskStatus) ? (
-                                    <button onClick={() => toggleTask(task.id)} className="min-w-24 rounded px-2 py-1 text-xs font-semibold text-emerald-700">
+                                    <button onClick={() => toggleTask(task.id)} className={`min-w-24 rounded px-2 py-1 text-xs font-semibold ${taskStatus === 'noMovement' ? 'text-zinc-600' : 'text-emerald-700'}`}>
                                       {statusLabel(taskStatus)}
                                     </button>
                                   ) : isInvoiceTask ? (
