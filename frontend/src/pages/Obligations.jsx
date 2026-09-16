@@ -146,6 +146,15 @@ function TextField({ label, value, onChange, placeholder }) {
   );
 }
 
+function DateField({ label, value, onChange }) {
+  return (
+    <label className="block text-sm">
+      <span className="mb-1 block">{label}</span>
+      <input type="date" value={value} onChange={(event) => onChange(event.target.value)} className="h-10 w-full rounded border border-[#dfe5e8] bg-white px-3 text-[#3f4548]" />
+    </label>
+  );
+}
+
 function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
   let active = true;
   setLoading?.(true);
@@ -1313,8 +1322,10 @@ function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clients
   const [query, setQuery] = useState('');
   const [selectedIds, setSelectedIds] = useState([]);
   const [initialIds, setInitialIds] = useState([]);
+  const [unlinkEndsAt, setUnlinkEndsAt] = useState(new Date().toISOString().slice(0, 10));
   const [loading, setLoading] = useState(false);
   const visibleClients = clientsData.filter((client) => client.name.toLowerCase().includes(query.toLowerCase()));
+  const pendingUnlinks = initialIds.filter((clientId) => !selectedIds.includes(clientId));
 
   useEffect(() => {
     let active = true;
@@ -1353,13 +1364,17 @@ function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clients
       const initial = new Set(initialIds);
       const toAdd = selectedIds.filter((clientId) => !initial.has(clientId));
       const toRemove = initialIds.filter((clientId) => !current.has(clientId));
+      if (toRemove.length && !unlinkEndsAt) {
+        window.alert('Informe a data de término dos vínculos removidos.');
+        return;
+      }
       const matrix = toRemove.length ? (await api.get('/obligations/links/matrix')).data : { links: [] };
 
       await Promise.all([
         ...toAdd.map((clientId) => api.post('/obligations/links', { clientId, obligationId, active: true })),
         ...toRemove.map((clientId) => {
           const link = (matrix.links || []).find((item) => item.active && item.client?.id === clientId && item.obligation?.id === obligationId);
-          return link?.id ? api.delete(`/obligations/links/${link.id}`) : null;
+          return link?.id ? api.delete(`/obligations/links/${link.id}`, { data: { endsAt: dateInputToIso(unlinkEndsAt) } }) : null;
         }).filter(Boolean),
       ]);
 
@@ -1390,6 +1405,11 @@ function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clients
               <b>{selectedIds.length}</b> cliente(s) vinculado(s)
             </div>
           </div>
+          {pendingUnlinks.length > 0 && (
+            <div className="mb-4 rounded border border-amber-200 bg-amber-50 p-3">
+              <DateField label="Data de término dos vínculos removidos" value={unlinkEndsAt} onChange={setUnlinkEndsAt} />
+            </div>
+          )}
           {loading && <p className="mb-3 text-sm text-[#68737a]">Carregando vínculos...</p>}
           <div className="overflow-hidden rounded border border-[#e7ecef]">
             {visibleClients.map((client) => (
@@ -1777,10 +1797,16 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
   const obligationKey = cell.obligationKey || cell.obligationId || cell.obligation;
   const linked = (linkedClients[obligationKey] || []).includes(cell.client);
   const [responsible, setResponsible] = useState(linkResponsibles[`${obligationKey}::${cell.client}`] || responsibles[0]);
+  const [startsAt, setStartsAt] = useState(new Date().toISOString().slice(0, 10));
+  const [endsAt, setEndsAt] = useState(new Date().toISOString().slice(0, 10));
 
   async function saveLink() {
     if (!cell.clientId || !cell.obligationId) {
       window.alert('Não foi possível identificar o cliente ou a obrigação.');
+      return;
+    }
+    if (!startsAt) {
+      window.alert('Informe a data de início do vínculo.');
       return;
     }
     let savedLink = null;
@@ -1789,6 +1815,7 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
         clientId: cell.clientId,
         obligationId: cell.obligationId,
         active: true,
+        startsAt: dateInputToIso(startsAt),
       });
       savedLink = data;
     } catch (error) {
@@ -1810,8 +1837,12 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
   async function removeLink() {
     const linkId = cell.linkId || linkIds[`${obligationKey}::${cell.client}`];
     if (!linkId) return;
+    if (!endsAt) {
+      window.alert('Informe a data de término do vínculo.');
+      return;
+    }
     try {
-      await api.delete(`/obligations/links/${linkId}`);
+      await api.delete(`/obligations/links/${linkId}`, { data: { endsAt: dateInputToIso(endsAt) } });
     } catch (error) {
       window.alert(error.response?.data?.error || 'Não foi possível remover o vínculo.');
       return;
@@ -1850,6 +1881,11 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
           </div>
           <SelectField label="Responsavel pela tarefa" value={responsible} onChange={setResponsible} options={responsibles} />
           <p className="text-sm text-[#68737a]">A sigla exibida no quadradinho sera <b>{getInitials(responsible)}</b>.</p>
+          {linked ? (
+            <DateField label="Data de término do vínculo" value={endsAt} onChange={setEndsAt} />
+          ) : (
+            <DateField label="Data de início do vínculo" value={startsAt} onChange={setStartsAt} />
+          )}
         </div>
         <div className="flex justify-between border-t border-[#e7ecef] p-4">
           <button onClick={removeLink} disabled={!linked} className={`rounded border px-5 py-2 ${linked ? 'border-red-300 text-red-600' : 'cursor-not-allowed border-[#ddd] text-[#aaa]'}`}>Desvincular</button>
@@ -1895,6 +1931,7 @@ function buildCalendarTasks(links, year, month) {
     .map((link) => {
       const dueDate = getObligationDueDate(link.obligation, year, month);
       if (!dueDate) return null;
+      if (!isLinkActiveForDueDate(link, dueDate)) return null;
       const taskStatus = storedMovements[link.id] || link.taskStatus;
       return {
         id: link.id,
@@ -1969,6 +2006,17 @@ function statusForDate(task, date, today) {
 
 function startOfDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function dateInputToIso(value) {
+  return new Date(`${value}T12:00:00`).toISOString();
+}
+
+function isLinkActiveForDueDate(link, dueDate) {
+  const due = startOfDay(dueDate);
+  if (link.startsAt && due < startOfDay(new Date(link.startsAt))) return false;
+  if (link.endsAt && due > startOfDay(new Date(link.endsAt))) return false;
+  return true;
 }
 
 function isSameMonth(date, today) {

@@ -35,10 +35,15 @@ const linkSchema = z.object({
   responsibleId: z.string().optional().nullable(),
   active: z.boolean().optional(),
   startsAt: z.string().datetime().optional().nullable(),
+  endsAt: z.string().datetime().optional().nullable(),
 });
 
 const linkStatusSchema = z.object({
   taskStatus: z.enum(['EM_ABERTO', 'CONCLUIDA', 'SEM_MOVIMENTO', 'COM_MOVIMENTO']),
+});
+
+const unlinkSchema = z.object({
+  endsAt: z.string().datetime(),
 });
 
 const robotSchema = z.object({
@@ -192,12 +197,14 @@ async function upsertClientObligation(req, res) {
       active: data.active ?? true,
       responsibleId: data.responsibleId || req.user.id,
       startsAt: data.startsAt ? new Date(data.startsAt) : undefined,
+      endsAt: data.active === false && data.endsAt ? new Date(data.endsAt) : null,
     },
     create: {
       clientId: data.clientId,
       obligationId: data.obligationId,
       responsibleId: data.responsibleId || req.user.id,
       startsAt: data.startsAt ? new Date(data.startsAt) : undefined,
+      endsAt: data.endsAt ? new Date(data.endsAt) : null,
     },
     include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
   });
@@ -205,12 +212,17 @@ async function upsertClientObligation(req, res) {
 }
 
 async function removeClientObligation(req, res) {
+  const data = unlinkSchema.parse(req.body || {});
   const link = await prisma.clientObligation.findFirst({
     where: { id: req.params.id, client: firmWhere(req) },
   });
   if (!link) return res.status(404).json({ error: 'Vinculo nao encontrado.' });
-  await prisma.clientObligation.delete({ where: { id: link.id } });
-  res.status(204).send();
+  const updated = await prisma.clientObligation.update({
+    where: { id: link.id },
+    data: { active: false, endsAt: new Date(data.endsAt) },
+    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+  });
+  res.json(updated);
 }
 
 async function updateClientObligationStatus(req, res) {
