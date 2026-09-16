@@ -328,6 +328,9 @@ const typeLabels = {
   OUTRO: 'Outro',
 };
 
+const typeValues = Object.fromEntries(Object.entries(typeLabels).map(([value, label]) => [label, value]));
+const frequencyValues = Object.fromEntries(Object.entries(frequencyLabels).map(([value, label]) => [label, value]));
+
 function obligationToRow(obligation) {
   const dueText = obligation.dueControl === false
     ? 'Conforme evento/validade'
@@ -343,6 +346,14 @@ function obligationToRow(obligation) {
     obligation.defaultRobot ? 'Sim' : 'Não',
     dueText,
     obligation.id,
+    obligation.type,
+    obligation.frequency,
+    obligation.dueControl,
+    obligation.ruleMonth,
+    obligation.dueDay,
+    obligation.dueDateRule,
+    obligation.saturdayBusinessDay,
+    obligation.physicalOnly,
   ];
 }
 
@@ -828,12 +839,35 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
       .finally(() => setLoadingObligations(false));
   }, [setObligationRows]);
 
-  function saveObligation(next) {
-    setObligationRows((current) => {
-      if (next.index === -1) return [[next.name, next.type, next.department, next.nickname, next.frequency, next.status, next.robot], ...current];
-      return current.map((row, index) => index === next.index ? [next.name, next.type, next.department, next.nickname, next.frequency, next.status, next.robot] : row);
-    });
-    setEditing(null);
+  async function saveObligation(next) {
+    try {
+      const payload = {
+        name: next.name,
+        type: typeValues[next.type] || next.type,
+        department: next.department,
+        nickname: next.nickname,
+        frequency: frequencyValues[next.frequency] || next.frequency,
+        status: next.status === 'Ativo' ? 'ATIVO' : 'INATIVO',
+        physicalOnly: next.physicalOnly,
+        dueControl: next.dueControl,
+        ruleMonth: (frequencyValues[next.frequency] || next.frequency) === 'MONTHLY' ? null : (next.ruleMonth ? Number(next.ruleMonth) : null),
+        dueDay: next.dueDay ? Number(next.dueDay) : null,
+        dueDateRule: next.dueDateRule,
+        saturdayBusinessDay: next.saturdayBusinessDay,
+      };
+      const id = next.id || next.row?.[8];
+      const { data } = id
+        ? await api.put(`/obligations/${id}`, payload)
+        : await api.post('/obligations', payload);
+      const savedRow = obligationToRow(data);
+      setObligationRows((current) => {
+        if (!id) return [savedRow, ...current];
+        return current.map((row) => row[8] === id ? savedRow : row);
+      });
+      setEditing(null);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar a obrigação.');
+    }
   }
 
   return (
@@ -961,10 +995,12 @@ function ObligationModal({ editing, onClose, onSave }) {
   const [nickname, setNickname] = useState(editing.row[3]);
   const [frequency, setFrequency] = useState(editing.row[4] || 'Mensal');
   const [status, setStatus] = useState(editing.row[5]);
-  const [ruleMonth, setRuleMonth] = useState('10');
-  const [dueDay, setDueDay] = useState('31');
-  const [nonBusinessDayRule, setNonBusinessDayRule] = useState('Dias Corridos - Antecipa');
-  const [saturdayIsBusinessDay, setSaturdayIsBusinessDay] = useState('Nao');
+  const [physicalOnly, setPhysicalOnly] = useState(Boolean(editing.row[15]));
+  const [dueControl, setDueControl] = useState(editing.row[10] !== false);
+  const [ruleMonth, setRuleMonth] = useState(editing.row[11] ? String(editing.row[11]) : '');
+  const [dueDay, setDueDay] = useState(editing.row[12] ? String(editing.row[12]) : '');
+  const [nonBusinessDayRule, setNonBusinessDayRule] = useState(editing.row[13] === 'POSTERGA' ? 'Dias Uteis - Posterga' : 'Dias Corridos - Antecipa');
+  const [saturdayIsBusinessDay, setSaturdayIsBusinessDay] = useState(editing.row[14] ? 'Sim' : 'Nao');
   const [competence, setCompetence] = useState('06/2026');
   const [simulationResult, setSimulationResult] = useState('');
 
@@ -986,11 +1022,11 @@ function ObligationModal({ editing, onClose, onSave }) {
         <div className="flex items-center justify-between border-b border-[#e7ecef] p-4"><h2 className="text-2xl font-semibold">{name}</h2><button onClick={onClose} className="text-2xl text-[#aaa]">×</button></div>
         <div className="grid grid-cols-[1fr_240px] gap-9 p-4">
           <TextField label="Nome da obrigacao" value={name} onChange={setName} />
-          <SelectField label="Tipo de obrigacao" value={type} onChange={setType} options={['Pagamento', 'Cadastral', 'Declaracao']} />
+          <SelectField label="Tipo de obrigacao" value={type} onChange={setType} options={['Pagamento', 'Cadastral', 'Declaração', 'Documento', 'Outro']} />
           <SelectField label="Departamento da obrigacao" value={department} onChange={setDepartment} options={departments} />
           <div className="grid grid-cols-2 gap-4"><TextField label="Apelido da obrigacao" value={nickname} onChange={setNickname} /><SelectField label="Status da obrigacao" value={status} onChange={setStatus} options={['Ativo', 'Inativo']} /></div>
-          <label className="rounded border border-[#e7ecef] p-3"><input type="checkbox" /> Entrega somente fisica</label>
-          <label className="rounded border border-[#e7ecef] p-3"><input type="checkbox" defaultChecked /> Controle de vencimento</label>
+          <label className="rounded border border-[#e7ecef] p-3"><input type="checkbox" checked={physicalOnly} onChange={(event) => setPhysicalOnly(event.target.checked)} /> Entrega somente fisica</label>
+          <label className="rounded border border-[#e7ecef] p-3"><input type="checkbox" checked={dueControl} onChange={(event) => setDueControl(event.target.checked)} /> Controle de vencimento</label>
         </div>
         <div className="border-t border-[#e7ecef] p-4">
           <h3 className="mb-5 text-lg">Cadastro de Regras de Vencimento</h3>
@@ -1006,7 +1042,7 @@ function ObligationModal({ editing, onClose, onSave }) {
           <h3 className="mb-5 text-lg">Simular vencimento</h3>
           <div className="flex items-end gap-8"><TextField label="Competencia" value={competence} onChange={setCompetence} placeholder="mm/aaaa ou aaaa" /><button onClick={simulateDueDate} className="rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Simular vencimento</button><span>{simulationResult}</span></div>
         </div>
-        <div className="flex justify-end gap-3 border-t border-[#e7ecef] p-4"><button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button><button onClick={onClose} className="rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Excluir</button><button onClick={() => onSave({ index: editing.index, name, type, department, nickname, frequency, status })} className="rounded bg-[#2693d2] px-5 py-2 text-white">Salvar</button></div>
+        <div className="flex justify-end gap-3 border-t border-[#e7ecef] p-4"><button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button><button onClick={onClose} className="rounded border border-[#16829b] px-5 py-2 text-[#16829b]">Excluir</button><button onClick={() => onSave({ row: editing.row, index: editing.index, id: editing.row[8], name, type, department, nickname, frequency, status, physicalOnly, dueControl, ruleMonth, dueDay, dueDateRule: nonBusinessDayRule.includes('Posterga') ? 'POSTERGA' : 'ANTECIPA', saturdayBusinessDay: saturdayIsBusinessDay === 'Sim' })} className="rounded bg-[#2693d2] px-5 py-2 text-white">Salvar</button></div>
       </div>
     </div>
   );
