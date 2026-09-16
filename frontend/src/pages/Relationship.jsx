@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ExternalLink, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, X } from 'lucide-react';
+import { CheckCircle2, ClipboardCheck, ClipboardList, Copy, ExternalLink, ListChecks, MessageCircle, Plus, Search, Send, Settings, TriangleAlert, Users, WalletCards, X } from 'lucide-react';
 import { getStatus, connectEvolution, listConversations, createConversation, getConversationMessages, sendMessage } from '../api/whatsapp';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
@@ -24,6 +24,7 @@ function RelationshipMenu() {
         </SideMenuSection>
         <p className="mb-4 mt-1 flex items-center gap-2 font-semibold"><MessageCircle size={16} /> Relacionamento</p>
         <Link to="/radar-ecac" className="mb-4 flex items-center gap-2 text-[#68737a]">Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></Link>
+        <Link to="/financeiro" className="mb-4 flex items-center gap-2 text-[#68737a]"><WalletCards size={16} /> Financeiro</Link>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
         <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
           {['Meus clientes', 'Contatos'].map((item) => (

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ClipboardCheck, ClipboardList, ListChecks, MessageCircle, Pencil, Plus, Search,
-  Settings as SettingsIcon, ShieldCheck, Trash2, Upload, Users, X, KeyRound,
+  Settings as SettingsIcon, ShieldCheck, Trash2, Upload, Users, WalletCards, X, KeyRound,
 } from 'lucide-react';
 import { getFirm, updateFirm, uploadLogo, uploadCertificate, removeCertificate } from '../api/firm';
 import {
@@ -40,6 +40,7 @@ function SettingsMenu({ tab, setTab }) {
         </SideMenuSection>
         <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#68737a]"><MessageCircle size={16} /> Relacionamento</Link>
         <Link to="/radar-ecac" className="mb-4 flex items-center gap-2 text-[#68737a]">Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></Link>
+        <Link to="/financeiro" className="mb-4 flex items-center gap-2 text-[#68737a]"><WalletCards size={16} /> Financeiro</Link>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
         <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
           {['Meus clientes', 'Contatos'].map((item) => (

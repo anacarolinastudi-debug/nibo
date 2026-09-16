@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, RefreshCw, Settings, TriangleAlert, Users } from 'lucide-react';
+import { ClipboardCheck, ClipboardList, ListChecks, MessageCircle, RefreshCw, Settings, TriangleAlert, Users, WalletCards } from 'lucide-react';
 import { getStatus, getLatestByClient, syncClient } from '../api/ecac';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -25,6 +25,7 @@ function RadarMenu() {
         <p className="mb-4 flex items-center gap-2 font-semibold">
           Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b>
         </p>
+        <Link to="/financeiro" className="mb-4 flex items-center gap-2 text-[#68737a]"><WalletCards size={16} /> Financeiro</Link>
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
         <SideMenuSection icon={Users} label="Clientes" to="/clientes" open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
           {['Meus clientes', 'Contatos'].map((item) => (
