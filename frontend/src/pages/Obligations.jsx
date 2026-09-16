@@ -115,8 +115,27 @@ function Calendar({ tasks, setTasks }) {
   const [viewBy, setViewBy] = useState('atividade');
   const [showDone, setShowDone] = useState(true);
   const [expandedClient, setExpandedClient] = useState(null);
+  const [loadingCalendar, setLoadingCalendar] = useState(false);
 
   const days = useMemo(() => buildMonth(year, month), [year, month]);
+
+  useEffect(() => {
+    let active = true;
+    setLoadingCalendar(true);
+    api.get('/obligations/links/matrix')
+      .then(({ data }) => {
+        if (!active) return;
+        setTasks(buildCalendarTasks(data.links || [], year, month));
+      })
+      .catch(() => {
+        if (active) setTasks([]);
+      })
+      .finally(() => {
+        if (active) setLoadingCalendar(false);
+      });
+    return () => { active = false; };
+  }, [year, month, setTasks]);
+
   const tasksWithCalendarStatus = tasks.map((task) => ({
     ...task,
     calendarStatus: statusForDate(task, new Date(year, month, task.day), today),
@@ -203,6 +222,7 @@ function Calendar({ tasks, setTasks }) {
           <h2 className="text-xl font-semibold">Tarefas do dia {String(selectedDay).padStart(2, '0')}/{String(month + 1).padStart(2, '0')}/{year}</h2>
           <label className="flex items-center gap-2 text-sm text-[#147e9a]"><input type="checkbox" checked={showDone} onChange={(event) => setShowDone(event.target.checked)} /> Exibir concluidos</label>
         </div>
+        {loadingCalendar && <p className="mb-3 text-sm text-[#68737a]">Carregando obrigações vinculadas...</p>}
         <div className="mb-5 flex gap-4 text-sm">
           {['atividade', 'cliente'].map((mode) => (
             <button key={mode} onClick={() => selectView(mode)} className={`border-b-2 pb-2 ${viewBy === mode ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>
@@ -1504,6 +1524,57 @@ function buildMonth(year, month) {
     date.setDate(start.getDate() + index);
     return { date, current: date.getMonth() === month, key: date.toISOString() };
   });
+}
+
+function buildCalendarTasks(links, year, month) {
+  return links
+    .filter((link) => link.active && link.client && link.obligation?.status === 'ATIVO')
+    .map((link) => {
+      const dueDate = getObligationDueDate(link.obligation, year, month);
+      if (!dueDate) return null;
+      return {
+        id: link.id,
+        client: link.client.name,
+        obligation: link.obligation.name,
+        department: link.obligation.department,
+        day: dueDate.getDate(),
+        status: link.taskStatus === 'CONCLUIDA' ? 'doneOnTime' : 'openOnTime',
+      };
+    })
+    .filter(Boolean);
+}
+
+function getObligationDueDate(obligation, year, month) {
+  if (obligation.dueControl === false || !obligation.dueDay || obligation.frequency === 'NONE') return null;
+
+  if (obligation.frequency === 'YEARLY') {
+    const targetMonth = Number(obligation.ruleMonth || 1) - 1;
+    if (targetMonth !== month) return null;
+    return adjustDueDate(new Date(year, targetMonth, safeDueDay(year, targetMonth, obligation.dueDay)), obligation);
+  }
+
+  if (obligation.frequency === 'QUARTERLY') {
+    const baseMonth = obligation.ruleMonth ? Number(obligation.ruleMonth) - 1 : 0;
+    const monthDiff = ((month - baseMonth) % 3 + 3) % 3;
+    if (monthDiff !== 0) return null;
+  }
+
+  return adjustDueDate(new Date(year, month, safeDueDay(year, month, obligation.dueDay)), obligation);
+}
+
+function safeDueDay(year, month, dueDay) {
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return Math.min(Math.max(Number(dueDay || 1), 1), lastDay);
+}
+
+function adjustDueDate(date, obligation) {
+  const result = new Date(date);
+  const direction = obligation.dueDateRule === 'POSTERGA' ? 1 : -1;
+  const saturdayWorks = Boolean(obligation.saturdayBusinessDay);
+  while (isNonBusinessDay(result, saturdayWorks)) {
+    result.setDate(result.getDate() + direction);
+  }
+  return result;
 }
 
 function summarizeStatuses(tasks, date, today) {
