@@ -470,6 +470,8 @@ enum ProtocolStatus {
 enum TaskStatus {
   EM_ABERTO
   CONCLUIDA
+  SEM_MOVIMENTO
+  COM_MOVIMENTO
 }
 
 model Obligation {

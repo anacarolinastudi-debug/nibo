@@ -38,7 +38,7 @@ const linkSchema = z.object({
 });
 
 const linkStatusSchema = z.object({
-  taskStatus: z.enum(['EM_ABERTO', 'CONCLUIDA']),
+  taskStatus: z.enum(['EM_ABERTO', 'CONCLUIDA', 'SEM_MOVIMENTO', 'COM_MOVIMENTO']),
 });
 
 const robotSchema = z.object({

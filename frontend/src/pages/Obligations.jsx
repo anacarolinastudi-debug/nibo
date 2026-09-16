@@ -124,25 +124,37 @@ function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
   return () => { active = false; };
 }
 
-async function toggleLinkedTask({ id, tasks, setTasks, year, month, today }) {
+async function setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, month, today }) {
   const target = tasks.find((task) => task.id === id);
   if (!target) return;
   const currentStatus = statusForDate(target, new Date(year, month, target.day), today);
-  const nextDone = !isDoneStatus(currentStatus);
-  const nextStatus = nextDone
-    ? (currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime')
-    : 'openOnTime';
+  const nextStatus = calendarStatusFromTaskStatus(taskStatus, currentStatus);
 
   setTasks((current) => current.map((task) => (
-    task.id === id ? { ...task, status: nextStatus } : task
+    task.id === id ? { ...task, status: nextStatus, taskStatus } : task
   )));
 
   try {
-    await api.put(`/obligations/links/${id}/status`, { taskStatus: nextDone ? 'CONCLUIDA' : 'EM_ABERTO' });
+    await api.put(`/obligations/links/${id}/status`, { taskStatus });
   } catch (error) {
     setTasks((current) => current.map((task) => (task.id === id ? target : task)));
     window.alert(error.response?.data?.error || 'Não foi possível salvar a baixa da tarefa.');
   }
+}
+
+async function toggleLinkedTask({ id, tasks, setTasks, year, month, today }) {
+  const target = tasks.find((task) => task.id === id);
+  if (!target) return;
+  const currentStatus = statusForDate(target, new Date(year, month, target.day), today);
+  await setLinkedTaskStatus({
+    id,
+    taskStatus: isDoneStatus(currentStatus) ? 'EM_ABERTO' : 'CONCLUIDA',
+    tasks,
+    setTasks,
+    year,
+    month,
+    today,
+  });
 }
 
 function Calendar({ tasks, setTasks, reloadKey }) {
@@ -184,7 +196,11 @@ function Calendar({ tasks, setTasks, reloadKey }) {
     setExpandedClient(null);
   }
 
-  async function toggleTask(id) {
+  async function toggleTask(id, taskStatus) {
+    if (taskStatus) {
+      await setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, month, today });
+      return;
+    }
     await toggleLinkedTask({ id, tasks, setTasks, year, month, today });
   }
 
@@ -293,6 +309,7 @@ function Calendar({ tasks, setTasks, reloadKey }) {
 
 function TaskCard({ task, onToggle, compact }) {
   const taskStatus = task.calendarStatus || task.status;
+  const isInvoiceTask = isInvoiceMovementTask(task);
   return (
     <article className={`rounded border border-[#e6eaed] bg-white ${compact ? 'p-2.5' : 'p-3'}`}>
       <div className="flex items-start justify-between gap-3">
@@ -300,9 +317,17 @@ function TaskCard({ task, onToggle, compact }) {
           <div className="font-semibold">{task.obligation}</div>
           <div className="mt-1 text-sm text-[#68737a]">{task.client} · {task.department}</div>
         </div>
-        <button onClick={() => onToggle(task.id)} className={`rounded px-3 py-1 text-xs ${isDoneStatus(taskStatus) ? 'bg-emerald-50 text-emerald-700' : 'bg-[#f2f2f2]'}`}>
-          {isDoneStatus(taskStatus) ? statusLabel(taskStatus) : 'Marcar baixa'}
-        </button>
+        <div className="flex flex-wrap justify-end gap-2">
+          {isInvoiceTask && !isDoneStatus(taskStatus) && (
+            <>
+              <button onClick={() => onToggle(task.id, 'SEM_MOVIMENTO')} className="rounded bg-sky-50 px-3 py-1 text-xs text-sky-700">Sem movimento</button>
+              <button onClick={() => onToggle(task.id, 'COM_MOVIMENTO')} className="rounded bg-amber-50 px-3 py-1 text-xs text-amber-700">Com movimento</button>
+            </>
+          )}
+          <button onClick={() => onToggle(task.id)} className={`rounded px-3 py-1 text-xs ${isDoneStatus(taskStatus) ? 'bg-emerald-50 text-emerald-700' : 'bg-[#f2f2f2]'}`}>
+            {isDoneStatus(taskStatus) ? statusLabel(taskStatus) : 'Marcar baixa'}
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -349,7 +374,11 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
     setYear(next.getFullYear());
   }
 
-  async function toggleTask(id) {
+  async function toggleTask(id, taskStatus) {
+    if (taskStatus) {
+      await setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, month, today });
+      return;
+    }
     await toggleLinkedTask({ id, tasks, setTasks, year, month, today });
   }
 
@@ -420,15 +449,26 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
                         {section.columns.map((column) => {
                           const task = section.tasks.find((item) => item.client === client.client && item.obligation === column.obligation && item.day === column.day);
                           const taskStatus = task?.calendarStatus || task?.status;
+                          const isInvoiceTask = task && isInvoiceMovementTask(task);
                           return (
                             <td key={column.key} className={`border border-[#dfe5e8] px-2 py-2 text-center ${isDoneStatus(taskStatus) ? 'bg-emerald-50' : ''}`}>
                               {task ? (
-                                <button
-                                  onClick={() => toggleTask(task.id)}
-                                  className={`min-w-20 rounded px-2 py-1 text-xs font-semibold ${isDoneStatus(taskStatus) ? 'text-emerald-700' : 'bg-[#f2f2f2] text-[#3f4548]'}`}
-                                >
-                                  {isDoneStatus(taskStatus) ? 'OK' : 'Baixar'}
-                                </button>
+                                <div className="flex flex-col items-center gap-1">
+                                  {isDoneStatus(taskStatus) ? (
+                                    <button onClick={() => toggleTask(task.id)} className="min-w-24 rounded px-2 py-1 text-xs font-semibold text-emerald-700">
+                                      {statusLabel(taskStatus)}
+                                    </button>
+                                  ) : isInvoiceTask ? (
+                                    <>
+                                      <button onClick={() => toggleTask(task.id, 'SEM_MOVIMENTO')} className="min-w-28 rounded bg-sky-50 px-2 py-1 text-xs font-semibold text-sky-700">Sem movimento</button>
+                                      <button onClick={() => toggleTask(task.id, 'COM_MOVIMENTO')} className="min-w-28 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-700">Com movimento</button>
+                                    </>
+                                  ) : (
+                                    <button onClick={() => toggleTask(task.id)} className="min-w-20 rounded bg-[#f2f2f2] px-2 py-1 text-xs font-semibold text-[#3f4548]">
+                                      Baixar
+                                    </button>
+                                  )}
+                                </div>
                               ) : (
                                 <span className="text-[#c7ced3]">-</span>
                               )}
@@ -1756,10 +1796,12 @@ function buildCalendarTasks(links, year, month) {
         cnpj: link.client.cnpj,
         taxRegime: link.client.taxRegime,
         obligation: link.obligation.name,
+        nickname: link.obligation.nickname,
         department: link.obligation.department,
         day: dueDate.getDate(),
         dueDate,
-        status: link.taskStatus === 'CONCLUIDA' ? 'doneOnTime' : 'openOnTime',
+        taskStatus: link.taskStatus,
+        status: calendarStatusFromTaskStatus(link.taskStatus, 'openOnTime'),
       };
     })
     .filter(Boolean);
@@ -1806,7 +1848,7 @@ function summarizeStatuses(tasks, date, today) {
 }
 
 function isDoneStatus(status) {
-  return status === 'doneOnTime' || status === 'doneLate';
+  return ['doneOnTime', 'doneLate', 'noMovement', 'withMovement'].includes(status);
 }
 
 function statusForDate(task, date, today) {
@@ -1832,8 +1874,22 @@ function statusLabel(status) {
     openOnTime: 'Dentro do prazo',
     overdue: 'Atrasada',
     doneLate: 'Concluida em atraso',
+    noMovement: 'Sem movimento',
+    withMovement: 'Com movimento',
   };
   return labels[status] || status;
+}
+
+function calendarStatusFromTaskStatus(taskStatus, currentStatus = 'openOnTime') {
+  if (taskStatus === 'SEM_MOVIMENTO') return 'noMovement';
+  if (taskStatus === 'COM_MOVIMENTO') return 'withMovement';
+  if (taskStatus === 'CONCLUIDA') return currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime';
+  return 'openOnTime';
+}
+
+function isInvoiceMovementTask(task) {
+  const text = `${task.obligation || ''} ${task.nickname || ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return /\bnfs\b|\bnfse\b|\bnfs-e\b|\bnfe\b|\bnf-e\b|\bnfc\b|\bnfce\b|\bnfc-e\b|nota fiscal/.test(text);
 }
 
 function taxRegimeLabel(value) {
