@@ -20,6 +20,7 @@ router.delete('/groups/:id', requireRole('ADMIN'), ctrl.removeGroup);
 
 router.get('/links/matrix', ctrl.getLinksMatrix);
 router.post('/links', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.upsertClientObligation);
+router.put('/links/:id/status', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateClientObligationStatus);
 router.delete('/links/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeClientObligation);
 
 router.get('/robots/list', ctrl.listRobots);

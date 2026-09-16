@@ -37,6 +37,10 @@ const linkSchema = z.object({
   startsAt: z.string().datetime().optional().nullable(),
 });
 
+const linkStatusSchema = z.object({
+  taskStatus: z.enum(['EM_ABERTO', 'CONCLUIDA']),
+});
+
 const robotSchema = z.object({
   obligationId: z.string(),
   name: z.string().optional().nullable(),
@@ -207,6 +211,21 @@ async function removeClientObligation(req, res) {
   if (!link) return res.status(404).json({ error: 'Vinculo nao encontrado.' });
   await prisma.clientObligation.delete({ where: { id: link.id } });
   res.status(204).send();
+}
+
+async function updateClientObligationStatus(req, res) {
+  const data = linkStatusSchema.parse(req.body);
+  const existing = await prisma.clientObligation.findFirst({
+    where: { id: req.params.id, client: firmWhere(req) },
+  });
+  if (!existing) return res.status(404).json({ error: 'Vinculo nao encontrado.' });
+
+  const link = await prisma.clientObligation.update({
+    where: { id: existing.id },
+    data,
+    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+  });
+  res.json(link);
 }
 
 async function listRobots(req, res) {
@@ -523,6 +542,7 @@ module.exports = {
   removeGroup,
   getLinksMatrix,
   upsertClientObligation,
+  updateClientObligationStatus,
   removeClientObligation,
   listRobots,
   createRobot,

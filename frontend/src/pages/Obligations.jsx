@@ -159,13 +159,26 @@ function Calendar({ tasks, setTasks }) {
     setExpandedClient(null);
   }
 
-  function toggleTask(id) {
+  async function toggleTask(id) {
+    const target = tasks.find((task) => task.id === id);
+    if (!target) return;
+    const currentStatus = statusForDate(target, new Date(year, month, target.day), today);
+    const nextDone = !isDoneStatus(currentStatus);
+    const nextStatus = nextDone
+      ? (currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime')
+      : 'openOnTime';
+
     setTasks((current) => current.map((task) => {
       if (task.id !== id) return task;
-      const currentStatus = statusForDate(task, new Date(year, month, task.day), today);
-      if (isDoneStatus(currentStatus)) return { ...task, status: 'openOnTime' };
-      return { ...task, status: currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime' };
+      return { ...task, status: nextStatus };
     }));
+
+    try {
+      await api.put(`/obligations/links/${id}/status`, { taskStatus: nextDone ? 'CONCLUIDA' : 'EM_ABERTO' });
+    } catch (error) {
+      setTasks((current) => current.map((task) => (task.id === id ? target : task)));
+      window.alert(error.response?.data?.error || 'Não foi possível salvar a baixa da tarefa.');
+    }
   }
 
   function selectView(mode) {
