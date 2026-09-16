@@ -7,7 +7,7 @@ import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
-const tabs = ['Calendário', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
+const tabs = ['Calendário', 'Planilha', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
 const departments = ['Departamento Fiscal', 'Departamento Contabil', 'Departamento Pessoal', 'Departamento de Registro', 'Departamento Financeiro'];
 const obligationNames = seedObligations.map((item) => item[0]);
 const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -107,6 +107,44 @@ function TextField({ label, value, onChange, placeholder }) {
   );
 }
 
+function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
+  let active = true;
+  setLoading?.(true);
+  api.get('/obligations/links/matrix')
+    .then(({ data }) => {
+      if (!active) return;
+      setTasks(buildCalendarTasks(data.links || [], year, month));
+    })
+    .catch(() => {
+      if (active) setTasks([]);
+    })
+    .finally(() => {
+      if (active) setLoading?.(false);
+    });
+  return () => { active = false; };
+}
+
+async function toggleLinkedTask({ id, tasks, setTasks, year, month, today }) {
+  const target = tasks.find((task) => task.id === id);
+  if (!target) return;
+  const currentStatus = statusForDate(target, new Date(year, month, target.day), today);
+  const nextDone = !isDoneStatus(currentStatus);
+  const nextStatus = nextDone
+    ? (currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime')
+    : 'openOnTime';
+
+  setTasks((current) => current.map((task) => (
+    task.id === id ? { ...task, status: nextStatus } : task
+  )));
+
+  try {
+    await api.put(`/obligations/links/${id}/status`, { taskStatus: nextDone ? 'CONCLUIDA' : 'EM_ABERTO' });
+  } catch (error) {
+    setTasks((current) => current.map((task) => (task.id === id ? target : task)));
+    window.alert(error.response?.data?.error || 'Não foi possível salvar a baixa da tarefa.');
+  }
+}
+
 function Calendar({ tasks, setTasks }) {
   const today = useMemo(() => startOfDay(new Date()), []);
   const [month, setMonth] = useState(today.getMonth());
@@ -120,20 +158,7 @@ function Calendar({ tasks, setTasks }) {
   const days = useMemo(() => buildMonth(year, month), [year, month]);
 
   useEffect(() => {
-    let active = true;
-    setLoadingCalendar(true);
-    api.get('/obligations/links/matrix')
-      .then(({ data }) => {
-        if (!active) return;
-        setTasks(buildCalendarTasks(data.links || [], year, month));
-      })
-      .catch(() => {
-        if (active) setTasks([]);
-      })
-      .finally(() => {
-        if (active) setLoadingCalendar(false);
-      });
-    return () => { active = false; };
+    return loadLinkedCalendarTasks({ year, month, setTasks, setLoading: setLoadingCalendar });
   }, [year, month, setTasks]);
 
   const tasksWithCalendarStatus = tasks.map((task) => ({
@@ -160,25 +185,7 @@ function Calendar({ tasks, setTasks }) {
   }
 
   async function toggleTask(id) {
-    const target = tasks.find((task) => task.id === id);
-    if (!target) return;
-    const currentStatus = statusForDate(target, new Date(year, month, target.day), today);
-    const nextDone = !isDoneStatus(currentStatus);
-    const nextStatus = nextDone
-      ? (currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime')
-      : 'openOnTime';
-
-    setTasks((current) => current.map((task) => {
-      if (task.id !== id) return task;
-      return { ...task, status: nextStatus };
-    }));
-
-    try {
-      await api.put(`/obligations/links/${id}/status`, { taskStatus: nextDone ? 'CONCLUIDA' : 'EM_ABERTO' });
-    } catch (error) {
-      setTasks((current) => current.map((task) => (task.id === id ? target : task)));
-      window.alert(error.response?.data?.error || 'Não foi possível salvar a baixa da tarefa.');
-    }
+    await toggleLinkedTask({ id, tasks, setTasks, year, month, today });
   }
 
   function selectView(mode) {
@@ -298,6 +305,146 @@ function TaskCard({ task, onToggle, compact }) {
         </button>
       </div>
     </article>
+  );
+}
+
+function SpreadsheetView({ tasks, setTasks }) {
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [month, setMonth] = useState(today.getMonth());
+  const [year, setYear] = useState(today.getFullYear());
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [showDone, setShowDone] = useState(true);
+
+  useEffect(() => {
+    return loadLinkedCalendarTasks({ year, month, setTasks, setLoading });
+  }, [year, month, setTasks]);
+
+  const tasksWithStatus = tasks.map((task) => ({
+    ...task,
+    calendarStatus: statusForDate(task, new Date(year, month, task.day), today),
+  }));
+  const visibleTasks = tasksWithStatus.filter((task) => {
+    const text = `${task.client} ${task.cnpj} ${task.code} ${task.obligation}`.toLowerCase();
+    return text.includes(query.toLowerCase()) && (showDone || !isDoneStatus(task.calendarStatus));
+  });
+  const sections = Object.entries(visibleTasks.reduce((acc, task) => {
+    const section = task.department || 'Sem departamento';
+    const key = `${task.obligation}::${task.day}`;
+    const existing = acc[section] || { tasks: [], columns: new Map() };
+    existing.tasks.push(task);
+    if (!existing.columns.has(key)) {
+      existing.columns.set(key, { key, obligation: task.obligation, day: task.day });
+    }
+    return { ...acc, [section]: existing };
+  }, {})).map(([name, data]) => ({
+    name,
+    tasks: data.tasks,
+    columns: Array.from(data.columns.values()).sort((a, b) => a.day - b.day || a.obligation.localeCompare(b.obligation)),
+  }));
+
+  function shiftMonth(direction) {
+    const next = new Date(year, month + direction, 1);
+    setMonth(next.getMonth());
+    setYear(next.getFullYear());
+  }
+
+  async function toggleTask(id) {
+    await toggleLinkedTask({ id, tasks, setTasks, year, month, today });
+  }
+
+  function clientsForSection(sectionTasks) {
+    return Array.from(new Map(sectionTasks.map((task) => [task.client, {
+      client: task.client,
+      code: task.code || '-',
+      cnpj: task.cnpj || '-',
+      taxRegime: taxRegimeLabel(task.taxRegime),
+    }])).values()).sort((a, b) => a.client.localeCompare(b.client));
+  }
+
+  return (
+    <section className="p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold">Planilha de obrigações</h2>
+          <p className="mt-1 text-sm text-[#68737a]">Mesmas tarefas do calendário, conforme os vínculos cadastrados.</p>
+        </div>
+        <div className="flex items-center gap-4 text-lg text-[#147e9a]">
+          <button onClick={() => shiftMonth(-1)} className="rounded px-2 py-1 hover:bg-[#eaf6ff]">‹</button>
+          <b className="min-w-28 text-center text-[#111]">{monthLabels[month]}/{year}</b>
+          <button onClick={() => shiftMonth(1)} className="rounded px-2 py-1 hover:bg-[#eaf6ff]">›</button>
+        </div>
+      </div>
+      <div className="mb-4 flex flex-wrap items-end gap-4">
+        <div className="w-[360px] max-w-full">
+          <TextField label="Buscar" value={query} onChange={setQuery} placeholder="Cliente, CNPJ ou obrigação" />
+        </div>
+        <label className="mb-2 flex items-center gap-2 text-sm text-[#147e9a]">
+          <input type="checkbox" checked={showDone} onChange={(event) => setShowDone(event.target.checked)} />
+          Exibir baixadas
+        </label>
+      </div>
+      {loading && <p className="mb-3 text-sm text-[#68737a]">Carregando obrigações vinculadas...</p>}
+      {sections.length === 0 ? (
+        <p className="rounded border border-dashed border-[#cfd8dd] p-8 text-center text-[#7a858c]">Nenhuma tarefa vinculada para este mês.</p>
+      ) : (
+        <div className="space-y-8">
+          {sections.map((section) => (
+            <div key={section.name} className="overflow-hidden rounded border border-[#dfe5e8]">
+              <div className="bg-[#f2f2f2] px-3 py-2 text-sm font-bold uppercase text-[#202427]">
+                {section.name} - vencimentos de {monthLabels[month]}/{year}
+              </div>
+              <div className="overflow-auto">
+                <table className="min-w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-white">
+                      <th className="sticky left-0 z-20 w-16 min-w-16 border border-[#cfd8dd] bg-white px-2 py-2 text-left">COD</th>
+                      <th className="sticky left-16 z-20 w-72 min-w-72 border border-[#cfd8dd] bg-white px-2 py-2 text-left">Empresa</th>
+                      <th className="w-40 min-w-40 border border-[#cfd8dd] px-2 py-2 text-left">CNPJ</th>
+                      <th className="w-28 min-w-28 border border-[#cfd8dd] px-2 py-2 text-left">Tributação</th>
+                      {section.columns.map((column) => (
+                        <th key={column.key} className="w-44 min-w-44 border border-[#cfd8dd] px-2 py-2 text-center">
+                          <span className="block font-semibold">{column.obligation}</span>
+                          <span className="text-xs font-normal text-[#68737a]">Dia {column.day}</span>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientsForSection(section.tasks).map((client) => (
+                      <tr key={client.client}>
+                        <td className="sticky left-0 z-10 border border-[#dfe5e8] bg-white px-2 py-2">{client.code}</td>
+                        <td className="sticky left-16 z-10 border border-[#dfe5e8] bg-white px-2 py-2 font-medium">{client.client}</td>
+                        <td className="border border-[#dfe5e8] px-2 py-2">{client.cnpj}</td>
+                        <td className="border border-[#dfe5e8] px-2 py-2">{client.taxRegime}</td>
+                        {section.columns.map((column) => {
+                          const task = section.tasks.find((item) => item.client === client.client && item.obligation === column.obligation && item.day === column.day);
+                          const taskStatus = task?.calendarStatus || task?.status;
+                          return (
+                            <td key={column.key} className={`border border-[#dfe5e8] px-2 py-2 text-center ${isDoneStatus(taskStatus) ? 'bg-emerald-50' : ''}`}>
+                              {task ? (
+                                <button
+                                  onClick={() => toggleTask(task.id)}
+                                  className={`min-w-20 rounded px-2 py-1 text-xs font-semibold ${isDoneStatus(taskStatus) ? 'text-emerald-700' : 'bg-[#f2f2f2] text-[#3f4548]'}`}
+                                >
+                                  {isDoneStatus(taskStatus) ? 'OK' : 'Baixar'}
+                                </button>
+                              ) : (
+                                <span className="text-[#c7ced3]">-</span>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -1584,9 +1731,13 @@ function buildCalendarTasks(links, year, month) {
       return {
         id: link.id,
         client: link.client.name,
+        code: link.client.code,
+        cnpj: link.client.cnpj,
+        taxRegime: link.client.taxRegime,
         obligation: link.obligation.name,
         department: link.obligation.department,
         day: dueDate.getDate(),
+        dueDate,
         status: link.taskStatus === 'CONCLUIDA' ? 'doneOnTime' : 'openOnTime',
       };
     })
@@ -1664,6 +1815,17 @@ function statusLabel(status) {
   return labels[status] || status;
 }
 
+function taxRegimeLabel(value) {
+  const labels = {
+    SIMPLES_NACIONAL: 'SIMPLES',
+    LUCRO_PRESUMIDO: 'Lucro Presumido',
+    LUCRO_REAL: 'Lucro Real',
+    MEI: 'MEI',
+    IMUNE_ISENTA: 'Imune/Isenta',
+  };
+  return labels[value] || value || '-';
+}
+
 function groupTasks(tasks, by) {
   return tasks.reduce((acc, task) => {
     const key = by === 'cliente' ? task.client : task.obligation;
@@ -1687,6 +1849,7 @@ export default function Obligations() {
   const clientsList = serverClients.map((client) => client.name);
   const content = {
     Calendário: <Calendar tasks={tasks} setTasks={setTasks} />,
+    Planilha: <SpreadsheetView tasks={tasks} setTasks={setTasks} />,
     Conferência: <Conference />,
     Protocolos: <Protocols />,
     Relatórios: <Reports tasks={tasks} protocols={[]} />,
