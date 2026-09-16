@@ -21,7 +21,6 @@ const departmentsRoutes = require('./routes/departments.routes');
 const { startEcacScheduler } = require('./jobs/ecacScheduler');
 const errorHandler = require('./middleware/errorHandler');
 const prisma = require('./lib/prisma');
-const { seedYoungClients } = require('./services/youngClientsBootstrap.service');
 
 const app = express();
 
@@ -70,7 +69,4 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`API rodando em http://localhost:${PORT}`);
   startEcacScheduler();
-  seedYoungClients().catch((error) => {
-    console.error('Falha ao sincronizar clientes Young:', error);
-  });
 });
