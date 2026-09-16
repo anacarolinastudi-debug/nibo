@@ -119,8 +119,69 @@ const transactionSchema = z.object({
   paid: z.boolean().optional(),
 });
 
+async function resolveTransactionDefaults({ clientId, accountingFirmId, type, accountId, categoryId }) {
+  let resolvedAccountId = accountId;
+  if (!resolvedAccountId) {
+    const account = await prisma.financialAccount.findFirst({
+      where: { clientId, bankName: 'Conta principal' },
+    }) || await prisma.financialAccount.create({
+      data: { clientId, bankName: 'Conta principal' },
+    });
+    resolvedAccountId = account.id;
+  }
+
+  let resolvedCategoryId = categoryId;
+  if (!resolvedCategoryId) {
+    const name = type === 'RECEITA' ? 'Recebimentos' : 'Pagamentos';
+    const category = await prisma.financialCategory.findFirst({
+      where: { accountingFirmId, type, name },
+    }) || await prisma.financialCategory.create({
+      data: { accountingFirmId, type, name },
+    });
+    resolvedCategoryId = category.id;
+  }
+
+  return { accountId: resolvedAccountId, categoryId: resolvedCategoryId };
+}
+
+async function syncMissingReceiptTransactions(accountingFirmId) {
+  const receipts = await prisma.financialReceipt.findMany({
+    where: { accountingFirmId, transactionId: null },
+    select: { id: true, description: true, amount: true, dueDate: true, issueDate: true, paymentDate: true, clientId: true },
+  });
+
+  for (const receipt of receipts) {
+    const { accountId, categoryId } = await resolveTransactionDefaults({
+      clientId: receipt.clientId,
+      accountingFirmId,
+      type: 'RECEITA',
+    });
+    const transaction = await prisma.financialTransaction.create({
+      data: {
+        description: receipt.description,
+        amount: receipt.amount,
+        type: 'RECEITA',
+        status: receipt.paymentDate ? 'PAID' : 'PENDING',
+        dueDate: receipt.dueDate || receipt.issueDate || new Date(),
+        paidAt: receipt.paymentDate || null,
+        clientId: receipt.clientId,
+        accountId,
+        categoryId,
+      },
+    });
+    await prisma.financialReceipt.update({
+      where: { id: receipt.id },
+      data: { transactionId: transaction.id },
+    });
+  }
+}
+
 async function listTransactions(req, res) {
   const { clientId, type, status, month, year } = req.query;
+
+  if (req.user.role !== 'CLIENT') {
+    await syncMissingReceiptTransactions(req.user.accountingFirmId);
+  }
 
   const where = {
     ...clientScope(req.user),
@@ -157,26 +218,13 @@ async function createTransaction(req, res) {
   });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
-  let accountId = data.accountId;
-  if (!accountId) {
-    const account = await prisma.financialAccount.findFirst({
-      where: { clientId: client.id, bankName: 'Conta principal' },
-    }) || await prisma.financialAccount.create({
-      data: { clientId: client.id, bankName: 'Conta principal' },
-    });
-    accountId = account.id;
-  }
-
-  let categoryId = data.categoryId;
-  if (!categoryId) {
-    const name = data.type === 'RECEITA' ? 'Recebimentos' : 'Pagamentos';
-    const category = await prisma.financialCategory.findFirst({
-      where: { accountingFirmId: req.user.accountingFirmId, type: data.type, name },
-    }) || await prisma.financialCategory.create({
-      data: { accountingFirmId: req.user.accountingFirmId, type: data.type, name },
-    });
-    categoryId = category.id;
-  }
+  const { accountId, categoryId } = await resolveTransactionDefaults({
+    clientId: client.id,
+    accountingFirmId: req.user.accountingFirmId,
+    type: data.type,
+    accountId: data.accountId,
+    categoryId: data.categoryId,
+  });
 
   const transaction = await prisma.financialTransaction.create({
     data: {
@@ -270,20 +318,48 @@ async function createReceipt(req, res) {
   });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
 
-  const receipt = await prisma.financialReceipt.create({
-    data: {
-      number: await nextReceiptNumber(req.user.accountingFirmId),
-      description: data.description,
-      amount: data.amount,
-      issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
-      dueDate: data.dueDate ? new Date(data.dueDate) : null,
-      paymentDate: data.paymentDate ? new Date(data.paymentDate) : null,
-      paymentMethod: data.paymentMethod || null,
-      notes: data.notes || null,
-      accountingFirmId: req.user.accountingFirmId,
-      clientId: client.id,
-    },
-    include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+  const { accountId, categoryId } = await resolveTransactionDefaults({
+    clientId: client.id,
+    accountingFirmId: req.user.accountingFirmId,
+    type: 'RECEITA',
+  });
+
+  const paid = Boolean(data.paymentDate);
+  const receipt = await prisma.$transaction(async (tx) => {
+    const transaction = await tx.financialTransaction.create({
+      data: {
+        description: data.description,
+        amount: data.amount,
+        type: 'RECEITA',
+        status: paid ? 'PAID' : 'PENDING',
+        dueDate: data.dueDate ? new Date(data.dueDate) : (data.issueDate ? new Date(data.issueDate) : new Date()),
+        paidAt: data.paymentDate ? new Date(data.paymentDate) : null,
+        clientId: client.id,
+        accountId,
+        categoryId,
+      },
+    });
+
+    if (paid) {
+      await tx.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: data.amount } } });
+    }
+
+    return tx.financialReceipt.create({
+      data: {
+        number: await nextReceiptNumber(req.user.accountingFirmId),
+        description: data.description,
+        amount: data.amount,
+        issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        paymentDate: data.paymentDate ? new Date(data.paymentDate) : null,
+        paymentMethod: data.paymentMethod || null,
+        notes: data.notes || null,
+        accountingFirmId: req.user.accountingFirmId,
+        clientId: client.id,
+        transactionId: transaction.id,
+      },
+      include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+    });
   });
 
   res.status(201).json(receipt);
@@ -294,6 +370,7 @@ async function updateReceipt(req, res) {
 
   const existing = await prisma.financialReceipt.findFirst({
     where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+    include: { transaction: true },
   });
   if (!existing) return res.status(404).json({ error: 'Recibo não encontrado.' });
 
@@ -306,19 +383,67 @@ async function updateReceipt(req, res) {
     clientId = client.id;
   }
 
-  const receipt = await prisma.financialReceipt.update({
-    where: { id: existing.id },
-    data: {
-      ...(data.description !== undefined ? { description: data.description } : {}),
-      ...(data.amount !== undefined ? { amount: data.amount } : {}),
-      ...(data.issueDate !== undefined ? { issueDate: data.issueDate ? new Date(data.issueDate) : existing.issueDate } : {}),
-      ...(data.dueDate !== undefined ? { dueDate: data.dueDate ? new Date(data.dueDate) : null } : {}),
-      ...(data.paymentDate !== undefined ? { paymentDate: data.paymentDate ? new Date(data.paymentDate) : null } : {}),
-      ...(data.paymentMethod !== undefined ? { paymentMethod: data.paymentMethod || null } : {}),
-      ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
-      clientId,
-    },
-    include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+  const nextDescription = data.description ?? existing.description;
+  const nextAmount = data.amount ?? Number(existing.amount);
+  const nextDueDate = data.dueDate !== undefined ? (data.dueDate ? new Date(data.dueDate) : null) : existing.dueDate;
+  const nextIssueDate = data.issueDate !== undefined ? (data.issueDate ? new Date(data.issueDate) : existing.issueDate) : existing.issueDate;
+  const nextPaymentDate = data.paymentDate !== undefined ? (data.paymentDate ? new Date(data.paymentDate) : null) : existing.paymentDate;
+  const nextPaid = Boolean(nextPaymentDate);
+
+  const { accountId, categoryId } = await resolveTransactionDefaults({
+    clientId,
+    accountingFirmId: req.user.accountingFirmId,
+    type: 'RECEITA',
+  });
+
+  const receipt = await prisma.$transaction(async (tx) => {
+    let transactionId = existing.transactionId;
+    if (transactionId) {
+      await tx.financialTransaction.update({
+        where: { id: transactionId },
+        data: {
+          description: nextDescription,
+          amount: nextAmount,
+          dueDate: nextDueDate || nextIssueDate || new Date(),
+          status: nextPaid ? 'PAID' : 'PENDING',
+          paidAt: nextPaymentDate,
+          clientId,
+          accountId: existing.transaction?.accountId || accountId,
+          categoryId: existing.transaction?.categoryId || categoryId,
+        },
+      });
+    } else {
+      const transaction = await tx.financialTransaction.create({
+        data: {
+          description: nextDescription,
+          amount: nextAmount,
+          type: 'RECEITA',
+          dueDate: nextDueDate || nextIssueDate || new Date(),
+          status: nextPaid ? 'PAID' : 'PENDING',
+          paidAt: nextPaymentDate,
+          clientId,
+          accountId,
+          categoryId,
+        },
+      });
+      transactionId = transaction.id;
+    }
+
+    return tx.financialReceipt.update({
+      where: { id: existing.id },
+      data: {
+        description: nextDescription,
+        amount: nextAmount,
+        issueDate: nextIssueDate,
+        dueDate: nextDueDate,
+        paymentDate: nextPaymentDate,
+        ...(data.paymentMethod !== undefined ? { paymentMethod: data.paymentMethod || null } : {}),
+        ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
+        clientId,
+        transactionId,
+      },
+      include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+    });
   });
 
   res.json(receipt);

@@ -829,6 +829,8 @@ model FinancialTransaction {
   categoryId String
   category   FinancialCategory @relation(fields: [categoryId], references: [id])
 
+  receipt FinancialReceipt?
+
   @@index([clientId])
   @@index([accountId])
   @@map("financial_transactions")
@@ -852,6 +854,9 @@ model FinancialReceipt {
 
   clientId String
   client   Client @relation(fields: [clientId], references: [id])
+
+  transactionId String? @unique
+  transaction   FinancialTransaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
 
   @@unique([accountingFirmId, number])
   @@index([accountingFirmId])

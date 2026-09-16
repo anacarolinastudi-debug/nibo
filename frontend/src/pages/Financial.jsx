@@ -306,7 +306,7 @@ export default function Financial() {
         </section>
       </main>
       {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} />}
-      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
+      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
     </div>
   );
 }
