@@ -145,7 +145,7 @@ async function toggleLinkedTask({ id, tasks, setTasks, year, month, today }) {
   }
 }
 
-function Calendar({ tasks, setTasks }) {
+function Calendar({ tasks, setTasks, reloadKey }) {
   const today = useMemo(() => startOfDay(new Date()), []);
   const [month, setMonth] = useState(today.getMonth());
   const [year, setYear] = useState(today.getFullYear());
@@ -159,7 +159,7 @@ function Calendar({ tasks, setTasks }) {
 
   useEffect(() => {
     return loadLinkedCalendarTasks({ year, month, setTasks, setLoading: setLoadingCalendar });
-  }, [year, month, setTasks]);
+  }, [year, month, setTasks, reloadKey]);
 
   const tasksWithCalendarStatus = tasks.map((task) => ({
     ...task,
@@ -308,7 +308,7 @@ function TaskCard({ task, onToggle, compact }) {
   );
 }
 
-function SpreadsheetView({ tasks, setTasks }) {
+function SpreadsheetView({ tasks, setTasks, reloadKey }) {
   const today = useMemo(() => startOfDay(new Date()), []);
   const [month, setMonth] = useState(today.getMonth());
   const [year, setYear] = useState(today.getFullYear());
@@ -318,7 +318,7 @@ function SpreadsheetView({ tasks, setTasks }) {
 
   useEffect(() => {
     return loadLinkedCalendarTasks({ year, month, setTasks, setLoading });
-  }, [year, month, setTasks]);
+  }, [year, month, setTasks, reloadKey]);
 
   const tasksWithStatus = tasks.map((task) => ({
     ...task,
@@ -969,7 +969,7 @@ function Reports({ tasks, protocols }) {
   );
 }
 
-function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, clientsList, clientsData }) {
+function Configurations({ obligationRows, setObligationRows, linkedClients, setLinkedClients, clientsList, clientsData, onObligationSaved }) {
   const [section, setSection] = useState('Lista de obrigações');
   const [editing, setEditing] = useState(null);
   const [linking, setLinking] = useState(null);
@@ -997,8 +997,8 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
         status: next.status === 'Ativo' ? 'ATIVO' : 'INATIVO',
         physicalOnly: next.physicalOnly,
         dueControl: next.dueControl,
-        ruleMonth: (frequencyValues[next.frequency] || next.frequency) === 'MONTHLY' ? null : (next.ruleMonth ? Number(next.ruleMonth) : null),
-        dueDay: next.dueDay ? Number(next.dueDay) : null,
+        ruleMonth: ['MONTHLY', 'NONE'].includes(frequencyValues[next.frequency] || next.frequency) ? null : (next.ruleMonth ? Number(next.ruleMonth) : null),
+        dueDay: next.dueControl && next.dueDay ? Number(next.dueDay) : null,
         dueDateRule: next.dueDateRule,
         saturdayBusinessDay: next.saturdayBusinessDay,
       };
@@ -1011,6 +1011,7 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
         if (!id) return [savedRow, ...current];
         return current.map((row) => row[8] === id ? savedRow : row);
       });
+      onObligationSaved?.();
       setEditing(null);
     } catch (error) {
       window.alert(error.response?.data?.error || 'Não foi possível salvar a obrigação.');
@@ -1150,8 +1151,15 @@ function ObligationModal({ editing, onClose, onSave }) {
   const [saturdayIsBusinessDay, setSaturdayIsBusinessDay] = useState(editing.row[14] ? 'Sim' : 'Nao');
   const [competence, setCompetence] = useState('06/2026');
   const [simulationResult, setSimulationResult] = useState('');
+  const frequencyCode = frequencyValues[frequency] || frequency;
+  const hasScheduledDueDate = dueControl && frequencyCode !== 'NONE';
+  const usesRuleMonth = ['QUARTERLY', 'YEARLY'].includes(frequencyCode);
 
   function simulateDueDate() {
+    if (!hasScheduledDueDate) {
+      setSimulationResult('Esta obrigação está como por evento e não entra no calendário automaticamente.');
+      return;
+    }
     const result = calculateDueDate({
       competence,
       frequency,
@@ -1178,12 +1186,25 @@ function ObligationModal({ editing, onClose, onSave }) {
         <div className="border-t border-[#e7ecef] p-4">
           <h3 className="mb-5 text-lg">Cadastro de Regras de Vencimento</h3>
           <div className="grid grid-cols-5 gap-8">
-            <SelectField label="Frequencia" value={frequency} onChange={setFrequency} options={['Mensal', 'Anual', 'Trimestral']} />
-            <TextField label="Meses" value={ruleMonth} onChange={setRuleMonth} />
-            <TextField label="Dia do vencimento" value={dueDay} onChange={setDueDay} />
+            <SelectField label="Frequência" value={frequency} onChange={(value) => {
+              setFrequency(value);
+              if ((frequencyValues[value] || value) === 'NONE') {
+                setDueControl(false);
+                setRuleMonth('');
+              } else {
+                setDueControl(true);
+              }
+            }} options={['Mensal', 'Trimestral', 'Anual', 'Por evento']} />
+            <TextField label={usesRuleMonth ? 'Mês inicial/base' : 'Mês'} value={ruleMonth} onChange={setRuleMonth} placeholder={usesRuleMonth ? '1 a 12' : 'Não usado'} />
+            <TextField label="Dia do vencimento" value={dueDay} onChange={setDueDay} placeholder={hasScheduledDueDate ? '1 a 31' : 'Não usado'} />
             <SelectField label="Data nao util" value={nonBusinessDayRule} onChange={setNonBusinessDayRule} options={['Dias Corridos - Antecipa', 'Dias Uteis - Posterga']} />
             <SelectField label="Sabado e dia util?" value={saturdayIsBusinessDay} onChange={setSaturdayIsBusinessDay} options={['Nao', 'Sim']} />
           </div>
+          <p className="mt-3 text-sm text-[#68737a]">
+            {frequencyCode === 'NONE'
+              ? 'Obrigações por evento ficam fora do calendário e da planilha automática até serem tratadas manualmente.'
+              : 'Alterações nesta regra atualizam os vencimentos exibidos no calendário e na planilha.'}
+          </p>
         </div>
         <div className="bg-[#f3f3f3] p-4">
           <h3 className="mb-5 text-lg">Simular vencimento</h3>
@@ -1836,6 +1857,7 @@ function groupTasks(tasks, by) {
 export default function Obligations() {
   const [activeTab, setActiveTab] = useState('Calendário');
   const [tasks, setTasks] = useState([]);
+  const [calendarReloadKey, setCalendarReloadKey] = useState(0);
   const [obligationRows, setObligationRows] = useState(seedObligations);
   const [linkedClients, setLinkedClients] = useState({});
   const [serverClients, setServerClients] = useState([]);
@@ -1848,12 +1870,12 @@ export default function Obligations() {
 
   const clientsList = serverClients.map((client) => client.name);
   const content = {
-    Calendário: <Calendar tasks={tasks} setTasks={setTasks} />,
-    Planilha: <SpreadsheetView tasks={tasks} setTasks={setTasks} />,
+    Calendário: <Calendar tasks={tasks} setTasks={setTasks} reloadKey={calendarReloadKey} />,
+    Planilha: <SpreadsheetView tasks={tasks} setTasks={setTasks} reloadKey={calendarReloadKey} />,
     Conferência: <Conference />,
     Protocolos: <Protocols />,
     Relatórios: <Reports tasks={tasks} protocols={[]} />,
-    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} clientsData={serverClients} />,
+    Configurações: <Configurations obligationRows={obligationRows} setObligationRows={setObligationRows} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} clientsData={serverClients} onObligationSaved={() => setCalendarReloadKey((value) => value + 1)} />,
   };
 
   return (
