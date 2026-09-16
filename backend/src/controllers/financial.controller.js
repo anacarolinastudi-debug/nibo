@@ -29,14 +29,32 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function logoDataUri(logoUrl) {
-  if (!logoUrl?.startsWith('/uploads/')) return '';
+function logoMime(fileName) {
+  const ext = path.extname(fileName || '').toLowerCase();
+  if (ext === '.png') return 'image/png';
+  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
+  if (ext === '.bmp') return 'image/bmp';
+  if (ext === '.webp') return 'image/webp';
+  return '';
+}
+
+function apiBaseUrl(req) {
+  const configured = process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
+  return configured.replace(/\/+$/, '');
+}
+
+function logoSource(logoUrl, req) {
+  if (!logoUrl) return '';
+  if (/^https?:\/\//i.test(logoUrl)) return logoUrl;
+  if (!logoUrl.startsWith('/uploads/')) return '';
+
   const filePath = path.join(__dirname, '..', '..', 'uploads', path.basename(logoUrl));
-  if (!fs.existsSync(filePath)) return '';
-  const ext = path.extname(filePath).toLowerCase();
-  const mime = ext === '.png' ? 'image/png' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.bmp' ? 'image/bmp' : '';
-  if (!mime) return '';
-  return `data:${mime};base64,${fs.readFileSync(filePath).toString('base64')}`;
+  if (fs.existsSync(filePath)) {
+    const mime = logoMime(filePath);
+    if (mime) return `data:${mime};base64,${fs.readFileSync(filePath).toString('base64')}`;
+  }
+
+  return `${apiBaseUrl(req)}${logoUrl}`;
 }
 
 // ---------- Contas bancárias ----------
@@ -259,9 +277,9 @@ async function updateReceipt(req, res) {
   res.json(receipt);
 }
 
-function receiptHtml(receipt) {
+function receiptHtml(receipt, req) {
   const firm = receipt.accountingFirm;
-  const logoSrc = logoDataUri(firm.logoUrl);
+  const logoSrc = logoSource(firm.logoUrl, req);
   const firmAddress = [firm.street, firm.number, firm.neighborhood, firm.city, firm.state].filter(Boolean).join(', ');
   const clientAddress = [receipt.client.street, receipt.client.number, receipt.client.neighborhood, receipt.client.city, receipt.client.state].filter(Boolean).join(', ');
   return `<!doctype html>
@@ -371,7 +389,7 @@ async function receiptPdf(req, res) {
   const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
   try {
     const page = await browser.newPage();
-    await page.setContent(receiptHtml(receipt), { waitUntil: 'networkidle' });
+    await page.setContent(receiptHtml(receipt, req), { waitUntil: 'networkidle' });
     const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '12mm', right: '12mm', bottom: '12mm', left: '12mm' } });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${receipt.number}.pdf"`);
