@@ -406,11 +406,11 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
   });
   const sections = Object.entries(visibleTasks.reduce((acc, task) => {
     const section = task.department || 'Sem departamento';
-    const key = `${task.obligation}::${task.day}`;
+    const key = `${task.obligationId || task.obligation}::${task.day}`;
     const existing = acc[section] || { tasks: [], columns: new Map() };
     existing.tasks.push(task);
     if (!existing.columns.has(key)) {
-      existing.columns.set(key, { key, obligation: task.obligation, day: task.day });
+      existing.columns.set(key, { key, obligationId: task.obligationId, obligation: task.obligation, day: task.day });
     }
     return { ...acc, [section]: existing };
   }, {})).map(([name, data]) => ({
@@ -498,7 +498,7 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
                         <td className="border border-[#dfe5e8] px-2 py-2">{client.cnpj}</td>
                         <td className="border border-[#dfe5e8] px-2 py-2">{client.taxRegime}</td>
                         {section.columns.map((column) => {
-                          const task = section.tasks.find((item) => item.client === client.client && item.obligation === column.obligation && item.day === column.day);
+                          const task = section.tasks.find((item) => item.client === client.client && (column.obligationId ? item.obligationId === column.obligationId : item.obligation === column.obligation) && item.day === column.day);
                           const taskStatus = task?.calendarStatus || task?.status;
                           const isInvoiceTask = task && isInvoiceMovementTask(task);
                           return (
@@ -1126,7 +1126,7 @@ function Configurations({ obligationRows, setObligationRows, linkedClients, setL
         {section === 'Responsabilidades' && <Responsibilities />}
       </div>
       {editing && <ObligationModal editing={editing} onClose={() => setEditing(null)} onSave={saveObligation} />}
-      {linking && <LinkClientsModal obligation={linking} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} onClose={() => setLinking(null)} />}
+      {linking && <LinkClientsModal obligation={linking} linkedClients={linkedClients} setLinkedClients={setLinkedClients} clientsList={clientsList} clientsData={clientsData} onClose={() => setLinking(null)} />}
     </section>
   );
 }
@@ -1307,19 +1307,70 @@ function ObligationModal({ editing, onClose, onSave }) {
   );
 }
 
-function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clientsList, onClose }) {
+function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clientsList, clientsData, onClose }) {
   const obligationName = obligation[0];
-  const selected = linkedClients[obligationName] || [];
-  const visibleClients = clientsList;
+  const obligationId = obligation[8];
+  const [query, setQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [initialIds, setInitialIds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const visibleClients = clientsData.filter((client) => client.name.toLowerCase().includes(query.toLowerCase()));
 
-  function toggleClient(client) {
-    setLinkedClients((current) => {
-      const currentClients = current[obligationName] || [];
-      const nextClients = currentClients.includes(client)
-        ? currentClients.filter((item) => item !== client)
-        : [...currentClients, client];
-      return { ...current, [obligationName]: nextClients };
-    });
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api.get('/obligations/links/matrix')
+      .then(({ data }) => {
+        if (!active) return;
+        const ids = (data.links || [])
+          .filter((link) => link.active && link.obligation?.id === obligationId)
+          .map((link) => link.client?.id)
+          .filter(Boolean);
+        setSelectedIds(ids);
+        setInitialIds(ids);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [obligationId]);
+
+  function toggleClient(clientId) {
+    setSelectedIds((current) => current.includes(clientId)
+      ? current.filter((id) => id !== clientId)
+      : [...current, clientId]);
+  }
+
+  async function saveLinks() {
+    if (!obligationId) {
+      window.alert('Salve a obrigação antes de vincular clientes.');
+      return;
+    }
+
+    try {
+      const current = new Set(selectedIds);
+      const initial = new Set(initialIds);
+      const toAdd = selectedIds.filter((clientId) => !initial.has(clientId));
+      const toRemove = initialIds.filter((clientId) => !current.has(clientId));
+      const matrix = toRemove.length ? (await api.get('/obligations/links/matrix')).data : { links: [] };
+
+      await Promise.all([
+        ...toAdd.map((clientId) => api.post('/obligations/links', { clientId, obligationId, active: true })),
+        ...toRemove.map((clientId) => {
+          const link = (matrix.links || []).find((item) => item.active && item.client?.id === clientId && item.obligation?.id === obligationId);
+          return link?.id ? api.delete(`/obligations/links/${link.id}`) : null;
+        }).filter(Boolean),
+      ]);
+
+      const selectedNames = clientsData
+        .filter((client) => selectedIds.includes(client.id))
+        .map((client) => client.name);
+      setLinkedClients((currentLinks) => ({ ...currentLinks, [obligationId]: selectedNames }));
+      onClose();
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar os vínculos.');
+    }
   }
 
   return (
@@ -1334,16 +1385,17 @@ function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clients
         </div>
         <div className="p-5">
           <div className="mb-4 grid grid-cols-[1fr_180px] gap-4">
-            <TextField label="Buscar cliente" value="" onChange={() => {}} placeholder="Nome, codigo, CPF/CNPJ" />
+            <TextField label="Buscar cliente" value={query} onChange={setQuery} placeholder="Nome, codigo, CPF/CNPJ" />
             <div className="rounded border border-[#dfe5e8] p-3 text-sm">
-              <b>{selected.length}</b> cliente(s) vinculado(s)
+              <b>{selectedIds.length}</b> cliente(s) vinculado(s)
             </div>
           </div>
+          {loading && <p className="mb-3 text-sm text-[#68737a]">Carregando vínculos...</p>}
           <div className="overflow-hidden rounded border border-[#e7ecef]">
             {visibleClients.map((client) => (
-              <label key={client} className="flex cursor-pointer items-center justify-between border-b border-[#e7ecef] px-4 py-3 last:border-b-0">
-                <span>{client}</span>
-                <input type="checkbox" checked={selected.includes(client)} onChange={() => toggleClient(client)} />
+              <label key={client.id} className="flex cursor-pointer items-center justify-between border-b border-[#e7ecef] px-4 py-3 last:border-b-0">
+                <span>{client.name}</span>
+                <input type="checkbox" checked={selectedIds.includes(client.id)} onChange={() => toggleClient(client.id)} />
               </label>
             ))}
             {visibleClients.length === 0 && <p className="px-4 py-6 text-center text-sm text-[#68737a]">Nenhum cliente cadastrado.</p>}
@@ -1351,7 +1403,7 @@ function LinkClientsModal({ obligation, linkedClients, setLinkedClients, clients
         </div>
         <div className="flex justify-end gap-3 border-t border-[#e7ecef] p-4">
           <button onClick={onClose} className="px-4 py-2 text-[#16829b]">Cancelar</button>
-          <button onClick={onClose} className="rounded bg-[#2693d2] px-5 py-2 text-white">Salvar vinculos</button>
+          <button onClick={saveLinks} className="rounded bg-[#2693d2] px-5 py-2 text-white">Salvar vinculos</button>
         </div>
       </div>
     </div>
@@ -1641,12 +1693,12 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
         const nextResponsibles = {};
         const nextLinkIds = {};
         (data.links || []).forEach((link) => {
-          if (!link.active || !link.client?.name || !link.obligation?.name) return;
-          const obligationName = link.obligation.name;
+          if (!link.active || !link.client?.name || !link.obligation?.id) return;
+          const obligationKey = link.obligation.id;
           const clientName = link.client.name;
-          nextLinked[obligationName] = [...(nextLinked[obligationName] || []), clientName];
-          nextResponsibles[`${obligationName}::${clientName}`] = link.responsible?.name || 'Ana Carolina';
-          nextLinkIds[`${obligationName}::${clientName}`] = link.id;
+          nextLinked[obligationKey] = [...(nextLinked[obligationKey] || []), clientName];
+          nextResponsibles[`${obligationKey}::${clientName}`] = link.responsible?.name || 'Ana Carolina';
+          nextLinkIds[`${obligationKey}::${clientName}`] = link.id;
         });
         setLinkedClients(nextLinked);
         setLinkResponsibles(nextResponsibles);
@@ -1655,12 +1707,12 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
       .catch(() => {});
   }, [setLinkedClients, setLinkResponsibles]);
 
-  function isLinked(obligation, client) {
-    return (linkedClients[obligation] || []).includes(client);
+  function isLinked(obligationKey, client) {
+    return (linkedClients[obligationKey] || []).includes(client);
   }
 
-  function responsibleInitials(obligation, client) {
-    return getInitials(linkResponsibles[`${obligation}::${client}`] || 'Ana Carolina');
+  function responsibleInitials(obligationKey, client) {
+    return getInitials(linkResponsibles[`${obligationKey}::${client}`] || 'Ana Carolina');
   }
 
   return (
@@ -1685,7 +1737,7 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
           <thead>
             <tr>
               <th className="sticky left-0 top-0 z-30 w-[360px] bg-[#eee] p-3 text-left shadow-[4px_0_0_#e7ecef]">Cliente</th>
-              {visibleObligations.map((row) => <th key={row[0]} className="sticky top-0 z-20 h-36 w-[92px] bg-[#eee] p-3 align-bottom [writing-mode:vertical-rl]">{row[3] || row[0]}</th>)}
+              {visibleObligations.map((row) => <th key={row[8] || row[0]} className="sticky top-0 z-20 h-36 w-[92px] bg-[#eee] p-3 align-bottom [writing-mode:vertical-rl]">{row[3] || row[0]}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -1694,16 +1746,17 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
                 <td className="sticky left-0 z-10 w-[360px] bg-white p-3 font-semibold shadow-[4px_0_0_#e7ecef]">{client}</td>
                 {visibleObligations.map((row) => {
                   const obligation = row[0];
-                  const linked = isLinked(obligation, client);
+                  const obligationKey = row[8] || row[0];
+                  const linked = isLinked(obligationKey, client);
                   const clientId = clientsData.find((item) => item.name === client)?.id;
                   return (
-                    <td key={obligation} className="w-[92px] p-0 text-center">
+                    <td key={obligationKey} className="w-[92px] p-0 text-center">
                       <button
-                        onClick={() => setCell({ obligation, obligationId: row[8], client, clientId, linkId: linkIds[`${obligation}::${client}`] })}
+                        onClick={() => setCell({ obligation, obligationKey, obligationId: row[8], client, clientId, linkId: linkIds[`${obligationKey}::${client}`] })}
                         className={`h-14 w-full border-l border-[#e7ecef] ${linked ? 'bg-emerald-50 text-[#2f3a42]' : 'bg-[#f8f8f8] text-[#b8c0c5] hover:bg-[#eef7fb]'}`}
                         title={`${linked ? 'Alterar' : 'Atribuir'} ${obligation} para ${client}`}
                       >
-                        {linked ? responsibleInitials(obligation, client) : '+'}
+                        {linked ? responsibleInitials(obligationKey, client) : '+'}
                       </button>
                     </td>
                   );
@@ -1721,8 +1774,9 @@ function LinksMatrix({ obligationRows, linkedClients, setLinkedClients, linkResp
 
 function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles, setLinkResponsibles, linkIds, setLinkIds, onClose }) {
   const responsibles = ['Ana Carolina', 'Mariana Fiscal', 'Carlos Contabil', 'Beatriz Registro'];
-  const linked = (linkedClients[cell.obligation] || []).includes(cell.client);
-  const [responsible, setResponsible] = useState(linkResponsibles[`${cell.obligation}::${cell.client}`] || responsibles[0]);
+  const obligationKey = cell.obligationKey || cell.obligationId || cell.obligation;
+  const linked = (linkedClients[obligationKey] || []).includes(cell.client);
+  const [responsible, setResponsible] = useState(linkResponsibles[`${obligationKey}::${cell.client}`] || responsibles[0]);
 
   async function saveLink() {
     if (!cell.clientId || !cell.obligationId) {
@@ -1743,18 +1797,18 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
     }
 
     setLinkedClients((current) => {
-      const currentClients = current[cell.obligation] || [];
+      const currentClients = current[obligationKey] || [];
       return currentClients.includes(cell.client)
         ? current
-        : { ...current, [cell.obligation]: [...currentClients, cell.client] };
+        : { ...current, [obligationKey]: [...currentClients, cell.client] };
     });
-    setLinkResponsibles((current) => ({ ...current, [`${cell.obligation}::${cell.client}`]: responsible }));
-    if (savedLink?.id) setLinkIds((current) => ({ ...current, [`${cell.obligation}::${cell.client}`]: savedLink.id }));
+    setLinkResponsibles((current) => ({ ...current, [`${obligationKey}::${cell.client}`]: responsible }));
+    if (savedLink?.id) setLinkIds((current) => ({ ...current, [`${obligationKey}::${cell.client}`]: savedLink.id }));
     onClose();
   }
 
   async function removeLink() {
-    const linkId = cell.linkId || linkIds[`${cell.obligation}::${cell.client}`];
+    const linkId = cell.linkId || linkIds[`${obligationKey}::${cell.client}`];
     if (!linkId) return;
     try {
       await api.delete(`/obligations/links/${linkId}`);
@@ -1765,16 +1819,16 @@ function LinkCellModal({ cell, linkedClients, setLinkedClients, linkResponsibles
 
     setLinkedClients((current) => ({
       ...current,
-      [cell.obligation]: (current[cell.obligation] || []).filter((client) => client !== cell.client),
+      [obligationKey]: (current[obligationKey] || []).filter((client) => client !== cell.client),
     }));
     setLinkResponsibles((current) => {
       const next = { ...current };
-      delete next[`${cell.obligation}::${cell.client}`];
+      delete next[`${obligationKey}::${cell.client}`];
       return next;
     });
     setLinkIds((current) => {
       const next = { ...current };
-      delete next[`${cell.obligation}::${cell.client}`];
+      delete next[`${obligationKey}::${cell.client}`];
       return next;
     });
     onClose();
@@ -1848,6 +1902,7 @@ function buildCalendarTasks(links, year, month) {
         code: link.client.code,
         cnpj: link.client.cnpj,
         taxRegime: link.client.taxRegime,
+        obligationId: link.obligation.id,
         obligation: link.obligation.name,
         nickname: link.obligation.nickname,
         department: link.obligation.department,
