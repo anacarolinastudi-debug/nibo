@@ -114,8 +114,9 @@ const transactionSchema = z.object({
   type: z.enum(['RECEITA', 'DESPESA']),
   dueDate: z.string().datetime(),
   clientId: z.string().uuid(),
-  accountId: z.string().uuid(),
-  categoryId: z.string().uuid(),
+  accountId: z.string().uuid().optional().nullable(),
+  categoryId: z.string().uuid().optional().nullable(),
+  paid: z.boolean().optional(),
 });
 
 async function listTransactions(req, res) {
@@ -151,9 +152,55 @@ async function createTransaction(req, res) {
   if (req.user.role === 'CLIENT') req.body.clientId = req.user.clientId;
   const data = transactionSchema.parse(req.body);
 
-  const transaction = await prisma.financialTransaction.create({
-    data: { ...data, dueDate: new Date(data.dueDate) },
+  const client = await prisma.client.findFirst({
+    where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
   });
+  if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+  let accountId = data.accountId;
+  if (!accountId) {
+    const account = await prisma.financialAccount.findFirst({
+      where: { clientId: client.id, bankName: 'Conta principal' },
+    }) || await prisma.financialAccount.create({
+      data: { clientId: client.id, bankName: 'Conta principal' },
+    });
+    accountId = account.id;
+  }
+
+  let categoryId = data.categoryId;
+  if (!categoryId) {
+    const name = data.type === 'RECEITA' ? 'Recebimentos' : 'Pagamentos';
+    const category = await prisma.financialCategory.findFirst({
+      where: { accountingFirmId: req.user.accountingFirmId, type: data.type, name },
+    }) || await prisma.financialCategory.create({
+      data: { accountingFirmId: req.user.accountingFirmId, type: data.type, name },
+    });
+    categoryId = category.id;
+  }
+
+  const transaction = await prisma.financialTransaction.create({
+    data: {
+      description: data.description,
+      amount: data.amount,
+      type: data.type,
+      dueDate: new Date(data.dueDate),
+      status: data.paid ? 'PAID' : 'PENDING',
+      paidAt: data.paid ? new Date() : null,
+      clientId: client.id,
+      accountId,
+      categoryId,
+    },
+    include: {
+      client: { select: { id: true, name: true, cnpj: true } },
+      category: { select: { name: true } },
+      account: { select: { bankName: true } },
+    },
+  });
+
+  if (data.paid) {
+    const delta = data.type === 'RECEITA' ? data.amount : -data.amount;
+    await prisma.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: delta } } });
+  }
 
   res.status(201).json(transaction);
 }
