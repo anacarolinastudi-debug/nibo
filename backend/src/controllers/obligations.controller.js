@@ -242,6 +242,10 @@ async function updateClientObligationStatus(req, res) {
     update: { taskStatus: data.taskStatus },
     create: { linkId: existing.id, year, month, taskStatus: data.taskStatus },
   });
+  await prisma.clientObligation.update({
+    where: { id: existing.id },
+    data: { taskStatus: data.taskStatus },
+  });
   const link = await prisma.clientObligation.findUnique({
     where: { id: existing.id },
     include: { client: true, obligation: true, responsible: { select: { id: true, name: true } }, statusRecords: true },

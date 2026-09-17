@@ -1938,8 +1938,10 @@ function buildCalendarTasks(links, year, month) {
       const dueDate = getObligationDueDate(link.obligation, year, month);
       if (!dueDate) return null;
       if (!isLinkActiveForDueDate(link, dueDate)) return null;
-      const statusRecord = (link.statusRecords || []).find((record) => record.year === year && record.month === month + 1);
-      const taskStatus = storedMovements[statusStorageKey(link.id, year, month)] || statusRecord?.taskStatus || 'EM_ABERTO';
+      const statusRecords = link.statusRecords || [];
+      const statusRecord = statusRecords.find((record) => record.year === year && record.month === month + 1);
+      const legacyStatus = statusRecords.length === 0 && link.taskStatus !== 'EM_ABERTO' ? link.taskStatus : null;
+      const taskStatus = storedMovements[statusStorageKey(link.id, year, month)] || statusRecord?.taskStatus || legacyStatus || 'EM_ABERTO';
       return {
         id: link.id,
         client: link.client.name,
