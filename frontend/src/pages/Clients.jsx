@@ -41,11 +41,14 @@ function ClientMenu({ tab, setTab }) {
   );
 }
 
-function Input({ label, value, onChange, type = 'text', placeholder = '' }) {
-  return <label className="block text-sm"><span className="mb-1 block font-medium">{label}</span><input type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-full rounded border border-[#d8dfe3] px-3 outline-none focus:border-[#16829b]" /></label>;
+function FieldLabel({ label, required }) {
+  return <span className="mb-1 block font-medium">{label}{required && <b className="ml-1 text-red-600">*</b>}</span>;
 }
-function Select({ label, value, onChange, options }) {
-  return <label className="block text-sm"><span className="mb-1 block font-medium">{label}</span><select value={value || ''} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="">Selecione...</option>{options.map((item) => <option key={item.value || item} value={item.value || item}>{item.label || item}</option>)}</select></label>;
+function Input({ label, value, onChange, type = 'text', placeholder = '', required = false, minLength }) {
+  return <label className="block text-sm"><FieldLabel label={label} required={required} /><input required={required} minLength={minLength} type={type} value={value || ''} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="h-10 w-full rounded border border-[#d8dfe3] px-3 outline-none focus:border-[#16829b]" /></label>;
+}
+function Select({ label, value, onChange, options, required = false }) {
+  return <label className="block text-sm"><FieldLabel label={label} required={required} /><select required={required} value={value || ''} onChange={(e) => onChange(e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="">Selecione...</option>{options.map((item) => <option key={item.value || item} value={item.value || item}>{item.label || item}</option>)}</select></label>;
 }
 function Toggle({ label, checked, onChange }) {
   return <label className="flex cursor-pointer items-center gap-3 text-sm"><button type="button" onClick={() => onChange(!checked)} className={`relative h-5 w-9 rounded-full ${checked ? 'bg-[#2b91d2]' : 'bg-[#c9ced1]'}`}><i className={`absolute top-0.5 h-4 w-4 rounded-full bg-white transition-all ${checked ? 'left-[18px]' : 'left-0.5'}`} /></button>{label}</label>;
@@ -55,8 +58,54 @@ function ClientDrawer({ client, onClose, onSaved }) {
   const [form, setForm] = useState(client ? { ...emptyClient, ...client } : emptyClient);
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-  async function save(e) { e.preventDefault(); setSaving(true); try { client ? await api.put(`/clients/${client.id}`, form) : await api.post('/clients', form); onSaved(); } catch (error) { window.alert(error.response?.data?.error || 'Não foi possível salvar o cliente.'); } finally { setSaving(false); } }
-  return <div className="fixed inset-0 z-50 bg-black/40"><form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(1050px,92vw)] flex-col bg-white shadow-xl"><header className="flex h-16 items-center justify-between border-b px-6"><h2 className="text-2xl font-semibold">{client ? 'Editar cliente' : 'Criar cliente'}</h2><button type="button" onClick={onClose}><X /></button></header><div className="flex-1 space-y-7 overflow-y-auto p-6"><section><p className="mb-4 text-sm font-medium">Tipo de cliente</p><div className="flex gap-8 text-sm"><label><input type="radio" checked={form.personType === 'JURIDICA'} onChange={() => set('personType', 'JURIDICA')} /> Pessoa jurídica</label><label><input type="radio" checked={form.personType === 'FISICA'} onChange={() => set('personType', 'FISICA')} /> Pessoa física</label></div></section><section className="grid grid-cols-[240px_1fr_180px] gap-5 bg-[#fafafa] p-5"><Input label={form.personType === 'FISICA' ? 'CPF' : 'CNPJ'} value={form.cnpj} onChange={(v) => set('cnpj', v)} /><Input label={form.personType === 'FISICA' ? 'Nome' : 'Razão social'} value={form.name} onChange={(v) => set('name', v)} /><Input label="Código" value={form.code} onChange={(v) => set('code', v)} /><Input label="Inscrição Estadual" value={form.stateRegistration} onChange={(v) => set('stateRegistration', v)} /><Input label="Inscrição Municipal" value={form.municipalRegistration} onChange={(v) => set('municipalRegistration', v)} /><Select label="Regime tributário" value={form.taxRegime} onChange={(v) => set('taxRegime', v)} options={Object.entries(regimes).map(([value, label]) => ({ value, label }))} /></section><section><h3 className="mb-4 font-semibold">Endereço</h3><div className="grid grid-cols-4 gap-5"><Input label="CEP" value={form.cep} onChange={(v) => set('cep', v)} /><div className="col-span-2"><Input label="Logradouro" value={form.street} onChange={(v) => set('street', v)} /></div><Input label="Número" value={form.number} onChange={(v) => set('number', v)} /><Input label="Complemento" value={form.complement} onChange={(v) => set('complement', v)} /><Input label="Estado" value={form.state} onChange={(v) => set('state', v)} /><Input label="Município" value={form.city} onChange={(v) => set('city', v)} /><Input label="Bairro" value={form.neighborhood} onChange={(v) => set('neighborhood', v)} /></div></section><section><h3 className="mb-4 font-semibold">Atividade</h3><div className="grid grid-cols-2 gap-5"><Input label="Ramo de atividade" value={form.activity} onChange={(v) => set('activity', v)} /><Input label="CNAE Federal" value={form.cnae} onChange={(v) => set('cnae', v)} /></div></section><section><h3 className="mb-4 font-semibold">Contato e acesso</h3><div className="mb-5 grid grid-cols-2 gap-5"><Input label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} /><Input label="Telefone" value={form.phone} onChange={(v) => set('phone', v)} /></div><div className="space-y-4"><Toggle label="Permitir visualização de documentos sem login" checked={form.allowPublicDocuments} onChange={(v) => set('allowPublicDocuments', v)} /><Toggle label="Enviar e-mail com lembrete no dia do vencimento de impostos" checked={form.taxReminderEmail} onChange={(v) => set('taxReminderEmail', v)} /></div></section></div><footer className="flex justify-end gap-3 border-t p-4"><button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button><button disabled={saving} className="rounded bg-[#2693d2] px-6 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar'}</button></footer></form></div>;
+  async function save(e) {
+    e.preventDefault();
+    const taxIdDigits = String(form.cnpj || '').replace(/\D/g, '');
+    if (taxIdDigits.length < 11) {
+      window.alert(`${form.personType === 'FISICA' ? 'CPF' : 'CNPJ'} é obrigatório.`);
+      return;
+    }
+    if (!form.name?.trim()) {
+      window.alert(`${form.personType === 'FISICA' ? 'Nome' : 'Razão social'} é obrigatório.`);
+      return;
+    }
+    if (!form.taxRegime) {
+      window.alert('Regime tributário é obrigatório.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const payload = { ...form, cnpj: form.cnpj.trim(), name: form.name.trim() };
+      client ? await api.put(`/clients/${client.id}`, payload) : await api.post('/clients', payload);
+      onSaved();
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar o cliente. Confira os campos obrigatórios marcados com *.');
+    } finally {
+      setSaving(false);
+    }
+  }
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40">
+      <form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(1050px,92vw)] flex-col bg-white shadow-xl">
+        <header className="flex h-16 items-center justify-between border-b px-6"><h2 className="text-2xl font-semibold">{client ? 'Editar cliente' : 'Criar cliente'}</h2><button type="button" onClick={onClose}><X /></button></header>
+        <div className="flex-1 space-y-7 overflow-y-auto p-6">
+          <section><p className="mb-4 text-sm font-medium">Tipo de cliente <b className="text-red-600">*</b></p><div className="flex gap-8 text-sm"><label><input type="radio" checked={form.personType === 'JURIDICA'} onChange={() => set('personType', 'JURIDICA')} /> Pessoa jurídica</label><label><input type="radio" checked={form.personType === 'FISICA'} onChange={() => set('personType', 'FISICA')} /> Pessoa física</label></div></section>
+          <section className="grid grid-cols-[240px_1fr_180px] gap-5 bg-[#fafafa] p-5">
+            <Input required minLength={11} label={form.personType === 'FISICA' ? 'CPF' : 'CNPJ'} value={form.cnpj} onChange={(v) => set('cnpj', v)} />
+            <Input required label={form.personType === 'FISICA' ? 'Nome' : 'Razão social'} value={form.name} onChange={(v) => set('name', v)} />
+            <Input label="Código" value={form.code} onChange={(v) => set('code', v)} />
+            <Input label="Inscrição Estadual" value={form.stateRegistration} onChange={(v) => set('stateRegistration', v)} />
+            <Input label="Inscrição Municipal" value={form.municipalRegistration} onChange={(v) => set('municipalRegistration', v)} />
+            <Select required label="Regime tributário" value={form.taxRegime} onChange={(v) => set('taxRegime', v)} options={Object.entries(regimes).map(([value, label]) => ({ value, label }))} />
+          </section>
+          <section><h3 className="mb-4 font-semibold">Endereço</h3><div className="grid grid-cols-4 gap-5"><Input label="CEP" value={form.cep} onChange={(v) => set('cep', v)} /><div className="col-span-2"><Input label="Logradouro" value={form.street} onChange={(v) => set('street', v)} /></div><Input label="Número" value={form.number} onChange={(v) => set('number', v)} /><Input label="Complemento" value={form.complement} onChange={(v) => set('complement', v)} /><Input label="Estado" value={form.state} onChange={(v) => set('state', v)} /><Input label="Município" value={form.city} onChange={(v) => set('city', v)} /><Input label="Bairro" value={form.neighborhood} onChange={(v) => set('neighborhood', v)} /></div></section>
+          <section><h3 className="mb-4 font-semibold">Atividade</h3><div className="grid grid-cols-2 gap-5"><Input label="Ramo de atividade" value={form.activity} onChange={(v) => set('activity', v)} /><Input label="CNAE Federal" value={form.cnae} onChange={(v) => set('cnae', v)} /></div></section>
+          <section><h3 className="mb-4 font-semibold">Contato e acesso</h3><div className="mb-5 grid grid-cols-2 gap-5"><Input label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} /><Input label="Telefone" value={form.phone} onChange={(v) => set('phone', v)} /></div><div className="space-y-4"><Toggle label="Permitir visualização de documentos sem login" checked={form.allowPublicDocuments} onChange={(v) => set('allowPublicDocuments', v)} /><Toggle label="Enviar e-mail com lembrete no dia do vencimento de impostos" checked={form.taxReminderEmail} onChange={(v) => set('taxReminderEmail', v)} /></div></section>
+        </div>
+        <footer className="flex justify-end gap-3 border-t p-4"><button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button><button disabled={saving} className="rounded bg-[#2693d2] px-6 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar'}</button></footer>
+      </form>
+    </div>
+  );
 }
 
 function ContactDrawer({ contact, clients, onClose, onSaved }) {
