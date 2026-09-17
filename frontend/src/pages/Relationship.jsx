@@ -105,13 +105,23 @@ export default function Relationship() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [activeId, setActiveId] = useState(null);
+  const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
   const [showModal, setShowModal] = useState(false);
   const bottomRef = useRef(null);
 
-  function loadConversations() {
-    listConversations().then(setConversations).catch(() => {});
+  async function loadConversations() {
+    try {
+      const data = await listConversations();
+      setConversations(Array.isArray(data) ? data : []);
+      if (activeId) {
+        const current = data.find((conversation) => conversation.id === activeId);
+        if (current) setActiveConversation(current);
+      }
+    } catch {
+      // Mantém a lista atual se a API oscilar, para a tela não ficar vazia.
+    }
   }
 
   useEffect(() => {
@@ -121,11 +131,16 @@ export default function Relationship() {
     }).catch(() => {});
     api.get('/clients').then(({ data }) => setClients(data)).catch(() => {});
     loadConversations();
+    const timer = window.setInterval(loadConversations, 15000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
     if (!activeId) return;
-    getConversationMessages(activeId).then(({ messages }) => setMessages(messages.filter((message) => message.body || message.mediaUrl))).catch(() => {});
+    getConversationMessages(activeId).then(({ conversation, messages }) => {
+      setActiveConversation(conversation);
+      setMessages(messages.filter((message) => message.body || message.mediaUrl));
+    }).catch(() => {});
   }, [activeId]);
 
   useEffect(() => {
@@ -137,7 +152,7 @@ export default function Relationship() {
     return !term || (conv.contactName || '').toLowerCase().includes(term) || conv.phoneNumber.includes(term);
   });
 
-  const active = conversations.find((conv) => conv.id === activeId);
+  const active = conversations.find((conv) => conv.id === activeId) || (activeConversation?.id === activeId ? activeConversation : null);
   const missingLabels = {
     EVOLUTION_API_URL: 'URL da Evolution API',
     EVOLUTION_API_KEY: 'Chave da Evolution API',
@@ -320,20 +335,20 @@ export default function Relationship() {
             )}
           </div>}
 
-          <div className={`grid ${showIntegrationSettings ? 'h-[calc(100vh-220px)]' : 'h-[calc(100vh-155px)]'} grid-cols-[320px_1fr] overflow-hidden rounded border border-[#dfe5e8]`}>
-            <div className="flex flex-col border-r border-[#dfe5e8]">
-              <div className="border-b border-[#dfe5e8] p-3">
+          <div className={`grid ${showIntegrationSettings ? 'h-[calc(100vh-220px)]' : 'h-[calc(100vh-155px)]'} min-h-[540px] grid-cols-[390px_minmax(0,1fr)] overflow-hidden rounded border border-[#dfe5e8]`}>
+            <div className="flex min-w-0 flex-col border-r border-[#dfe5e8] bg-white">
+              <div className="shrink-0 border-b border-[#dfe5e8] p-3">
                 <span className="flex h-10 items-center gap-2 rounded border border-[#dfe5e8] px-3">
                   <Search size={16} />
                   <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar conversa" className="w-full text-sm outline-none" />
                 </span>
               </div>
               <div className="flex-1 overflow-y-auto">
-                {filtered.length === 0 && <p className="p-4 text-center text-sm text-[#9aa5ad]">Nenhuma conversa ainda.</p>}
+                {filtered.length === 0 && <p className="p-4 text-center text-sm text-[#9aa5ad]">{conversations.length > 0 ? 'Nenhuma conversa encontrada.' : 'Nenhuma conversa ainda.'}</p>}
                 {filtered.map((conv) => {
                   const lastMessage = conv.messages?.find((message) => message.body || message.mediaUrl);
                   return (
-                    <button key={conv.id} onClick={() => setActiveId(conv.id)} className={`block w-full border-b border-[#f0f3f5] px-4 py-3 text-left ${activeId === conv.id ? 'bg-[#eaf6ff]' : 'hover:bg-[#fafbfc]'}`}>
+                    <button key={conv.id} onClick={() => { setActiveConversation(conv); setActiveId(conv.id); }} className={`block w-full border-b border-[#f0f3f5] px-4 py-3 text-left ${activeId === conv.id ? 'bg-[#eaf6ff]' : 'hover:bg-[#fafbfc]'}`}>
                       <div className="flex items-center justify-between">
                         <b className="text-sm">{conv.contactName || conv.phoneNumber}</b>
                         <span className="text-xs text-[#9aa5ad]">{new Date(conv.lastMessageAt).toLocaleDateString('pt-BR')}</span>
@@ -345,7 +360,7 @@ export default function Relationship() {
               </div>
             </div>
 
-            <div className="flex flex-col">
+            <div className="flex min-w-0 flex-col">
               {!active && <div className="flex flex-1 items-center justify-center text-sm text-[#9aa5ad]">Selecione uma conversa para começar.</div>}
               {active && (
                 <>
@@ -399,6 +414,7 @@ export default function Relationship() {
           onClose={() => setShowModal(false)}
           onCreated={(conversation) => {
             setShowModal(false);
+            setActiveConversation(conversation);
             loadConversations();
             setActiveId(conversation.id);
           }}
