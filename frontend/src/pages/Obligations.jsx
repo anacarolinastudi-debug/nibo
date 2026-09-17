@@ -7,7 +7,7 @@ import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
-const tabs = ['Calendário', 'Planilha', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
+const tabs = ['Calendário', 'Planilha', 'Kanban', 'Conferência', 'Protocolos', 'Relatórios', 'Configurações'];
 const departments = ['Departamento Fiscal', 'Departamento Contabil', 'Departamento Pessoal', 'Departamento de Registro', 'Departamento Financeiro'];
 const obligationNames = seedObligations.map((item) => item[0]);
 const monthLabels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -15,12 +15,20 @@ const statusColors = {
   overdue: 'bg-red-500 text-white',
   dueToday: 'bg-amber-300 text-ink',
   openOnTime: 'bg-zinc-300 text-ink',
+  inProgress: 'bg-sky-300 text-sky-950',
   doneOnTime: 'bg-emerald-300 text-ink',
   doneLate: 'bg-rose-300 text-ink',
   noMovement: 'bg-sky-300 text-sky-950',
   withMovement: 'bg-amber-300 text-amber-950',
 };
 const movementStorageKey = 'youngTaskMovementStatus';
+const kanbanColumnsStorageKey = 'youngObligationsKanbanColumns';
+const kanbanCustomStatusStorageKey = 'youngObligationsKanbanCustomStatus';
+const defaultKanbanColumns = [
+  { id: 'open', label: 'Aberta', taskStatus: 'EM_ABERTO' },
+  { id: 'progress', label: 'Em andamento', taskStatus: 'EM_ANDAMENTO' },
+  { id: 'done', label: 'Concluída', taskStatus: 'CONCLUIDA' },
+];
 
 function getStoredMovementStatuses() {
   try {
@@ -28,6 +36,34 @@ function getStoredMovementStatuses() {
   } catch {
     return {};
   }
+}
+
+function getStoredKanbanColumns() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(kanbanColumnsStorageKey) || '[]');
+    return Array.isArray(parsed) && parsed.length ? parsed : defaultKanbanColumns;
+  } catch {
+    return defaultKanbanColumns;
+  }
+}
+
+function getStoredKanbanCustomStatuses() {
+  try {
+    return JSON.parse(localStorage.getItem(kanbanCustomStatusStorageKey) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function storeKanbanCustomStatus(id, columnId, year, month) {
+  const current = getStoredKanbanCustomStatuses();
+  const key = statusStorageKey(id, year, month);
+  if (columnId) {
+    current[key] = columnId;
+  } else {
+    delete current[key];
+  }
+  localStorage.setItem(kanbanCustomStatusStorageKey, JSON.stringify(current));
 }
 
 function statusStorageKey(id, year, month) {
@@ -195,7 +231,8 @@ async function setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, mont
 
   try {
     if (target.source === 'demand') {
-      await api.patch(`/demands/${target.demandId}/status`, { status: taskStatus === 'EM_ABERTO' ? 'PENDING' : 'DONE' });
+      const demandStatus = taskStatus === 'CONCLUIDA' ? 'DONE' : taskStatus === 'EM_ANDAMENTO' ? 'IN_PROGRESS' : 'PENDING';
+      await api.patch(`/demands/${target.demandId}/status`, { status: demandStatus });
       return;
     }
     await api.put(`/obligations/links/${id}/status`, { taskStatus, year, month: month + 1 });
@@ -563,6 +600,166 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
           ))}
         </div>
       )}
+    </section>
+  );
+}
+
+function KanbanView({ tasks, setTasks, reloadKey }) {
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const [month, setMonth] = useState(today.getMonth());
+  const [year, setYear] = useState(today.getFullYear());
+  const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState('');
+  const [department, setDepartment] = useState('Todos');
+  const [client, setClient] = useState('Todos');
+  const [statusFilter, setStatusFilter] = useState('Todos');
+  const [columns, setColumns] = useState(getStoredKanbanColumns);
+  const [editingFlow, setEditingFlow] = useState(false);
+
+  useEffect(() => {
+    return loadLinkedCalendarTasks({ year, month, setTasks, setLoading });
+  }, [year, month, setTasks, reloadKey]);
+
+  useEffect(() => {
+    localStorage.setItem(kanbanColumnsStorageKey, JSON.stringify(columns));
+  }, [columns]);
+
+  const customStatuses = getStoredKanbanCustomStatuses();
+  const tasksWithStatus = tasks.map((task) => ({
+    ...task,
+    calendarStatus: statusForDate(task, new Date(year, month, task.day), today),
+    kanbanColumnId: kanbanColumnForTask(task, columns, customStatuses, year, month),
+  }));
+  const clients = Array.from(new Set(tasksWithStatus.map((task) => task.client))).sort((a, b) => a.localeCompare(b));
+  const departmentsList = Array.from(new Set(tasksWithStatus.map((task) => task.department || 'Sem departamento'))).sort((a, b) => a.localeCompare(b));
+  const filteredTasks = tasksWithStatus.filter((task) => {
+    const text = `${task.client} ${task.cnpj} ${task.code} ${task.obligation} ${task.department}`.toLowerCase();
+    return text.includes(query.toLowerCase())
+      && (department === 'Todos' || (task.department || 'Sem departamento') === department)
+      && (client === 'Todos' || task.client === client)
+      && (statusFilter === 'Todos' || task.kanbanColumnId === statusFilter);
+  });
+
+  function shiftMonth(direction) {
+    const next = new Date(year, month + direction, 1);
+    setMonth(next.getMonth());
+    setYear(next.getFullYear());
+  }
+
+  async function moveTask(task, column) {
+    if (column.taskStatus) {
+      storeKanbanCustomStatus(task.id, null, year, month);
+      await setLinkedTaskStatus({ id: task.id, taskStatus: column.taskStatus, tasks, setTasks, year, month, today });
+      return;
+    }
+    storeKanbanCustomStatus(task.id, column.id, year, month);
+    setTasks((current) => current.map((item) => (item.id === task.id ? { ...item } : item)));
+  }
+
+  function addColumn() {
+    const label = window.prompt('Nome da nova etapa');
+    if (!label?.trim()) return;
+    setColumns((current) => [...current, { id: `custom-${Date.now()}`, label: label.trim(), taskStatus: null }]);
+  }
+
+  function renameColumn(column) {
+    const label = window.prompt('Nome da etapa', column.label);
+    if (!label?.trim()) return;
+    setColumns((current) => current.map((item) => (item.id === column.id ? { ...item, label: label.trim() } : item)));
+  }
+
+  function removeColumn(column) {
+    if (columns.length <= 1) return;
+    if (!window.confirm(`Remover a etapa "${column.label}"?`)) return;
+    setColumns((current) => current.filter((item) => item.id !== column.id));
+  }
+
+  function moveColumn(columnId, direction) {
+    setColumns((current) => {
+      const index = current.findIndex((item) => item.id === columnId);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const copy = [...current];
+      const [item] = copy.splice(index, 1);
+      copy.splice(nextIndex, 0, item);
+      return copy;
+    });
+  }
+
+  return (
+    <section className="p-5">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold">Kanban de tarefas</h2>
+          <p className="mt-1 text-sm text-[#68737a]">Mesmas tarefas do calendário e da planilha, organizadas por etapa.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4 text-lg text-[#147e9a]">
+            <button onClick={() => shiftMonth(-1)} className="rounded px-2 py-1 hover:bg-[#eaf6ff]">‹</button>
+            <b className="min-w-28 text-center text-[#111]">{monthLabels[month]}/{year}</b>
+            <button onClick={() => shiftMonth(1)} className="rounded px-2 py-1 hover:bg-[#eaf6ff]">›</button>
+          </div>
+          <button onClick={() => setEditingFlow((current) => !current)} className="rounded border border-[#dfe5e8] px-4 py-2 text-sm text-[#16829b]">{editingFlow ? 'Concluir fluxo' : 'Editar fluxo'}</button>
+          <button onClick={addColumn} className="rounded bg-[#2693d2] px-4 py-2 text-sm text-white">+ Etapa</button>
+        </div>
+      </div>
+
+      <div className="mb-4 grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <TextField label="Buscar" value={query} onChange={setQuery} placeholder="Cliente, CNPJ, código ou tarefa" />
+        <SelectField label="Departamento" value={department} onChange={setDepartment} options={['Todos', ...departmentsList]} />
+        <SelectField label="Cliente" value={client} onChange={setClient} options={['Todos', ...clients]} />
+        <SelectField label="Etapa" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'Todos', label: 'Todas' }, ...columns.map((column) => ({ value: column.id, label: column.label }))]} />
+      </div>
+      {loading && <p className="mb-3 text-sm text-[#68737a]">Carregando tarefas...</p>}
+
+      <div className="overflow-x-auto pb-3">
+        <div className="flex min-h-[520px] gap-4">
+          {columns.map((column, index) => {
+            const columnTasks = filteredTasks.filter((task) => task.kanbanColumnId === column.id);
+            return (
+              <div key={column.id} className="flex w-80 shrink-0 flex-col rounded border border-[#dfe5e8] bg-[#f7f9fb]">
+                <div className="border-b border-[#dfe5e8] bg-white p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold">{column.label}</h3>
+                    <span className="rounded-full bg-[#eef2f5] px-2 py-0.5 text-xs font-semibold">{columnTasks.length}</span>
+                  </div>
+                  {editingFlow && (
+                    <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                      <button disabled={index === 0} onClick={() => moveColumn(column.id, -1)} className="rounded border border-[#dfe5e8] px-2 py-1 disabled:opacity-40">←</button>
+                      <button disabled={index === columns.length - 1} onClick={() => moveColumn(column.id, 1)} className="rounded border border-[#dfe5e8] px-2 py-1 disabled:opacity-40">→</button>
+                      <button onClick={() => renameColumn(column)} className="rounded border border-[#dfe5e8] px-2 py-1 text-[#16829b]">Renomear</button>
+                      <button onClick={() => removeColumn(column)} className="rounded border border-[#dfe5e8] px-2 py-1 text-red-600">Remover</button>
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-3 overflow-y-auto p-3">
+                  {columnTasks.length === 0 ? (
+                    <p className="rounded border border-dashed border-[#cfd8dd] p-4 text-center text-sm text-[#7a858c]">Nenhuma tarefa.</p>
+                  ) : columnTasks.map((task) => (
+                    <article key={task.id} className="rounded border border-[#dfe5e8] bg-white p-3 shadow-sm">
+                      <div className="mb-2 flex items-start justify-between gap-3">
+                        <div className="font-semibold text-[#2f3a42]">{task.obligation}</div>
+                        <span className="shrink-0 rounded bg-[#eef8fc] px-2 py-0.5 text-xs text-[#16829b]">Dia {task.day}</span>
+                      </div>
+                      <div className="text-sm text-[#68737a]">{task.client}</div>
+                      <div className="mt-1 text-xs text-[#8b98a1]">{task.department || 'Sem departamento'}</div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {columns.map((targetColumn) => (
+                          targetColumn.id !== column.id && (
+                            <button key={targetColumn.id} onClick={() => moveTask(task, targetColumn)} className="rounded bg-[#f1f3f5] px-2 py-1 text-xs text-[#3f4548] hover:bg-[#e5edf3]">
+                              {targetColumn.label}
+                            </button>
+                          )
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </section>
   );
 }
@@ -1982,7 +2179,7 @@ function buildDemandCalendarTasks(demands, year, month) {
       if (!dueDate) return null;
       const baseDate = new Date(demand.dueDate);
       const isOriginalCompetence = baseDate.getFullYear() === year && baseDate.getMonth() === month;
-      const taskStatus = isOriginalCompetence && demand.status === 'DONE' ? 'CONCLUIDA' : 'EM_ABERTO';
+      const taskStatus = isOriginalCompetence && demand.status === 'DONE' ? 'CONCLUIDA' : isOriginalCompetence && demand.status === 'IN_PROGRESS' ? 'EM_ANDAMENTO' : 'EM_ABERTO';
       return {
         id: `demand-${demand.id}-${year}-${month + 1}`,
         source: 'demand',
@@ -2082,6 +2279,7 @@ function isDoneStatus(status) {
 
 function statusForDate(task, date, today) {
   if (isDoneStatus(task.status)) return task.status;
+  if (task.taskStatus === 'EM_ANDAMENTO' || task.status === 'inProgress') return 'inProgress';
   const dueDate = startOfDay(date);
   if (dueDate < today) return 'overdue';
   if (dueDate.getTime() === today.getTime()) return 'dueToday';
@@ -2112,6 +2310,7 @@ function statusLabel(status) {
     doneOnTime: 'Concluida no prazo',
     dueToday: 'Vence hoje',
     openOnTime: 'Dentro do prazo',
+    inProgress: 'Em andamento',
     overdue: 'Atrasada',
     doneLate: 'Concluida em atraso',
     noMovement: 'Sem movimento',
@@ -2121,10 +2320,23 @@ function statusLabel(status) {
 }
 
 function calendarStatusFromTaskStatus(taskStatus, currentStatus = 'openOnTime') {
+  if (taskStatus === 'EM_ANDAMENTO') return 'inProgress';
   if (taskStatus === 'SEM_MOVIMENTO') return 'noMovement';
   if (taskStatus === 'COM_MOVIMENTO') return 'withMovement';
   if (taskStatus === 'CONCLUIDA') return currentStatus === 'overdue' ? 'doneLate' : 'doneOnTime';
   return 'openOnTime';
+}
+
+function kanbanColumnForTask(task, columns, customStatuses, year, month) {
+  const customColumn = customStatuses[statusStorageKey(task.id, year, month)];
+  if (customColumn && columns.some((column) => column.id === customColumn)) return customColumn;
+  if (['doneOnTime', 'doneLate', 'noMovement', 'withMovement'].includes(task.status) || ['CONCLUIDA', 'SEM_MOVIMENTO', 'COM_MOVIMENTO'].includes(task.taskStatus)) {
+    return columns.find((column) => column.taskStatus === 'CONCLUIDA')?.id || columns[0]?.id;
+  }
+  if (task.taskStatus === 'EM_ANDAMENTO' || task.status === 'inProgress') {
+    return columns.find((column) => column.taskStatus === 'EM_ANDAMENTO')?.id || columns[0]?.id;
+  }
+  return columns.find((column) => column.taskStatus === 'EM_ABERTO')?.id || columns[0]?.id;
 }
 
 function isInvoiceMovementTask(task) {
@@ -2168,6 +2380,7 @@ export default function Obligations() {
   const content = {
     Calendário: <Calendar tasks={tasks} setTasks={setTasks} reloadKey={calendarReloadKey} />,
     Planilha: <SpreadsheetView tasks={tasks} setTasks={setTasks} reloadKey={calendarReloadKey} />,
+    Kanban: <KanbanView tasks={tasks} setTasks={setTasks} reloadKey={calendarReloadKey} />,
     Conferência: <Conference />,
     Protocolos: <Protocols />,
     Relatórios: <Reports tasks={tasks} protocols={[]} />,

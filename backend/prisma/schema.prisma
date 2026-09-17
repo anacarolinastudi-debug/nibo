@@ -471,6 +471,7 @@ enum ProtocolStatus {
 
 enum TaskStatus {
   EM_ABERTO
+  EM_ANDAMENTO
   CONCLUIDA
   SEM_MOVIMENTO
   COM_MOVIMENTO

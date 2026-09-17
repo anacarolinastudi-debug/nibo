@@ -39,7 +39,7 @@ const linkSchema = z.object({
 });
 
 const linkStatusSchema = z.object({
-  taskStatus: z.enum(['EM_ABERTO', 'CONCLUIDA', 'SEM_MOVIMENTO', 'COM_MOVIMENTO']),
+  taskStatus: z.enum(['EM_ABERTO', 'EM_ANDAMENTO', 'CONCLUIDA', 'SEM_MOVIMENTO', 'COM_MOVIMENTO']),
   year: z.number().int().optional(),
   month: z.number().int().min(1).max(12).optional(),
 });
