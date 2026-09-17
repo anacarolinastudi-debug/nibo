@@ -118,8 +118,8 @@ function TransactionDrawer({ clients, transaction, onClose, onSaved, onCreateRec
           </div>
           {!transaction && (
             <div className="grid grid-cols-2 gap-5 rounded border border-[#dfe5e8] bg-[#fbfcfd] p-4">
-              <label className="block text-sm"><span className="mb-1 flex items-center gap-2 font-medium"><Repeat size={15} /> Recorrência</span><select value={form.recurrence} onChange={(e) => set('recurrence', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="NONE">Sem recorrência</option><option value="MONTHLY">Mensal</option></select></label>
-              <label className="block text-sm"><span className="mb-1 block font-medium">Quantidade</span><input type="number" min="1" max="60" disabled={form.recurrence === 'NONE'} value={form.recurrenceCount} onChange={(e) => set('recurrenceCount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 disabled:bg-[#f3f3f3]" /></label>
+              <label className="block text-sm"><span className="mb-1 flex items-center gap-2 font-medium"><Repeat size={15} /> Recorrência</span><select value={form.recurrence} onChange={(e) => set('recurrence', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="NONE">Sem recorrência</option><option value="MONTHLY">Mensal com quantidade</option><option value="MONTHLY_INDEFINITE">Mensal indeterminada</option></select></label>
+              <label className="block text-sm"><span className="mb-1 block font-medium">Quantidade</span><input type="number" min="1" max="60" disabled={form.recurrence !== 'MONTHLY'} value={form.recurrenceCount} onChange={(e) => set('recurrenceCount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 disabled:bg-[#f3f3f3]" /></label>
             </div>
           )}
           <label className="block text-sm"><span className="mb-1 block font-medium">Anotação do status</span><textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={3} placeholder="Campo livre para preencher quando necessário" className="w-full rounded border border-[#d8dfe3] px-3 py-2" /></label>
@@ -221,6 +221,7 @@ export default function Financial() {
       type: filters.type,
       status: filters.status,
       clientId: filters.clientId,
+      includeRecurring: '1',
     }).filter(([, value]) => value));
     const { data } = await api.get('/financial/transactions', { params });
     setAnnualTransactions(data);
@@ -256,11 +257,23 @@ export default function Financial() {
     }));
     annualTransactions.forEach((item) => {
       const date = new Date(item.dueDate);
-      if (date.getUTCFullYear() !== Number(filters.year)) return;
-      const row = rows[date.getUTCMonth()];
-      if (!row) return;
-      if (item.type === 'RECEITA') row.entradas += Number(item.amount || 0);
-      if (item.type === 'DESPESA') row.saidas += Number(item.amount || 0);
+      const targetYear = Number(filters.year);
+      const amount = Number(item.amount || 0);
+      const addToMonth = (monthIndex, projected = false) => {
+        const row = rows[monthIndex];
+        if (!row) return;
+        if (item.type === 'RECEITA') row.entradas += amount;
+        if (item.type === 'DESPESA') row.saidas += amount;
+        if (projected) row.projected = true;
+      };
+
+      if (date.getUTCFullYear() === targetYear) addToMonth(date.getUTCMonth());
+      if (item.recurrenceInfinite) {
+        const startMonth = date.getUTCFullYear() < targetYear ? 0 : date.getUTCMonth() + 1;
+        for (let monthIndex = startMonth; monthIndex < 12; monthIndex += 1) {
+          addToMonth(monthIndex, true);
+        }
+      }
     });
     const max = Math.max(1, ...rows.flatMap((row) => [row.entradas, row.saidas]));
     return rows.map((row) => ({ ...row, entradaPct: Math.round((row.entradas / max) * 100), saidaPct: Math.round((row.saidas / max) * 100) }));
@@ -269,6 +282,7 @@ export default function Financial() {
   async function markPaid(transaction) {
     await api.patch(`/financial/transactions/${transaction.id}/pay`);
     loadTransactions();
+    loadAnnualTransactions();
   }
 
   async function removeTransaction(transaction) {
@@ -276,6 +290,7 @@ export default function Financial() {
     if (!window.confirm(`Excluir a movimentação "${transaction.description}"?${linkedText}`)) return;
     await api.delete(`/financial/transactions/${transaction.id}`);
     loadTransactions();
+    loadAnnualTransactions();
     loadReceipts();
   }
 
@@ -284,6 +299,7 @@ export default function Financial() {
     await api.delete(`/financial/receipts/${receipt.id}`);
     loadReceipts();
     loadTransactions();
+    loadAnnualTransactions();
   }
 
   async function openReceipt(receipt) {
@@ -400,8 +416,8 @@ export default function Financial() {
           )}
         </section>
       </main>
-      {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
-      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
+      {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); loadAnnualTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
+      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); loadAnnualTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
     </div>
   );
 }

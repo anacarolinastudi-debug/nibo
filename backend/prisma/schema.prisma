@@ -834,6 +834,9 @@ model FinancialTransaction {
   type        TransactionType
   status      TransactionStatus @default(PENDING)
   notes       String?
+  recurrence  String            @default("NONE")
+  recurrenceCount Int?
+  recurrenceInfinite Boolean    @default(false)
   dueDate     DateTime
   paidAt      DateTime?
   createdAt   DateTime          @default(now())

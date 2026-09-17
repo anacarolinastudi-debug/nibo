@@ -118,7 +118,7 @@ const transactionSchema = z.object({
   categoryId: z.string().uuid().optional().nullable(),
   paid: z.boolean().optional(),
   notes: z.string().optional().nullable(),
-  recurrence: z.enum(['NONE', 'MONTHLY']).optional().default('NONE'),
+  recurrence: z.enum(['NONE', 'MONTHLY', 'MONTHLY_INDEFINITE']).optional().default('NONE'),
   recurrenceCount: z.number().int().min(1).max(60).optional().default(1),
 });
 
@@ -180,7 +180,7 @@ async function syncMissingReceiptTransactions(accountingFirmId) {
 }
 
 async function listTransactions(req, res) {
-  const { clientId, type, status, month, year } = req.query;
+  const { clientId, type, status, month, year, includeRecurring } = req.query;
 
   if (req.user.role !== 'CLIENT') {
     await syncMissingReceiptTransactions(req.user.accountingFirmId);
@@ -196,7 +196,14 @@ async function listTransactions(req, res) {
   if (year) {
     const start = month ? new Date(Number(year), Number(month) - 1, 1) : new Date(Number(year), 0, 1);
     const end = month ? new Date(Number(year), Number(month), 1) : new Date(Number(year) + 1, 0, 1);
-    where.dueDate = { gte: start, lt: end };
+    if (includeRecurring) {
+      where.OR = [
+        { dueDate: { gte: start, lt: end } },
+        { recurrenceInfinite: true, dueDate: { lt: end } },
+      ];
+    } else {
+      where.dueDate = { gte: start, lt: end };
+    }
   }
 
   const transactions = await prisma.financialTransaction.findMany({
@@ -246,6 +253,9 @@ async function createTransaction(req, res) {
           status: data.paid ? 'PAID' : 'PENDING',
           paidAt: data.paid ? new Date() : null,
           notes: data.notes || null,
+          recurrence: data.recurrence,
+          recurrenceCount: data.recurrence === 'MONTHLY' ? count : null,
+          recurrenceInfinite: data.recurrence === 'MONTHLY_INDEFINITE',
           clientId: client.id,
           accountId,
           categoryId,
