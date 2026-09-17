@@ -59,8 +59,8 @@ function TransactionDrawer({ clients, transaction, onClose, onSaved, onCreateRec
     dueDate: inputDate(transaction?.dueDate) || new Date().toISOString().slice(0, 10),
     paid: transaction?.status === 'PAID',
     notes: transaction?.notes || '',
-    recurrence: 'NONE',
-    recurrenceCount: 2,
+    recurrence: transaction?.recurrence || (transaction?.recurrenceInfinite ? 'MONTHLY_INDEFINITE' : 'NONE'),
+    recurrenceCount: transaction?.recurrenceCount || 2,
     createReceipt: false,
   });
   const [saving, setSaving] = useState(false);
@@ -116,12 +116,10 @@ function TransactionDrawer({ clients, transaction, onClose, onSaved, onCreateRec
             <label className="block text-sm"><span className="mb-1 block font-medium">Data</span><input required type="date" value={form.dueDate} onChange={(e) => set('dueDate', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
             <label className="mt-6 flex h-10 items-center gap-3 rounded border border-[#d8dfe3] px-3 text-sm"><input type="checkbox" checked={form.paid} onChange={(e) => set('paid', e.target.checked)} /> Já está pago/recebido</label>
           </div>
-          {!transaction && (
-            <div className="grid grid-cols-2 gap-5 rounded border border-[#dfe5e8] bg-[#fbfcfd] p-4">
-              <label className="block text-sm"><span className="mb-1 flex items-center gap-2 font-medium"><Repeat size={15} /> Recorrência</span><select value={form.recurrence} onChange={(e) => set('recurrence', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="NONE">Sem recorrência</option><option value="MONTHLY">Mensal com quantidade</option><option value="MONTHLY_INDEFINITE">Mensal indeterminada</option></select></label>
-              <label className="block text-sm"><span className="mb-1 block font-medium">Quantidade</span><input type="number" min="1" max="60" disabled={form.recurrence !== 'MONTHLY'} value={form.recurrenceCount} onChange={(e) => set('recurrenceCount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 disabled:bg-[#f3f3f3]" /></label>
-            </div>
-          )}
+          <div className="grid grid-cols-2 gap-5 rounded border border-[#dfe5e8] bg-[#fbfcfd] p-4">
+            <label className="block text-sm"><span className="mb-1 flex items-center gap-2 font-medium"><Repeat size={15} /> Recorrência</span><select value={form.recurrence} onChange={(e) => set('recurrence', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="NONE">Sem recorrência</option><option value="MONTHLY">Mensal com quantidade</option><option value="MONTHLY_INDEFINITE">Mensal indeterminada</option></select></label>
+            <label className="block text-sm"><span className="mb-1 block font-medium">Quantidade</span><input type="number" min="1" max="60" disabled={form.recurrence !== 'MONTHLY'} value={form.recurrenceCount} onChange={(e) => set('recurrenceCount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 disabled:bg-[#f3f3f3]" /></label>
+          </div>
           <label className="block text-sm"><span className="mb-1 block font-medium">Anotação do status</span><textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={3} placeholder="Campo livre para preencher quando necessário" className="w-full rounded border border-[#d8dfe3] px-3 py-2" /></label>
           {!transaction && form.type === 'RECEITA' && (
             <label className="flex items-center gap-3 rounded border border-[#d8dfe3] px-3 py-3 text-sm"><input type="checkbox" checked={form.createReceipt} onChange={(e) => set('createReceipt', e.target.checked)} /> Criar recibo a partir desta entrada</label>

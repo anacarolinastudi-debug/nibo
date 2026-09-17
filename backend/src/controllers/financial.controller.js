@@ -280,7 +280,7 @@ async function createTransaction(req, res) {
 }
 
 async function updateTransaction(req, res) {
-  const data = transactionSchema.partial().omit({ recurrence: true, recurrenceCount: true }).parse(req.body);
+  const data = transactionSchema.partial().parse(req.body);
   const existing = await prisma.financialTransaction.findFirst({
     where: { id: req.params.id, ...clientScope(req.user) },
   });
@@ -318,6 +318,9 @@ async function updateTransaction(req, res) {
         ...(data.type !== undefined ? { type: data.type } : {}),
         ...(data.dueDate !== undefined ? { dueDate: new Date(data.dueDate) } : {}),
         ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
+        ...(data.recurrence !== undefined ? { recurrence: data.recurrence } : {}),
+        ...(data.recurrence !== undefined ? { recurrenceCount: data.recurrence === 'MONTHLY' ? (data.recurrenceCount || existing.recurrenceCount || 1) : null } : {}),
+        ...(data.recurrence !== undefined ? { recurrenceInfinite: data.recurrence === 'MONTHLY_INDEFINITE' } : {}),
         status: willBePaid ? 'PAID' : 'PENDING',
         paidAt: willBePaid ? (existing.paidAt || new Date()) : null,
         clientId,
