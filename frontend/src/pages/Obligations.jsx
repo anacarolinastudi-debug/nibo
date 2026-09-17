@@ -199,7 +199,7 @@ function DateField({ label, value, onChange }) {
   );
 }
 
-function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
+function loadLinkedCalendarTasks({ year, month, setTasks, setLoading, includeUndatedDemands = false }) {
   let active = true;
   setLoading?.(true);
   Promise.all([api.get('/obligations/links/matrix'), api.get('/demands')])
@@ -207,7 +207,7 @@ function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
       if (!active) return;
       setTasks([
         ...buildCalendarTasks(linksResponse.data.links || [], year, month),
-        ...buildDemandCalendarTasks(demandsResponse.data || [], year, month),
+        ...buildDemandCalendarTasks(demandsResponse.data || [], year, month, { includeUndated: includeUndatedDemands }),
       ]);
     })
     .catch(() => {
@@ -222,7 +222,8 @@ function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
 async function setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, month, today }) {
   const target = tasks.find((task) => task.id === id);
   if (!target) return;
-  const currentStatus = statusForDate(target, new Date(year, month, target.day), today);
+  const statusDate = target.dueDate ? new Date(target.dueDate) : new Date(year, month, target.day || today.getDate());
+  const currentStatus = statusForDate(target, statusDate, today);
   const nextStatus = calendarStatusFromTaskStatus(taskStatus, currentStatus);
 
   setTasks((current) => current.map((task) => (
@@ -458,7 +459,7 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
   const [showDone, setShowDone] = useState(true);
 
   useEffect(() => {
-    return loadLinkedCalendarTasks({ year, month, setTasks, setLoading });
+    return loadLinkedCalendarTasks({ year, month, setTasks, setLoading, includeUndatedDemands: true });
   }, [year, month, setTasks, reloadKey]);
 
   const tasksWithStatus = tasks.map((task) => ({
@@ -630,25 +631,28 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
   const customStatuses = getStoredKanbanCustomStatuses();
   const tasksWithStatus = tasks.map((task) => ({
     ...task,
-    calendarStatus: statusForDate(task, new Date(year, month, task.day), today),
+    calendarStatus: task.dueDate ? statusForDate(task, new Date(task.dueDate), today) : calendarStatusFromTaskStatus(task.taskStatus, 'openOnTime'),
     kanbanColumnId: kanbanColumnForTask(task, columns, customStatuses, year, month),
   }));
   const clients = Array.from(new Set(tasksWithStatus.map((task) => task.client))).sort((a, b) => a.localeCompare(b));
   const departmentsList = Array.from(new Set(tasksWithStatus.map((task) => task.department || 'Sem departamento'))).sort((a, b) => a.localeCompare(b));
   const filteredTasks = tasksWithStatus.filter((task) => {
     const text = `${task.client} ${task.cnpj} ${task.code} ${task.obligation} ${task.department}`.toLowerCase();
-    const dueDate = startOfDay(new Date(year, month, task.day));
+    const dueDate = task.dueDate ? startOfDay(new Date(task.dueDate)) : null;
     const periodStart = startDate ? startOfDay(new Date(`${startDate}T12:00:00`)) : null;
     const periodEnd = endDate ? startOfDay(new Date(`${endDate}T12:00:00`)) : null;
     return text.includes(query.toLowerCase())
       && (department === 'Todos' || (task.department || 'Sem departamento') === department)
       && (client === 'Todos' || task.client === client)
       && (statusFilter === 'Todos' || task.kanbanColumnId === statusFilter)
-      && (!periodStart || dueDate >= periodStart)
-      && (!periodEnd || dueDate <= periodEnd);
+      && (!periodStart || (dueDate && dueDate >= periodStart))
+      && (!periodEnd || (dueDate && dueDate <= periodEnd));
   }).sort((a, b) => {
-    const dateA = new Date(year, month, a.day).getTime();
-    const dateB = new Date(year, month, b.day).getTime();
+    const dateA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+    const dateB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+    if (!dateA && !dateB) return a.obligation.localeCompare(b.obligation);
+    if (!dateA) return 1;
+    if (!dateB) return -1;
     return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
@@ -757,7 +761,7 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
                     <article key={task.id} className="rounded border border-[#dfe5e8] bg-white p-3 shadow-sm">
                       <div className="mb-2 flex items-start justify-between gap-3">
                         <div className="font-semibold text-[#2f3a42]">{task.obligation}</div>
-                        <span className="shrink-0 rounded bg-[#eef8fc] px-2 py-0.5 text-xs text-[#16829b]">{String(task.day).padStart(2, '0')}/{String(month + 1).padStart(2, '0')}/{year}</span>
+                        <span className="shrink-0 rounded bg-[#eef8fc] px-2 py-0.5 text-xs text-[#16829b]">{task.dueDate ? new Date(task.dueDate).toLocaleDateString('pt-BR') : 'Sem data'}</span>
                       </div>
                       <div className="text-sm text-[#68737a]">{task.client}</div>
                       <div className="mt-1 text-xs text-[#8b98a1]">{task.department || 'Sem departamento'}</div>
@@ -2189,14 +2193,14 @@ function buildCalendarTasks(links, year, month) {
     .filter(Boolean);
 }
 
-function buildDemandCalendarTasks(demands, year, month) {
+function buildDemandCalendarTasks(demands, year, month, { includeUndated = false } = {}) {
   return demands
-    .filter((demand) => demand.dueDate && demand.status !== 'CANCELED')
+    .filter((demand) => demand.status !== 'CANCELED' && (demand.dueDate || includeUndated))
     .map((demand) => {
-      const dueDate = getDemandDueDate(demand, year, month);
-      if (!dueDate) return null;
-      const baseDate = new Date(demand.dueDate);
-      const isOriginalCompetence = baseDate.getFullYear() === year && baseDate.getMonth() === month;
+      const dueDate = demand.dueDate ? getDemandDueDate(demand, year, month) : null;
+      if (demand.dueDate && !dueDate) return null;
+      const baseDate = demand.dueDate ? new Date(demand.dueDate) : null;
+      const isOriginalCompetence = baseDate ? baseDate.getFullYear() === year && baseDate.getMonth() === month : true;
       const taskStatus = isOriginalCompetence && demand.status === 'DONE' ? 'CONCLUIDA' : isOriginalCompetence && demand.status === 'IN_PROGRESS' ? 'EM_ANDAMENTO' : 'EM_ABERTO';
       return {
         id: `demand-${demand.id}-${year}-${month + 1}`,
@@ -2210,7 +2214,7 @@ function buildDemandCalendarTasks(demands, year, month) {
         obligation: demand.title,
         nickname: demand.title,
         department: demand.department || demandCategoryLabel(demand.category),
-        day: dueDate.getDate(),
+        day: dueDate?.getDate() || null,
         dueDate,
         taskStatus,
         status: calendarStatusFromTaskStatus(taskStatus, 'openOnTime'),
