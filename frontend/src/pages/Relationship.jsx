@@ -7,6 +7,18 @@ import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 
+const conversationCacheKey = 'youngRelationshipConversations';
+const activeConversationKey = 'youngRelationshipActiveConversation';
+
+function loadCachedConversations() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(conversationCacheKey) || '[]');
+    return Array.isArray(cached) ? cached : [];
+  } catch {
+    return [];
+  }
+}
+
 function RelationshipMenu() {
   const [openSection, setOpenSection] = useState('relacionamento');
   const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
@@ -101,10 +113,10 @@ export default function Relationship() {
   const [manualWebhookRequired, setManualWebhookRequired] = useState(false);
   const [showIntegrationSettings, setShowIntegrationSettings] = useState(false);
   const [sending, setSending] = useState(false);
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState(loadCachedConversations);
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
-  const [activeId, setActiveId] = useState(null);
+  const [activeId, setActiveId] = useState(() => localStorage.getItem(activeConversationKey));
   const [activeConversation, setActiveConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [draft, setDraft] = useState('');
@@ -114,9 +126,14 @@ export default function Relationship() {
   async function loadConversations() {
     try {
       const data = await listConversations();
-      setConversations(Array.isArray(data) ? data : []);
+      const next = Array.isArray(data) ? data : [];
+      setConversations((current) => {
+        const resolved = next.length > 0 || current.length === 0 ? next : current;
+        localStorage.setItem(conversationCacheKey, JSON.stringify(resolved.slice(0, 80)));
+        return resolved;
+      });
       if (activeId) {
-        const current = data.find((conversation) => conversation.id === activeId);
+        const current = next.find((conversation) => conversation.id === activeId);
         if (current) setActiveConversation(current);
       }
     } catch {
@@ -137,6 +154,7 @@ export default function Relationship() {
 
   useEffect(() => {
     if (!activeId) return;
+    localStorage.setItem(activeConversationKey, activeId);
     getConversationMessages(activeId).then(({ conversation, messages }) => {
       setActiveConversation(conversation);
       setMessages(messages.filter((message) => message.body || message.mediaUrl));
@@ -335,8 +353,8 @@ export default function Relationship() {
             )}
           </div>}
 
-          <div className={`grid ${showIntegrationSettings ? 'h-[calc(100vh-220px)]' : 'h-[calc(100vh-155px)]'} min-h-[540px] grid-cols-[390px_minmax(0,1fr)] overflow-hidden rounded border border-[#dfe5e8]`}>
-            <div className="flex min-w-0 flex-col border-r border-[#dfe5e8] bg-white">
+          <div className={`flex ${showIntegrationSettings ? 'h-[calc(100vh-220px)]' : 'h-[calc(100vh-155px)]'} min-h-[540px] overflow-hidden rounded border border-[#dfe5e8] bg-white`}>
+            <aside className="relative z-10 flex w-[390px] shrink-0 flex-col border-r border-[#dfe5e8] bg-white">
               <div className="shrink-0 border-b border-[#dfe5e8] p-3">
                 <span className="flex h-10 items-center gap-2 rounded border border-[#dfe5e8] px-3">
                   <Search size={16} />
@@ -358,9 +376,9 @@ export default function Relationship() {
                   );
                 })}
               </div>
-            </div>
+            </aside>
 
-            <div className="flex min-w-0 flex-col">
+            <div className="flex min-w-0 flex-1 flex-col">
               {!active && <div className="flex flex-1 items-center justify-center text-sm text-[#9aa5ad]">Selecione uma conversa para começar.</div>}
               {active && (
                 <>
