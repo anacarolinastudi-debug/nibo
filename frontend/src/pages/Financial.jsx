@@ -23,6 +23,41 @@ function inputDate(value) {
   return value ? new Date(value).toISOString().slice(0, 10) : '';
 }
 
+function safeDateForMonth(year, monthIndex, day) {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  return new Date(Date.UTC(year, monthIndex, Math.min(day, lastDay)));
+}
+
+function buildMonthlyTransactions(items, filters) {
+  const year = Number(filters.year);
+  const monthIndex = Number(filters.month) - 1;
+  if (!year || monthIndex < 0) return items;
+
+  return items.flatMap((item) => {
+    const dueDate = new Date(item.dueDate);
+    const sameMonth = dueDate.getUTCFullYear() === year && dueDate.getUTCMonth() === monthIndex;
+    const rows = sameMonth ? [item] : [];
+
+    if (item.recurrenceInfinite && !sameMonth) {
+      const selectedDate = safeDateForMonth(year, monthIndex, dueDate.getUTCDate());
+      if (selectedDate > dueDate) {
+        rows.push({
+          ...item,
+          id: `${item.id}-projected-${year}-${monthIndex + 1}`,
+          dueDate: selectedDate.toISOString(),
+          status: 'PENDING',
+          paidAt: null,
+          receipt: null,
+          projected: true,
+          notes: item.notes || 'Recorrência projetada',
+        });
+      }
+    }
+
+    return rows;
+  });
+}
+
 function FinancialMenu() {
   const [openSection, setOpenSection] = useState('financeiro');
   const toggleSection = (key) => setOpenSection((current) => (current === key ? null : key));
@@ -208,7 +243,13 @@ export default function Financial() {
   }
 
   async function loadTransactions() {
-    const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value));
+    const params = Object.fromEntries(Object.entries({
+      type: filters.type,
+      clientId: filters.clientId,
+      month: filters.month,
+      year: filters.year,
+      includeRecurring: '1',
+    }).filter(([, value]) => value));
     const { data } = await api.get('/financial/transactions', { params });
     setTransactions(data);
   }
@@ -217,7 +258,6 @@ export default function Financial() {
     const params = Object.fromEntries(Object.entries({
       year: filters.year,
       type: filters.type,
-      status: filters.status,
       clientId: filters.clientId,
       includeRecurring: '1',
     }).filter(([, value]) => value));
@@ -239,7 +279,11 @@ export default function Financial() {
     loadAnnualTransactions().catch(() => setAnnualTransactions([]));
   }, [filters]);
 
-  const filteredTransactions = useMemo(() => transactions.filter((item) => `${item.description} ${item.client?.name || ''} ${item.category?.name || ''}`.toLowerCase().includes(query.toLowerCase())), [transactions, query]);
+  const monthlyTransactions = useMemo(() => buildMonthlyTransactions(transactions, filters), [transactions, filters]);
+  const filteredTransactions = useMemo(() => monthlyTransactions
+    .filter((item) => !filters.status || item.status === filters.status)
+    .filter((item) => `${item.description} ${item.client?.name || ''} ${item.category?.name || ''}`.toLowerCase().includes(query.toLowerCase())),
+  [monthlyTransactions, filters.status, query]);
   const filteredReceipts = useMemo(() => receipts.filter((item) => `${item.number} ${item.client?.name || ''} ${item.client?.cnpj || ''} ${item.description}`.toLowerCase().includes(query.toLowerCase())), [receipts, query]);
   const summary = useMemo(() => {
     const entradas = filteredTransactions.filter((item) => item.type === 'RECEITA').reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -258,6 +302,8 @@ export default function Financial() {
       const targetYear = Number(filters.year);
       const amount = Number(item.amount || 0);
       const addToMonth = (monthIndex, projected = false) => {
+        const occurrenceStatus = projected ? 'PENDING' : item.status;
+        if (filters.status && occurrenceStatus !== filters.status) return;
         const row = rows[monthIndex];
         if (!row) return;
         if (item.type === 'RECEITA') row.entradas += amount;
@@ -371,16 +417,20 @@ export default function Financial() {
                   <tbody>
                     {filteredTransactions.map((item) => (
                       <tr key={item.id} className="border-t">
-                        <td className="px-5 py-4">{datePt(item.dueDate)}</td><td className="px-5 py-4">{item.client?.name || '-'}</td><td className="px-5 py-4">{item.description}{item.notes && <small className="mt-1 block text-[#68737a]">{item.notes}</small>}</td><td className="px-5 py-4">{item.category?.name || '-'}</td>
+                        <td className="px-5 py-4">{datePt(item.dueDate)}</td><td className="px-5 py-4">{item.client?.name || '-'}</td><td className="px-5 py-4">{item.description}{item.projected && <small className="ml-2 rounded bg-[#eef8fc] px-2 py-0.5 text-[11px] text-[#16829b]">Recorrência</small>}{item.notes && <small className="mt-1 block text-[#68737a]">{item.notes}</small>}</td><td className="px-5 py-4">{item.category?.name || '-'}</td>
                         <td className="px-5 py-4"><span className={`rounded px-2 py-1 text-xs ${item.type === 'RECEITA' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{item.type === 'RECEITA' ? 'Entrada' : 'Saída'}</span></td>
                         <td className="px-5 py-4">{item.status === 'PAID' ? 'Pago' : 'Pendente'}</td>
                         <td className={`px-5 py-4 text-right font-semibold ${item.type === 'RECEITA' ? 'text-emerald-700' : 'text-red-700'}`}>{item.type === 'RECEITA' ? '+' : '-'} {money(item.amount)}</td>
                         <td className="px-5 py-4">
                           <div className="flex justify-end gap-2">
-                            {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Baixar</button>}
-                            {item.type === 'RECEITA' && !item.receipt && <button onClick={() => receiptFromTransaction(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Recibo</button>}
-                            <button onClick={() => setDrawer({ type: 'transaction', transaction: item })} title="Editar" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
-                            <button onClick={() => removeTransaction(item)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
+                            {item.projected ? <span className="rounded bg-[#f6f8fa] px-3 py-2 text-xs text-[#68737a]">Projetada</span> : (
+                              <>
+                                {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Baixar</button>}
+                                {item.type === 'RECEITA' && !item.receipt && <button onClick={() => receiptFromTransaction(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Recibo</button>}
+                                <button onClick={() => setDrawer({ type: 'transaction', transaction: item })} title="Editar" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
+                                <button onClick={() => removeTransaction(item)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
