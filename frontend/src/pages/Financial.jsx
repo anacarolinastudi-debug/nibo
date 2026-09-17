@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowDownCircle, ArrowUpCircle, ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Pencil, Plus, Search, Settings, Trash2, Users, WalletCards, X } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, BarChart3, ClipboardCheck, ClipboardList, FileText, ListChecks, MessageCircle, Pencil, Plus, Repeat, Search, Settings, Trash2, Users, WalletCards, X } from 'lucide-react';
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
@@ -50,14 +50,18 @@ function FinancialMenu() {
   );
 }
 
-function TransactionDrawer({ clients, onClose, onSaved }) {
+function TransactionDrawer({ clients, transaction, onClose, onSaved, onCreateReceipt }) {
   const [form, setForm] = useState({
-    clientId: clients[0]?.id || '',
-    description: '',
-    amount: '',
-    type: 'RECEITA',
-    dueDate: new Date().toISOString().slice(0, 10),
-    paid: false,
+    clientId: transaction?.clientId || transaction?.client?.id || clients[0]?.id || '',
+    description: transaction?.description || '',
+    amount: transaction?.amount ? String(transaction.amount) : '',
+    type: transaction?.type || 'RECEITA',
+    dueDate: inputDate(transaction?.dueDate) || new Date().toISOString().slice(0, 10),
+    paid: transaction?.status === 'PAID',
+    notes: transaction?.notes || '',
+    recurrence: 'NONE',
+    recurrenceCount: 2,
+    createReceipt: false,
   });
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -70,12 +74,20 @@ function TransactionDrawer({ clients, onClose, onSaved }) {
     e.preventDefault();
     setSaving(true);
     try {
-      await api.post('/financial/transactions', {
+      const payload = {
         ...form,
         amount: Number(String(form.amount).replace(',', '.')),
         dueDate: toIsoDate(form.dueDate),
-      });
+        recurrenceCount: Number(form.recurrenceCount || 1),
+      };
+      const response = transaction
+        ? await api.put(`/financial/transactions/${transaction.id}`, payload)
+        : await api.post('/financial/transactions', payload);
+      const saved = Array.isArray(response.data) ? response.data[0] : response.data;
       onSaved();
+      if (!transaction && form.createReceipt && saved && form.type === 'RECEITA') {
+        onCreateReceipt(saved);
+      }
     } catch (error) {
       window.alert(error.response?.data?.error || 'Não foi possível salvar a movimentação.');
     } finally {
@@ -87,7 +99,7 @@ function TransactionDrawer({ clients, onClose, onSaved }) {
     <div className="fixed inset-0 z-50 bg-black/40">
       <form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(720px,92vw)] flex-col bg-white shadow-xl">
         <header className="flex h-16 items-center justify-between border-b px-6">
-          <h2 className="text-2xl font-semibold">Nova movimentação</h2>
+          <h2 className="text-2xl font-semibold">{transaction ? 'Editar movimentação' : 'Nova movimentação'}</h2>
           <button type="button" onClick={onClose}><X /></button>
         </header>
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
@@ -104,6 +116,16 @@ function TransactionDrawer({ clients, onClose, onSaved }) {
             <label className="block text-sm"><span className="mb-1 block font-medium">Data</span><input required type="date" value={form.dueDate} onChange={(e) => set('dueDate', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
             <label className="mt-6 flex h-10 items-center gap-3 rounded border border-[#d8dfe3] px-3 text-sm"><input type="checkbox" checked={form.paid} onChange={(e) => set('paid', e.target.checked)} /> Já está pago/recebido</label>
           </div>
+          {!transaction && (
+            <div className="grid grid-cols-2 gap-5 rounded border border-[#dfe5e8] bg-[#fbfcfd] p-4">
+              <label className="block text-sm"><span className="mb-1 flex items-center gap-2 font-medium"><Repeat size={15} /> Recorrência</span><select value={form.recurrence} onChange={(e) => set('recurrence', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="NONE">Sem recorrência</option><option value="MONTHLY">Mensal</option></select></label>
+              <label className="block text-sm"><span className="mb-1 block font-medium">Quantidade</span><input type="number" min="1" max="60" disabled={form.recurrence === 'NONE'} value={form.recurrenceCount} onChange={(e) => set('recurrenceCount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3 disabled:bg-[#f3f3f3]" /></label>
+            </div>
+          )}
+          <label className="block text-sm"><span className="mb-1 block font-medium">Anotação do status</span><textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={3} placeholder="Campo livre para preencher quando necessário" className="w-full rounded border border-[#d8dfe3] px-3 py-2" /></label>
+          {!transaction && form.type === 'RECEITA' && (
+            <label className="flex items-center gap-3 rounded border border-[#d8dfe3] px-3 py-3 text-sm"><input type="checkbox" checked={form.createReceipt} onChange={(e) => set('createReceipt', e.target.checked)} /> Criar recibo a partir desta entrada</label>
+          )}
         </div>
         <footer className="flex justify-end gap-3 border-t p-4">
           <button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button>
@@ -117,13 +139,14 @@ function TransactionDrawer({ clients, onClose, onSaved }) {
 function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
   const [form, setForm] = useState({
     clientId: receipt?.client?.id || receipt?.clientId || clients[0]?.id || '',
+    transactionId: receipt?.transactionId || receipt?.transaction?.id || '',
     description: receipt?.description || 'HONORÁRIOS CONTÁBEIS',
     amount: receipt?.amount ? String(receipt.amount) : '',
     issueDate: inputDate(receipt?.issueDate) || new Date().toISOString().slice(0, 10),
     dueDate: inputDate(receipt?.dueDate),
     paymentDate: inputDate(receipt?.paymentDate),
     paymentMethod: receipt?.paymentMethod || '',
-    notes: receipt?.notes || 'Obrigado por fazer negócios conosco.',
+    notes: receipt?.notes || '',
   });
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -136,7 +159,7 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
     e.preventDefault();
     setSaving(true);
     try {
-      const payload = { ...form, amount: Number(String(form.amount).replace(',', '.')), issueDate: toIsoDate(form.issueDate), dueDate: toIsoDate(form.dueDate), paymentDate: toIsoDate(form.paymentDate) };
+      const payload = { ...form, transactionId: form.transactionId || null, amount: Number(String(form.amount).replace(',', '.')), issueDate: toIsoDate(form.issueDate), dueDate: toIsoDate(form.dueDate), paymentDate: toIsoDate(form.paymentDate) };
       const response = receipt ? await api.put(`/financial/receipts/${receipt.id}`, payload) : await api.post('/financial/receipts', payload);
       onSaved(response.data);
     } catch (error) {
@@ -174,6 +197,7 @@ export default function Financial() {
   const [tab, setTab] = useState('Movimentações');
   const [clients, setClients] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [annualTransactions, setAnnualTransactions] = useState([]);
   const [receipts, setReceipts] = useState([]);
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ type: '', status: '', clientId: '', month: String(new Date().getMonth() + 1), year: String(new Date().getFullYear()) });
@@ -191,6 +215,17 @@ export default function Financial() {
     setTransactions(data);
   }
 
+  async function loadAnnualTransactions() {
+    const params = Object.fromEntries(Object.entries({
+      year: filters.year,
+      type: filters.type,
+      status: filters.status,
+      clientId: filters.clientId,
+    }).filter(([, value]) => value));
+    const { data } = await api.get('/financial/transactions', { params });
+    setAnnualTransactions(data);
+  }
+
   async function loadReceipts() {
     const { data } = await api.get('/financial/receipts');
     setReceipts(data);
@@ -198,9 +233,12 @@ export default function Financial() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadClients(), loadTransactions(), loadReceipts()]).finally(() => setLoading(false));
+    Promise.all([loadClients(), loadTransactions(), loadAnnualTransactions(), loadReceipts()]).finally(() => setLoading(false));
   }, []);
-  useEffect(() => { loadTransactions().catch(() => setTransactions([])); }, [filters]);
+  useEffect(() => {
+    loadTransactions().catch(() => setTransactions([]));
+    loadAnnualTransactions().catch(() => setAnnualTransactions([]));
+  }, [filters]);
 
   const filteredTransactions = useMemo(() => transactions.filter((item) => `${item.description} ${item.client?.name || ''} ${item.category?.name || ''}`.toLowerCase().includes(query.toLowerCase())), [transactions, query]);
   const filteredReceipts = useMemo(() => receipts.filter((item) => `${item.number} ${item.client?.name || ''} ${item.client?.cnpj || ''} ${item.description}`.toLowerCase().includes(query.toLowerCase())), [receipts, query]);
@@ -210,6 +248,23 @@ export default function Financial() {
     const pendentes = filteredTransactions.filter((item) => item.status !== 'PAID').reduce((sum, item) => sum + Number(item.amount || 0), 0);
     return { entradas, saidas, saldo: entradas - saidas, pendentes };
   }, [filteredTransactions]);
+  const annualProjection = useMemo(() => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      month: new Date(Number(filters.year) || new Date().getFullYear(), index, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
+      entradas: 0,
+      saidas: 0,
+    }));
+    annualTransactions.forEach((item) => {
+      const date = new Date(item.dueDate);
+      if (date.getUTCFullYear() !== Number(filters.year)) return;
+      const row = rows[date.getUTCMonth()];
+      if (!row) return;
+      if (item.type === 'RECEITA') row.entradas += Number(item.amount || 0);
+      if (item.type === 'DESPESA') row.saidas += Number(item.amount || 0);
+    });
+    const max = Math.max(1, ...rows.flatMap((row) => [row.entradas, row.saidas]));
+    return rows.map((row) => ({ ...row, entradaPct: Math.round((row.entradas / max) * 100), saidaPct: Math.round((row.saidas / max) * 100) }));
+  }, [annualTransactions, filters.year]);
 
   async function markPaid(transaction) {
     await api.patch(`/financial/transactions/${transaction.id}/pay`);
@@ -242,6 +297,23 @@ export default function Financial() {
     }
   }
 
+  function receiptFromTransaction(transaction) {
+    setDrawer({
+      type: 'receipt-new',
+      receipt: {
+        clientId: transaction.clientId || transaction.client?.id,
+        client: transaction.client,
+        description: transaction.description,
+        transactionId: transaction.id,
+        amount: transaction.amount,
+        issueDate: new Date().toISOString(),
+        dueDate: transaction.dueDate,
+        paymentDate: transaction.status === 'PAID' ? (transaction.paidAt || new Date().toISOString()) : null,
+        notes: transaction.notes || '',
+      },
+    });
+  }
+
   const monthOptions = Array.from({ length: 12 }, (_, index) => ({ value: String(index + 1), label: new Date(2026, index, 1).toLocaleDateString('pt-BR', { month: 'long' }) }));
 
   return (
@@ -270,6 +342,7 @@ export default function Financial() {
                 <SummaryCard label="Saldo" value={money(summary.saldo)} tone={summary.saldo >= 0 ? 'blue' : 'red'} />
                 <SummaryCard label="Pendentes" value={money(summary.pendentes)} tone="amber" />
               </div>
+              <AnnualProjection rows={annualProjection} />
               <div className="mb-5 grid grid-cols-[minmax(260px,1fr)_160px_170px_220px_140px_120px] gap-3">
                 <SearchBox value={query} onChange={setQuery} placeholder="Cliente, descrição ou categoria" />
                 <Select value={filters.type} onChange={(value) => setFilters((current) => ({ ...current, type: value }))} options={[['', 'Todos os tipos'], ['RECEITA', 'Entradas'], ['DESPESA', 'Saídas']]} />
@@ -280,17 +353,19 @@ export default function Financial() {
               </div>
               <div className="overflow-x-auto rounded border">
                 <table className="w-full min-w-[1050px] text-left text-sm">
-                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Data</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Categoria</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Valor</th><th className="w-44 px-5 py-3"></th></tr></thead>
+                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Data</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Categoria</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3">Status</th><th className="px-5 py-3 text-right">Valor</th><th className="w-72 px-5 py-3"></th></tr></thead>
                   <tbody>
                     {filteredTransactions.map((item) => (
                       <tr key={item.id} className="border-t">
-                        <td className="px-5 py-4">{datePt(item.dueDate)}</td><td className="px-5 py-4">{item.client?.name || '-'}</td><td className="px-5 py-4">{item.description}</td><td className="px-5 py-4">{item.category?.name || '-'}</td>
+                        <td className="px-5 py-4">{datePt(item.dueDate)}</td><td className="px-5 py-4">{item.client?.name || '-'}</td><td className="px-5 py-4">{item.description}{item.notes && <small className="mt-1 block text-[#68737a]">{item.notes}</small>}</td><td className="px-5 py-4">{item.category?.name || '-'}</td>
                         <td className="px-5 py-4"><span className={`rounded px-2 py-1 text-xs ${item.type === 'RECEITA' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{item.type === 'RECEITA' ? 'Entrada' : 'Saída'}</span></td>
                         <td className="px-5 py-4">{item.status === 'PAID' ? 'Pago' : 'Pendente'}</td>
                         <td className={`px-5 py-4 text-right font-semibold ${item.type === 'RECEITA' ? 'text-emerald-700' : 'text-red-700'}`}>{item.type === 'RECEITA' ? '+' : '-'} {money(item.amount)}</td>
                         <td className="px-5 py-4">
                           <div className="flex justify-end gap-2">
                             {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Baixar</button>}
+                            {item.type === 'RECEITA' && !item.receipt && <button onClick={() => receiptFromTransaction(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Recibo</button>}
+                            <button onClick={() => setDrawer({ type: 'transaction', transaction: item })} title="Editar" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
                             <button onClick={() => removeTransaction(item)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
                           </div>
                         </td>
@@ -325,7 +400,7 @@ export default function Financial() {
           )}
         </section>
       </main>
-      {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} />}
+      {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
       {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
     </div>
   );
@@ -334,6 +409,32 @@ export default function Financial() {
 function SummaryCard({ label, value, tone }) {
   const colors = { green: 'text-emerald-700 bg-emerald-50', red: 'text-red-700 bg-red-50', blue: 'text-[#0b4f8f] bg-[#eef8fc]', amber: 'text-amber-700 bg-amber-50' };
   return <div className={`rounded border border-[#dfe5e8] p-4 ${colors[tone] || 'bg-white'}`}><p className="text-xs uppercase text-[#68737a]">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></div>;
+}
+
+function AnnualProjection({ rows }) {
+  return (
+    <section className="mb-6 rounded border border-[#dfe5e8] bg-white p-4">
+      <div className="mb-4 flex items-center gap-2">
+        <BarChart3 size={18} className="text-[#16829b]" />
+        <h2 className="font-semibold">Projeção anual de entradas e saídas</h2>
+      </div>
+      <div className="grid grid-cols-12 gap-3">
+        {rows.map((row) => (
+          <div key={row.month} className="min-w-0">
+            <div className="mb-2 flex h-28 items-end gap-1 rounded bg-[#f6f8fa] px-2 py-2">
+              <span title={`Entradas: ${money(row.entradas)}`} className="w-1/2 rounded-t bg-emerald-500" style={{ height: `${Math.max(row.entradas ? 8 : 0, row.entradaPct)}%` }} />
+              <span title={`Saídas: ${money(row.saidas)}`} className="w-1/2 rounded-t bg-red-400" style={{ height: `${Math.max(row.saidas ? 8 : 0, row.saidaPct)}%` }} />
+            </div>
+            <p className="text-center text-xs capitalize text-[#68737a]">{row.month}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex gap-4 text-xs text-[#68737a]">
+        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-emerald-500" /> Entradas</span>
+        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-red-400" /> Saídas</span>
+      </div>
+    </section>
+  );
 }
 
 function SummaryMini({ label, value }) {

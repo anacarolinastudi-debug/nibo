@@ -15,6 +15,7 @@ router.post('/categories', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createCatego
 
 router.get('/transactions', ctrl.listTransactions);
 router.post('/transactions', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createTransaction);
+router.put('/transactions/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateTransaction);
 router.patch('/transactions/:id/pay', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.markPaid);
 router.delete('/transactions/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeTransaction);
 

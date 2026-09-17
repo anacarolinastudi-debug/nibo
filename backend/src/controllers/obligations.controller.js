@@ -40,6 +40,8 @@ const linkSchema = z.object({
 
 const linkStatusSchema = z.object({
   taskStatus: z.enum(['EM_ABERTO', 'CONCLUIDA', 'SEM_MOVIMENTO', 'COM_MOVIMENTO']),
+  year: z.number().int().optional(),
+  month: z.number().int().min(1).max(12).optional(),
 });
 
 const unlinkSchema = z.object({
@@ -179,7 +181,7 @@ async function getLinksMatrix(req, res) {
     prisma.obligation.findMany({ where: { ...firmWhere(req), status: 'ATIVO' }, orderBy: { name: 'asc' } }),
     prisma.clientObligation.findMany({
       where: { client: firmWhere(req) },
-      include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+      include: { client: true, obligation: true, responsible: { select: { id: true, name: true } }, statusRecords: true },
     }),
   ]);
   res.json({ clients, obligations, links });
@@ -232,10 +234,17 @@ async function updateClientObligationStatus(req, res) {
   });
   if (!existing) return res.status(404).json({ error: 'Vinculo nao encontrado.' });
 
-  const link = await prisma.clientObligation.update({
+  const current = new Date();
+  const year = data.year || current.getFullYear();
+  const month = data.month || current.getMonth() + 1;
+  await prisma.clientObligationStatus.upsert({
+    where: { linkId_year_month: { linkId: existing.id, year, month } },
+    update: { taskStatus: data.taskStatus },
+    create: { linkId: existing.id, year, month, taskStatus: data.taskStatus },
+  });
+  const link = await prisma.clientObligation.findUnique({
     where: { id: existing.id },
-    data,
-    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } } },
+    include: { client: true, obligation: true, responsible: { select: { id: true, name: true } }, statusRecords: true },
   });
   res.json(link);
 }

@@ -28,12 +28,17 @@ function getStoredMovementStatuses() {
   }
 }
 
-function storeMovementStatus(id, taskStatus) {
+function statusStorageKey(id, year, month) {
+  return `${id}:${year}-${month + 1}`;
+}
+
+function storeMovementStatus(id, taskStatus, year, month) {
   const current = getStoredMovementStatuses();
+  const key = statusStorageKey(id, year, month);
   if (taskStatus === 'SEM_MOVIMENTO' || taskStatus === 'COM_MOVIMENTO') {
-    current[id] = taskStatus;
+    current[key] = taskStatus;
   } else {
-    delete current[id];
+    delete current[key];
   }
   localStorage.setItem(movementStorageKey, JSON.stringify(current));
 }
@@ -184,20 +189,20 @@ async function setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, mont
   )));
 
   try {
-    await api.put(`/obligations/links/${id}/status`, { taskStatus });
-    storeMovementStatus(id, taskStatus);
+    await api.put(`/obligations/links/${id}/status`, { taskStatus, year, month: month + 1 });
+    storeMovementStatus(id, taskStatus, year, month);
   } catch (error) {
     const canFallback = error.response?.status === 400 && ['SEM_MOVIMENTO', 'COM_MOVIMENTO'].includes(taskStatus);
     if (canFallback) {
       try {
-        await api.put(`/obligations/links/${id}/status`, { taskStatus: 'CONCLUIDA' });
-        storeMovementStatus(id, taskStatus);
+        await api.put(`/obligations/links/${id}/status`, { taskStatus: 'CONCLUIDA', year, month: month + 1 });
+        storeMovementStatus(id, taskStatus, year, month);
         return;
       } catch {
         // Se a baixa simples também falhar, volta ao estado anterior abaixo.
       }
     }
-    storeMovementStatus(id, target.taskStatus);
+    storeMovementStatus(id, target.taskStatus, year, month);
     setTasks((current) => current.map((task) => (task.id === id ? target : task)));
     window.alert(error.response?.data?.error || 'Não foi possível salvar a baixa da tarefa.');
   }
@@ -1933,7 +1938,8 @@ function buildCalendarTasks(links, year, month) {
       const dueDate = getObligationDueDate(link.obligation, year, month);
       if (!dueDate) return null;
       if (!isLinkActiveForDueDate(link, dueDate)) return null;
-      const taskStatus = storedMovements[link.id] || link.taskStatus;
+      const statusRecord = (link.statusRecords || []).find((record) => record.year === year && record.month === month + 1);
+      const taskStatus = storedMovements[statusStorageKey(link.id, year, month)] || statusRecord?.taskStatus || 'EM_ABERTO';
       return {
         id: link.id,
         client: link.client.name,

@@ -557,11 +557,28 @@ model ClientObligation {
 
   responsibleId String?
   responsible   User? @relation(fields: [responsibleId], references: [id])
+  statusRecords ClientObligationStatus[]
 
   @@unique([clientId, obligationId])
   @@index([obligationId])
   @@index([responsibleId])
   @@map("client_obligations")
+}
+
+model ClientObligationStatus {
+  id         String     @id @default(uuid())
+  year       Int
+  month      Int
+  taskStatus TaskStatus @default(EM_ABERTO)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  linkId String
+  link   ClientObligation @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@unique([linkId, year, month])
+  @@index([year, month])
+  @@map("client_obligation_statuses")
 }
 
 model ObligationRobot {
@@ -816,6 +833,7 @@ model FinancialTransaction {
   amount      Decimal           @db.Decimal(14, 2)
   type        TransactionType
   status      TransactionStatus @default(PENDING)
+  notes       String?
   dueDate     DateTime
   paidAt      DateTime?
   createdAt   DateTime          @default(now())

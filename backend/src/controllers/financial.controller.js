@@ -117,6 +117,9 @@ const transactionSchema = z.object({
   accountId: z.string().uuid().optional().nullable(),
   categoryId: z.string().uuid().optional().nullable(),
   paid: z.boolean().optional(),
+  notes: z.string().optional().nullable(),
+  recurrence: z.enum(['NONE', 'MONTHLY']).optional().default('NONE'),
+  recurrenceCount: z.number().int().min(1).max(60).optional().default(1),
 });
 
 async function resolveTransactionDefaults({ clientId, accountingFirmId, type, accountId, categoryId }) {
@@ -190,9 +193,9 @@ async function listTransactions(req, res) {
     ...(status ? { status } : {}),
   };
 
-  if (month && year) {
-    const start = new Date(Number(year), Number(month) - 1, 1);
-    const end = new Date(Number(year), Number(month), 1);
+  if (year) {
+    const start = month ? new Date(Number(year), Number(month) - 1, 1) : new Date(Number(year), 0, 1);
+    const end = month ? new Date(Number(year), Number(month), 1) : new Date(Number(year) + 1, 0, 1);
     where.dueDate = { gte: start, lt: end };
   }
 
@@ -227,31 +230,105 @@ async function createTransaction(req, res) {
     categoryId: data.categoryId,
   });
 
-  const transaction = await prisma.financialTransaction.create({
-    data: {
-      description: data.description,
-      amount: data.amount,
-      type: data.type,
-      dueDate: new Date(data.dueDate),
-      status: data.paid ? 'PAID' : 'PENDING',
-      paidAt: data.paid ? new Date() : null,
-      clientId: client.id,
-      accountId,
-      categoryId,
-    },
-    include: {
-      client: { select: { id: true, name: true, cnpj: true } },
-      category: { select: { name: true } },
-      account: { select: { bankName: true } },
-    },
+  const count = data.recurrence === 'MONTHLY' ? data.recurrenceCount : 1;
+  const firstDueDate = new Date(data.dueDate);
+  const transactions = await prisma.$transaction(async (tx) => {
+    const created = [];
+    for (let index = 0; index < count; index += 1) {
+      const dueDate = new Date(firstDueDate);
+      if (data.recurrence === 'MONTHLY') dueDate.setMonth(firstDueDate.getMonth() + index);
+      created.push(await tx.financialTransaction.create({
+        data: {
+          description: count > 1 ? `${data.description} (${index + 1}/${count})` : data.description,
+          amount: data.amount,
+          type: data.type,
+          dueDate,
+          status: data.paid ? 'PAID' : 'PENDING',
+          paidAt: data.paid ? new Date() : null,
+          notes: data.notes || null,
+          clientId: client.id,
+          accountId,
+          categoryId,
+        },
+        include: {
+          client: { select: { id: true, name: true, cnpj: true } },
+          category: { select: { name: true } },
+          account: { select: { bankName: true } },
+        },
+      }));
+    }
+
+    if (data.paid) {
+      const delta = (data.type === 'RECEITA' ? data.amount : -data.amount) * count;
+      await tx.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: delta } } });
+    }
+
+    return created;
   });
 
-  if (data.paid) {
-    const delta = data.type === 'RECEITA' ? data.amount : -data.amount;
-    await prisma.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: delta } } });
+  res.status(201).json(count === 1 ? transactions[0] : transactions);
+}
+
+async function updateTransaction(req, res) {
+  const data = transactionSchema.partial().omit({ recurrence: true, recurrenceCount: true }).parse(req.body);
+  const existing = await prisma.financialTransaction.findFirst({
+    where: { id: req.params.id, ...clientScope(req.user) },
+  });
+  if (!existing) return res.status(404).json({ error: 'Movimentação não encontrada.' });
+
+  let clientId = existing.clientId;
+  if (data.clientId) {
+    const client = await prisma.client.findFirst({
+      where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
+    });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    clientId = client.id;
   }
 
-  res.status(201).json(transaction);
+  const nextType = data.type || existing.type;
+  const { accountId, categoryId } = await resolveTransactionDefaults({
+    clientId,
+    accountingFirmId: req.user.accountingFirmId,
+    type: nextType,
+    accountId: data.accountId || existing.accountId,
+    categoryId: data.categoryId || existing.categoryId,
+  });
+  const wasPaid = existing.status === 'PAID';
+  const willBePaid = data.paid !== undefined ? data.paid : wasPaid;
+
+  const transaction = await prisma.$transaction(async (tx) => {
+    const oldImpact = wasPaid ? (existing.type === 'RECEITA' ? Number(existing.amount) : -Number(existing.amount)) : 0;
+    const nextAmount = data.amount !== undefined ? data.amount : Number(existing.amount);
+    const newImpact = willBePaid ? (nextType === 'RECEITA' ? Number(nextAmount) : -Number(nextAmount)) : 0;
+    const updated = await tx.financialTransaction.update({
+      where: { id: existing.id },
+      data: {
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.amount !== undefined ? { amount: data.amount } : {}),
+        ...(data.type !== undefined ? { type: data.type } : {}),
+        ...(data.dueDate !== undefined ? { dueDate: new Date(data.dueDate) } : {}),
+        ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
+        status: willBePaid ? 'PAID' : 'PENDING',
+        paidAt: willBePaid ? (existing.paidAt || new Date()) : null,
+        clientId,
+        accountId,
+        categoryId,
+      },
+      include: {
+        client: { select: { id: true, name: true, cnpj: true } },
+        category: { select: { name: true } },
+        account: { select: { bankName: true } },
+        receipt: { select: { id: true, number: true } },
+      },
+    });
+    const delta = newImpact - oldImpact;
+    if (delta !== 0) {
+      await tx.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: delta } } });
+    }
+    return updated;
+  });
+
+  res.json(transaction);
 }
 
 async function markPaid(req, res) {
@@ -259,6 +336,7 @@ async function markPaid(req, res) {
     where: { id: req.params.id, ...clientScope(req.user) },
   });
   if (!existing) return res.status(404).json({ error: 'Lançamento não encontrado.' });
+  if (existing.status === 'PAID') return res.json(existing);
 
   const transaction = await prisma.financialTransaction.update({
     where: { id: req.params.id },
@@ -286,6 +364,10 @@ async function removeTransaction(req, res) {
     if (existing.receipt) {
       await tx.financialReceipt.delete({ where: { id: existing.receipt.id } });
     }
+    if (existing.status === 'PAID') {
+      const delta = existing.type === 'RECEITA' ? -Number(existing.amount) : Number(existing.amount);
+      await tx.financialAccount.update({ where: { id: existing.accountId }, data: { balance: { increment: delta } } });
+    }
     await tx.financialTransaction.delete({ where: { id: existing.id } });
   });
 
@@ -298,6 +380,7 @@ const receiptSchema = z.object({
   clientId: z.string().uuid(),
   description: z.string().min(2, 'Descrição é obrigatória.'),
   amount: z.number().positive('Valor precisa ser maior que zero.'),
+  transactionId: z.string().uuid().optional().nullable(),
   issueDate: z.string().datetime().optional(),
   dueDate: z.string().datetime().optional().nullable(),
   paymentDate: z.string().datetime().optional().nullable(),
@@ -344,19 +427,40 @@ async function createReceipt(req, res) {
 
   const paid = Boolean(data.paymentDate);
   const receipt = await prisma.$transaction(async (tx) => {
-    const transaction = await tx.financialTransaction.create({
-      data: {
-        description: data.description,
-        amount: data.amount,
-        type: 'RECEITA',
-        status: paid ? 'PAID' : 'PENDING',
-        dueDate: data.dueDate ? new Date(data.dueDate) : (data.issueDate ? new Date(data.issueDate) : new Date()),
-        paidAt: data.paymentDate ? new Date(data.paymentDate) : null,
-        clientId: client.id,
-        accountId,
-        categoryId,
-      },
-    });
+    let transaction;
+    if (data.transactionId) {
+      transaction = await tx.financialTransaction.findFirst({
+        where: { id: data.transactionId, clientId: client.id, receipt: null },
+      });
+      if (!transaction) throw new Error('Movimentação não encontrada ou já vinculada a um recibo.');
+      transaction = await tx.financialTransaction.update({
+        where: { id: transaction.id },
+        data: {
+          description: data.description,
+          amount: data.amount,
+          type: 'RECEITA',
+          status: paid ? 'PAID' : transaction.status,
+          dueDate: data.dueDate ? new Date(data.dueDate) : transaction.dueDate,
+          paidAt: data.paymentDate ? new Date(data.paymentDate) : transaction.paidAt,
+          accountId,
+          categoryId,
+        },
+      });
+    } else {
+      transaction = await tx.financialTransaction.create({
+        data: {
+          description: data.description,
+          amount: data.amount,
+          type: 'RECEITA',
+          status: paid ? 'PAID' : 'PENDING',
+          dueDate: data.dueDate ? new Date(data.dueDate) : (data.issueDate ? new Date(data.issueDate) : new Date()),
+          paidAt: data.paymentDate ? new Date(data.paymentDate) : null,
+          clientId: client.id,
+          accountId,
+          categoryId,
+        },
+      });
+    }
 
     if (paid) {
       await tx.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: data.amount } } });
@@ -573,7 +677,7 @@ function receiptHtml(receipt, req) {
 
     <div class="notes">
       <p class="label">Observações</p>
-      <p>${escapeHtml(receipt.notes || 'Obrigado por fazer negócios conosco.')}</p>
+      <p>${escapeHtml(receipt.notes || '')}</p>
     </div>
     <p class="footer">Documento emitido pelo Young Contábil.</p>
   </div>
@@ -642,7 +746,7 @@ async function summary(req, res) {
 module.exports = {
   listAccounts, createAccount,
   listCategories, createCategory,
-  listTransactions, createTransaction, markPaid, removeTransaction,
+  listTransactions, createTransaction, updateTransaction, markPaid, removeTransaction,
   listReceipts, createReceipt, updateReceipt, removeReceipt, receiptPdf,
   summary,
 };
