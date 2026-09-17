@@ -56,7 +56,7 @@ async function list(req, res) {
     where,
     orderBy: [{ dueDate: 'asc' }, { createdAt: 'desc' }],
     include: {
-      client: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true, code: true, cnpj: true, taxRegime: true } },
       assignedTo: { select: { id: true, name: true } },
       _count: { select: { comments: true, attachments: true } },
     },
@@ -69,7 +69,7 @@ async function getById(req, res) {
   const demand = await prisma.demand.findFirst({
     where: { id: req.params.id, ...buildScopeFilter(req.user) },
     include: {
-      client: { select: { id: true, name: true } },
+      client: { select: { id: true, name: true, code: true, cnpj: true, taxRegime: true } },
       assignedTo: { select: { id: true, name: true } },
       createdBy: { select: { id: true, name: true } },
       comments: { include: { author: { select: { id: true, name: true } } }, orderBy: { createdAt: 'asc' } },

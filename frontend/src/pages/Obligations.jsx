@@ -17,6 +17,8 @@ const statusColors = {
   openOnTime: 'bg-zinc-300 text-ink',
   doneOnTime: 'bg-emerald-300 text-ink',
   doneLate: 'bg-rose-300 text-ink',
+  noMovement: 'bg-sky-300 text-sky-950',
+  withMovement: 'bg-amber-300 text-amber-950',
 };
 const movementStorageKey = 'youngTaskMovementStatus';
 
@@ -164,10 +166,13 @@ function DateField({ label, value, onChange }) {
 function loadLinkedCalendarTasks({ year, month, setTasks, setLoading }) {
   let active = true;
   setLoading?.(true);
-  api.get('/obligations/links/matrix')
-    .then(({ data }) => {
+  Promise.all([api.get('/obligations/links/matrix'), api.get('/demands')])
+    .then(([linksResponse, demandsResponse]) => {
       if (!active) return;
-      setTasks(buildCalendarTasks(data.links || [], year, month));
+      setTasks([
+        ...buildCalendarTasks(linksResponse.data.links || [], year, month),
+        ...buildDemandCalendarTasks(demandsResponse.data || [], year, month),
+      ]);
     })
     .catch(() => {
       if (active) setTasks([]);
@@ -189,6 +194,10 @@ async function setLinkedTaskStatus({ id, taskStatus, tasks, setTasks, year, mont
   )));
 
   try {
+    if (target.source === 'demand') {
+      await api.patch(`/demands/${target.demandId}/status`, { status: taskStatus === 'EM_ABERTO' ? 'PENDING' : 'DONE' });
+      return;
+    }
     await api.put(`/obligations/links/${id}/status`, { taskStatus, year, month: month + 1 });
     storeMovementStatus(id, taskStatus, year, month);
   } catch (error) {
@@ -314,6 +323,10 @@ function Calendar({ tasks, setTasks, reloadKey }) {
             <div className="flex gap-4">
               <Legend label="Dentro do prazo" color="bg-emerald-300" />
               <Legend label="Fora do prazo" color="bg-rose-300" />
+            </div>
+            <div className="mt-2 flex gap-4">
+              <Legend label="Sem movimento" color="bg-sky-300" />
+              <Legend label="Com movimento" color="bg-amber-300" />
             </div>
           </div>
         </div>
@@ -517,11 +530,11 @@ function SpreadsheetView({ tasks, setTasks, reloadKey }) {
                           const taskStatus = task?.calendarStatus || task?.status;
                           const isInvoiceTask = task && isInvoiceMovementTask(task);
                           return (
-                            <td key={column.key} className={`border border-[#dfe5e8] px-2 py-2 text-center ${taskStatus === 'noMovement' ? 'bg-zinc-100' : isDoneStatus(taskStatus) ? 'bg-emerald-50' : ''}`}>
+                            <td key={column.key} className={`border border-[#dfe5e8] px-2 py-2 text-center ${taskStatus === 'noMovement' ? 'bg-sky-50' : taskStatus === 'withMovement' ? 'bg-amber-50' : isDoneStatus(taskStatus) ? 'bg-emerald-50' : ''}`}>
                               {task ? (
                                 <div className="flex flex-col items-center gap-1">
                                   {isDoneStatus(taskStatus) ? (
-                                    <button onClick={() => toggleTask(task.id)} className={`min-w-24 rounded px-2 py-1 text-xs font-semibold ${taskStatus === 'noMovement' ? 'text-zinc-600' : 'text-emerald-700'}`}>
+                                    <button onClick={() => toggleTask(task.id)} className={`min-w-24 rounded px-2 py-1 text-xs font-semibold ${taskStatus === 'noMovement' ? 'text-sky-700' : taskStatus === 'withMovement' ? 'text-amber-700' : 'text-emerald-700'}`}>
                                       {statusLabel(taskStatus)}
                                     </button>
                                   ) : isInvoiceTask ? (
@@ -1940,7 +1953,7 @@ function buildCalendarTasks(links, year, month) {
       if (!isLinkActiveForDueDate(link, dueDate)) return null;
       const statusRecords = link.statusRecords || [];
       const statusRecord = statusRecords.find((record) => record.year === year && record.month === month + 1);
-      const legacyStatus = statusRecords.length === 0 && link.taskStatus !== 'EM_ABERTO' ? link.taskStatus : null;
+      const legacyStatus = statusRecords.length === 0 && !isFutureCompetence(year, month) && link.taskStatus !== 'EM_ABERTO' ? link.taskStatus : null;
       const taskStatus = storedMovements[statusStorageKey(link.id, year, month)] || statusRecord?.taskStatus || legacyStatus || 'EM_ABERTO';
       return {
         id: link.id,
@@ -1959,6 +1972,68 @@ function buildCalendarTasks(links, year, month) {
       };
     })
     .filter(Boolean);
+}
+
+function buildDemandCalendarTasks(demands, year, month) {
+  return demands
+    .filter((demand) => demand.dueDate && demand.status !== 'CANCELED')
+    .map((demand) => {
+      const dueDate = getDemandDueDate(demand, year, month);
+      if (!dueDate) return null;
+      const baseDate = new Date(demand.dueDate);
+      const isOriginalCompetence = baseDate.getFullYear() === year && baseDate.getMonth() === month;
+      const taskStatus = isOriginalCompetence && demand.status === 'DONE' ? 'CONCLUIDA' : 'EM_ABERTO';
+      return {
+        id: `demand-${demand.id}-${year}-${month + 1}`,
+        source: 'demand',
+        demandId: demand.id,
+        client: demand.client?.name || 'Sem cliente',
+        code: demand.client?.code,
+        cnpj: demand.client?.cnpj,
+        taxRegime: demand.client?.taxRegime,
+        obligationId: `demand-${demand.id}`,
+        obligation: demand.title,
+        nickname: demand.title,
+        department: demand.department || demandCategoryLabel(demand.category),
+        day: dueDate.getDate(),
+        dueDate,
+        taskStatus,
+        status: calendarStatusFromTaskStatus(taskStatus, 'openOnTime'),
+      };
+    })
+    .filter(Boolean);
+}
+
+function getDemandDueDate(demand, year, month) {
+  const baseDate = new Date(demand.dueDate);
+  if (Number.isNaN(baseDate.getTime())) return null;
+  const selectedDate = new Date(year, month, safeDueDay(year, month, baseDate.getDate()));
+  if (selectedDate < startOfDay(baseDate)) return null;
+
+  const monthDiff = (year - baseDate.getFullYear()) * 12 + month - baseDate.getMonth();
+  if (monthDiff < 0) return null;
+  if (demand.recurrence === 'MONTHLY') return selectedDate;
+  if (demand.recurrence === 'QUARTERLY') return monthDiff % 3 === 0 ? selectedDate : null;
+  if (demand.recurrence === 'YEARLY') return month === baseDate.getMonth() ? selectedDate : null;
+  return monthDiff === 0 ? selectedDate : null;
+}
+
+function isFutureCompetence(year, month) {
+  const today = new Date();
+  return year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth());
+}
+
+function demandCategoryLabel(category) {
+  const labels = {
+    FISCAL: 'Tarefas & Processos - Fiscal',
+    CONTABIL: 'Tarefas & Processos - Contábil',
+    FOLHA_PAGAMENTO: 'Tarefas & Processos - Folha',
+    SOCIETARIO: 'Tarefas & Processos - Societário',
+    FINANCEIRO: 'Tarefas & Processos - Financeiro',
+    DOCUMENTACAO: 'Tarefas & Processos - Documentação',
+    OUTROS: 'Tarefas & Processos',
+  };
+  return labels[category] || 'Tarefas & Processos';
 }
 
 function getObligationDueDate(obligation, year, month) {
