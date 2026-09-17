@@ -613,6 +613,9 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
   const [department, setDepartment] = useState('Todos');
   const [client, setClient] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('Todos');
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [columns, setColumns] = useState(getStoredKanbanColumns);
   const [editingFlow, setEditingFlow] = useState(false);
 
@@ -634,10 +637,19 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
   const departmentsList = Array.from(new Set(tasksWithStatus.map((task) => task.department || 'Sem departamento'))).sort((a, b) => a.localeCompare(b));
   const filteredTasks = tasksWithStatus.filter((task) => {
     const text = `${task.client} ${task.cnpj} ${task.code} ${task.obligation} ${task.department}`.toLowerCase();
+    const dueDate = startOfDay(new Date(year, month, task.day));
+    const periodStart = startDate ? startOfDay(new Date(`${startDate}T12:00:00`)) : null;
+    const periodEnd = endDate ? startOfDay(new Date(`${endDate}T12:00:00`)) : null;
     return text.includes(query.toLowerCase())
       && (department === 'Todos' || (task.department || 'Sem departamento') === department)
       && (client === 'Todos' || task.client === client)
-      && (statusFilter === 'Todos' || task.kanbanColumnId === statusFilter);
+      && (statusFilter === 'Todos' || task.kanbanColumnId === statusFilter)
+      && (!periodStart || dueDate >= periodStart)
+      && (!periodEnd || dueDate <= periodEnd);
+  }).sort((a, b) => {
+    const dateA = new Date(year, month, a.day).getTime();
+    const dateB = new Date(year, month, b.day).getTime();
+    return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
   });
 
   function shiftMonth(direction) {
@@ -710,6 +722,12 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
         <SelectField label="Cliente" value={client} onChange={setClient} options={['Todos', ...clients]} />
         <SelectField label="Etapa" value={statusFilter} onChange={setStatusFilter} options={[{ value: 'Todos', label: 'Todas' }, ...columns.map((column) => ({ value: column.id, label: column.label }))]} />
       </div>
+      <div className="mb-4 grid items-end gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
+        <SelectField label="Classificar por data" value={sortOrder} onChange={setSortOrder} options={[{ value: 'newest', label: 'Mais nova para mais antiga' }, { value: 'oldest', label: 'Mais antiga para mais nova' }]} />
+        <DateField label="Data inicial" value={startDate} onChange={setStartDate} />
+        <DateField label="Data final" value={endDate} onChange={setEndDate} />
+        <button onClick={() => { setStartDate(''); setEndDate(''); }} className="h-10 rounded border border-[#dfe5e8] px-4 text-sm text-[#16829b]">Limpar período</button>
+      </div>
       {loading && <p className="mb-3 text-sm text-[#68737a]">Carregando tarefas...</p>}
 
       <div className="overflow-x-auto pb-3">
@@ -739,7 +757,7 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
                     <article key={task.id} className="rounded border border-[#dfe5e8] bg-white p-3 shadow-sm">
                       <div className="mb-2 flex items-start justify-between gap-3">
                         <div className="font-semibold text-[#2f3a42]">{task.obligation}</div>
-                        <span className="shrink-0 rounded bg-[#eef8fc] px-2 py-0.5 text-xs text-[#16829b]">Dia {task.day}</span>
+                        <span className="shrink-0 rounded bg-[#eef8fc] px-2 py-0.5 text-xs text-[#16829b]">{String(task.day).padStart(2, '0')}/{String(month + 1).padStart(2, '0')}/{year}</span>
                       </div>
                       <div className="text-sm text-[#68737a]">{task.client}</div>
                       <div className="mt-1 text-xs text-[#8b98a1]">{task.department || 'Sem departamento'}</div>
