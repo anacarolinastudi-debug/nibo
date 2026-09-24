@@ -2368,6 +2368,7 @@ function isInvoiceMovementTask(task) {
 
 function taxRegimeLabel(value) {
   const labels = {
+    PESSOA_FISICA: 'Pessoa Física',
     SIMPLES_NACIONAL: 'SIMPLES',
     LUCRO_PRESUMIDO: 'Lucro Presumido',
     LUCRO_REAL: 'Lucro Real',

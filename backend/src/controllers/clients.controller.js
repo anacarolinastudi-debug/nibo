@@ -1,4 +1,5 @@
 const { z } = require('zod');
+const crypto = require('crypto');
 const prisma = require('../lib/prisma');
 const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
 const secretCrypto = require('../utils/certCrypto');
@@ -6,12 +7,12 @@ const secretCrypto = require('../utils/certCrypto');
 const optionalText = z.string().optional().nullable();
 const clientSchema = z.object({
   name: z.string().min(2, 'Nome é obrigatório.'),
-  cnpj: z.string().min(11, 'CPF/CNPJ inválido.'),
+  cnpj: z.string().optional().nullable(),
   personType: z.enum(['JURIDICA', 'FISICA']).default('JURIDICA'),
   code: optionalText,
   stateRegistration: optionalText,
   municipalRegistration: optionalText,
-  taxRegime: z.enum(['MEI', 'SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL']),
+  taxRegime: z.enum(['PESSOA_FISICA', 'MEI', 'SIMPLES_NACIONAL', 'LUCRO_PRESUMIDO', 'LUCRO_REAL']),
   email: z.union([z.string().email(), z.literal('')]).optional().nullable(),
   phone: optionalText,
   cep: optionalText,
@@ -28,6 +29,14 @@ const clientSchema = z.object({
   allowPublicDocuments: z.boolean().optional(),
   taxReminderEmail: z.boolean().optional(),
   active: z.boolean().optional(),
+}).superRefine((data, ctx) => {
+  const digits = String(data.cnpj || '').replace(/\D/g, '');
+  if (data.personType !== 'FISICA' && digits.length < 11) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cnpj'], message: 'CNPJ é obrigatório.' });
+  }
+  if (data.personType === 'FISICA' && data.cnpj && digits.length < 11) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cnpj'], message: 'CPF inválido.' });
+  }
 });
 
 const contactSchema = z.object({
@@ -68,6 +77,10 @@ function serializeClient(client, { includeGovbrAccess = false } = {}) {
 function prepareClientData(data, { existing } = {}) {
   const { govbrLogin, govbrPassword, ...clientData } = data;
   const prepared = { ...clientData };
+  if (Object.prototype.hasOwnProperty.call(clientData, 'cnpj')) {
+    const cleanTaxId = String(clientData.cnpj || '').trim();
+    prepared.cnpj = cleanTaxId || existing?.cnpj || `PF-${crypto.randomUUID()}`;
+  }
   if (Object.prototype.hasOwnProperty.call(clientData, 'email')) {
     prepared.email = clientData.email || null;
   }

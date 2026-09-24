@@ -132,6 +132,7 @@ model PasswordResetRequest {
 }
 
 enum TaxRegime {
+  PESSOA_FISICA
   MEI
   SIMPLES_NACIONAL
   LUCRO_PRESUMIDO
