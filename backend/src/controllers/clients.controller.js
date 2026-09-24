@@ -1,6 +1,7 @@
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
+const secretCrypto = require('../utils/certCrypto');
 
 const optionalText = z.string().optional().nullable();
 const clientSchema = z.object({
@@ -22,6 +23,8 @@ const clientSchema = z.object({
   neighborhood: optionalText,
   activity: optionalText,
   cnae: optionalText,
+  govbrLogin: optionalText,
+  govbrPassword: optionalText,
   allowPublicDocuments: z.boolean().optional(),
   taxReminderEmail: z.boolean().optional(),
   active: z.boolean().optional(),
@@ -38,33 +41,82 @@ const contactSchema = z.object({
 
 const firmWhere = (req) => ({ accountingFirmId: req.user.accountingFirmId });
 
+function decryptText(value) {
+  if (!value) return '';
+  try {
+    return secretCrypto.decrypt(value).toString('utf8');
+  } catch {
+    return '';
+  }
+}
+
+function serializeClient(client, { includeGovbrAccess = false } = {}) {
+  const base = {
+    ...client,
+    govbrLoginEncrypted: undefined,
+    govbrPasswordEncrypted: undefined,
+    hasGovbrAccess: Boolean(client.govbrLoginEncrypted || client.govbrPasswordEncrypted),
+    govbrAccessUpdatedAt: client.govbrAccessUpdatedAt || null,
+  };
+  if (includeGovbrAccess) {
+    base.govbrLogin = decryptText(client.govbrLoginEncrypted);
+    base.govbrPassword = decryptText(client.govbrPasswordEncrypted);
+  }
+  return base;
+}
+
+function prepareClientData(data, { existing } = {}) {
+  const { govbrLogin, govbrPassword, ...clientData } = data;
+  const prepared = { ...clientData };
+  if (Object.prototype.hasOwnProperty.call(clientData, 'email')) {
+    prepared.email = clientData.email || null;
+  }
+  const sensitiveKeysProvided = Object.prototype.hasOwnProperty.call(data, 'govbrLogin') || Object.prototype.hasOwnProperty.call(data, 'govbrPassword');
+  if (!sensitiveKeysProvided) return prepared;
+
+  const nextLogin = govbrLogin !== undefined ? String(govbrLogin || '').trim() : decryptText(existing?.govbrLoginEncrypted);
+  const nextPassword = govbrPassword !== undefined ? String(govbrPassword || '') : decryptText(existing?.govbrPasswordEncrypted);
+  if ((nextLogin || nextPassword) && !secretCrypto.isConfigured()) {
+    const error = new Error('Chave de criptografia não configurada no servidor. Configure CERT_ENCRYPTION_KEY antes de salvar acesso Gov.br.');
+    error.statusCode = 500;
+    throw error;
+  }
+
+  return {
+    ...prepared,
+    govbrLoginEncrypted: nextLogin ? secretCrypto.encrypt(nextLogin) : null,
+    govbrPasswordEncrypted: nextPassword ? secretCrypto.encrypt(nextPassword) : null,
+    govbrAccessUpdatedAt: nextLogin || nextPassword ? new Date() : null,
+  };
+}
+
 async function list(req, res) {
   const clients = await prisma.client.findMany({
     where: firmWhere(req),
     orderBy: { name: 'asc' },
     include: { _count: { select: { demands: true, contacts: true, obligationLinks: true } } },
   });
-  res.json(clients);
+  res.json(clients.map((client) => serializeClient(client)));
 }
 
 async function getById(req, res) {
   const client = await prisma.client.findFirst({ where: { id: req.params.id, ...firmWhere(req) }, include: { contacts: true } });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
-  res.json(client);
+  res.json(serializeClient(client, { includeGovbrAccess: true }));
 }
 
 async function create(req, res) {
   const data = clientSchema.parse(req.body);
-  const client = await prisma.client.create({ data: { ...data, email: data.email || null, accountingFirmId: req.user.accountingFirmId } });
-  res.status(201).json(client);
+  const client = await prisma.client.create({ data: { ...prepareClientData(data), accountingFirmId: req.user.accountingFirmId } });
+  res.status(201).json(serializeClient(client));
 }
 
 async function update(req, res) {
   const data = clientSchema.partial().parse(req.body);
   const existing = await prisma.client.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
   if (!existing) return res.status(404).json({ error: 'Cliente não encontrado.' });
-  const client = await prisma.client.update({ where: { id: existing.id }, data: { ...data, email: data.email || null } });
-  res.json(client);
+  const client = await prisma.client.update({ where: { id: existing.id }, data: prepareClientData(data, { existing }) });
+  res.json(serializeClient(client, { includeGovbrAccess: true }));
 }
 
 async function remove(req, res) {

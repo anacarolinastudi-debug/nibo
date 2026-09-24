@@ -8,7 +8,7 @@ import SideMenuSection from '../components/SideMenuSection';
 
 const regimes = { MEI: 'MEI', SIMPLES_NACIONAL: 'Simples Nacional', LUCRO_PRESUMIDO: 'Lucro Presumido', LUCRO_REAL: 'Lucro Real' };
 const departments = ['Departamento Contábil', 'Departamento de Registro', 'Departamento Financeiro', 'Departamento Fiscal', 'Departamento Pessoal'];
-const emptyClient = { personType: 'JURIDICA', name: '', cnpj: '', code: '', stateRegistration: '', municipalRegistration: '', taxRegime: 'SIMPLES_NACIONAL', email: '', phone: '', cep: '', street: '', number: '', complement: '', state: '', city: '', neighborhood: '', activity: '', cnae: '', allowPublicDocuments: false, taxReminderEmail: true, active: true };
+const emptyClient = { personType: 'JURIDICA', name: '', cnpj: '', code: '', stateRegistration: '', municipalRegistration: '', taxRegime: 'SIMPLES_NACIONAL', email: '', phone: '', cep: '', street: '', number: '', complement: '', state: '', city: '', neighborhood: '', activity: '', cnae: '', govbrLogin: '', govbrPassword: '', allowPublicDocuments: false, taxReminderEmail: true, active: true };
 
 function ClientMenu({ tab, setTab }) {
   const [openSection, setOpenSection] = useState('clientes');
@@ -58,6 +58,18 @@ function ClientDrawer({ client, onClose, onSaved }) {
   const [form, setForm] = useState(client ? { ...emptyClient, ...client } : emptyClient);
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    if (!client?.id) return;
+    let active = true;
+    api.get(`/clients/${client.id}`)
+      .then(({ data }) => {
+        if (active) setForm({ ...emptyClient, ...data });
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [client?.id]);
+
   async function save(e) {
     e.preventDefault();
     const taxIdDigits = String(form.cnpj || '').replace(/\D/g, '');
@@ -101,6 +113,16 @@ function ClientDrawer({ client, onClose, onSaved }) {
           <section><h3 className="mb-4 font-semibold">Endereço</h3><div className="grid grid-cols-4 gap-5"><Input label="CEP" value={form.cep} onChange={(v) => set('cep', v)} /><div className="col-span-2"><Input label="Logradouro" value={form.street} onChange={(v) => set('street', v)} /></div><Input label="Número" value={form.number} onChange={(v) => set('number', v)} /><Input label="Complemento" value={form.complement} onChange={(v) => set('complement', v)} /><Input label="Estado" value={form.state} onChange={(v) => set('state', v)} /><Input label="Município" value={form.city} onChange={(v) => set('city', v)} /><Input label="Bairro" value={form.neighborhood} onChange={(v) => set('neighborhood', v)} /></div></section>
           <section><h3 className="mb-4 font-semibold">Atividade</h3><div className="grid grid-cols-2 gap-5"><Input label="Ramo de atividade" value={form.activity} onChange={(v) => set('activity', v)} /><Input label="CNAE Federal" value={form.cnae} onChange={(v) => set('cnae', v)} /></div></section>
           <section><h3 className="mb-4 font-semibold">Contato e acesso</h3><div className="mb-5 grid grid-cols-2 gap-5"><Input label="E-mail" type="email" value={form.email} onChange={(v) => set('email', v)} /><Input label="Telefone" value={form.phone} onChange={(v) => set('phone', v)} /></div><div className="space-y-4"><Toggle label="Permitir visualização de documentos sem login" checked={form.allowPublicDocuments} onChange={(v) => set('allowPublicDocuments', v)} /><Toggle label="Enviar e-mail com lembrete no dia do vencimento de impostos" checked={form.taxReminderEmail} onChange={(v) => set('taxReminderEmail', v)} /></div></section>
+          <section className="rounded border border-[#dfe5e8] bg-[#fbfcfd] p-5">
+            <div className="mb-4">
+              <h3 className="font-semibold">Acesso Gov.br</h3>
+              <p className="mt-1 text-xs text-[#7b858c]">Preenchimento opcional. Login e senha ficam criptografados no banco.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-5">
+              <Input label="CPF/Login Gov.br" value={form.govbrLogin} onChange={(v) => set('govbrLogin', v)} placeholder="Opcional" />
+              <Input label="Senha Gov.br" type="password" value={form.govbrPassword} onChange={(v) => set('govbrPassword', v)} placeholder="Opcional" />
+            </div>
+          </section>
         </div>
         <footer className="flex justify-end gap-3 border-t p-4"><button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button><button disabled={saving} className="rounded bg-[#2693d2] px-6 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar'}</button></footer>
       </form>

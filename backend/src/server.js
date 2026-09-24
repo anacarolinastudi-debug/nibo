@@ -26,6 +26,11 @@ const app = express();
 
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use(express.json());
+app.use((req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = (body) => originalJson(stripSensitiveClientFields(body));
+  next();
+});
 
 // Disponibiliza os arquivos enviados (documentos) publicamente via URL
 app.use('/uploads', express.static('uploads'));
@@ -70,3 +75,15 @@ app.listen(PORT, () => {
   console.log(`API rodando em http://localhost:${PORT}`);
   startEcacScheduler();
 });
+
+function stripSensitiveClientFields(value) {
+  if (Array.isArray(value)) return value.map(stripSensitiveClientFields);
+  if (!value || typeof value !== 'object') return value;
+  if (value instanceof Date || Object.getPrototypeOf(value) !== Object.prototype) return value;
+  const cleaned = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (key === 'govbrLoginEncrypted' || key === 'govbrPasswordEncrypted') continue;
+    cleaned[key] = stripSensitiveClientFields(item);
+  }
+  return cleaned;
+}
