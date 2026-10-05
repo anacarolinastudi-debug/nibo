@@ -469,6 +469,17 @@ export default function Financial() {
     loadBudgets();
   }
 
+  async function openBudgetPdf(budget) {
+    try {
+      const response = await api.get(`/financial/budgets/${budget.id}/pdf`, { responseType: 'blob' });
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      window.open(url, '_blank', 'noopener,noreferrer');
+      window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível emitir o orçamento.');
+    }
+  }
+
   async function openReceipt(receipt) {
     try {
       const response = await api.get(`/financial/receipts/${receipt.id}/pdf`, { responseType: 'blob' });
@@ -590,7 +601,7 @@ export default function Financial() {
           {tab === 'Orçamento' && (
             <>
               <div className="mb-5 grid grid-cols-[minmax(320px,520px)_180px_180px_180px] gap-4">
-                <SearchBox value={query} onChange={setQuery} placeholder="Cliente, CNPJ, número, status ou descrição" />
+                <SearchBox value={query} onChange={setQuery} placeholder="Cliente, CNPJ, número ou status" />
                 <SummaryMini label="Orçamentos" value={budgetSummary.count} />
                 <SummaryMini label="Em aberto" value={budgetSummary.open} />
                 <SummaryMini label="Aprovados" value={money(budgetSummary.approved)} />
@@ -600,28 +611,20 @@ export default function Financial() {
               </div>
               <div className="overflow-x-auto rounded border">
                 <table className="w-full min-w-[1050px] text-left text-sm">
-                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Número</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Validade</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3 text-right">Valor</th><th className="w-48 px-5 py-3"></th></tr></thead>
+                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Número</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Serviços</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Validade</th><th className="px-5 py-3 text-right">Valor</th><th className="w-64 px-5 py-3"></th></tr></thead>
                   <tbody>
                     {filteredBudgets.map((budget) => (
                       <tr key={budget.id} className="border-t">
                         <td className="px-5 py-4 font-semibold text-[#16829b]">{budget.number}</td>
                         <td className="px-5 py-4">{budget.client?.name || budget.clientName}<small className="block text-[#68737a]">{budget.client?.cnpj || (budget.client ? '' : 'Cliente avulso')}</small></td>
-                        <td className="px-5 py-4">
-                          {Array.isArray(budget.items) && budget.items.length ? (
-                            <div className="space-y-1">
-                              {budget.items.map((item, index) => <div key={`${budget.id}-${index}`}>{item.service} <small className="text-[#68737a]">({money(item.amount)})</small></div>)}
-                            </div>
-                          ) : budget.description}
-                          {budget.notes && <small className="mt-1 block text-[#68737a]">{budget.notes}</small>}
-                        </td>
+                        <td className="px-5 py-4">{Array.isArray(budget.items) && budget.items.length ? `${budget.items.length} serviço(s)` : '1 serviço'}</td>
                         <td className="px-5 py-4"><BudgetStatus status={budget.status} /></td>
                         <td className="px-5 py-4">{datePt(budget.validUntil)}</td>
-                        <td className="px-5 py-4">{budget.type === 'RECEITA' ? 'Entrada' : 'Saída'}</td>
                         <td className="px-5 py-4 text-right font-semibold">{money(budget.amount)}</td>
-                        <td className="px-5 py-4"><div className="flex justify-end gap-2"><button onClick={() => setDrawer({ type: 'budget', budget })} className="inline-flex items-center gap-2 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /> Editar</button><button onClick={() => removeBudget(budget)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></td>
+                        <td className="px-5 py-4"><div className="flex justify-end gap-2"><button onClick={() => openBudgetPdf(budget)} className="inline-flex items-center gap-2 rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]"><FileText size={16} /> PDF</button><button onClick={() => setDrawer({ type: 'budget', budget })} className="inline-flex items-center gap-2 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /> Editar</button><button onClick={() => removeBudget(budget)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></td>
                       </tr>
                     ))}
-                    {!loading && filteredBudgets.length === 0 && <tr><td colSpan={8} className="px-5 py-10 text-center text-[#78838a]">Nenhum orçamento cadastrado ainda.</td></tr>}
+                    {!loading && filteredBudgets.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-[#78838a]">Nenhum orçamento cadastrado ainda.</td></tr>}
                   </tbody>
                 </table>
               </div>
