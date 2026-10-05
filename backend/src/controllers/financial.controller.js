@@ -749,9 +749,11 @@ function budgetHtml(budget, req) {
   const clientName = budget.client?.name || budget.clientName || '-';
   const clientDoc = budget.client?.cnpj || '';
   const clientAddress = budget.client ? [budget.client.street, budget.client.number, budget.client.neighborhood, budget.client.city, budget.client.state].filter(Boolean).join(', ') : '';
-  const items = Array.isArray(budget.items) && budget.items.length
-    ? budget.items
-    : [{ service: budget.description, amount: Number(budget.amount || 0) }];
+  const rawItems = Array.isArray(budget.items) && budget.items.length ? budget.items : [{ service: budget.description, amount: Number(budget.amount || 0) }];
+  const items = rawItems.map((item) => ({
+    service: item.service || item.description || budget.description || 'Serviço',
+    amount: Number(item.amount || 0),
+  }));
 
   return `<!doctype html>
 <html lang="pt-BR">
@@ -854,16 +856,20 @@ async function budgetPdf(req, res) {
   });
   if (!budget) return res.status(404).json({ error: 'Orçamento não encontrado.' });
 
-  const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  let browser;
   try {
+    browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
-    await page.setContent(budgetHtml(budget, req), { waitUntil: 'networkidle' });
+    await page.setContent(budgetHtml(budget, req), { waitUntil: 'domcontentloaded', timeout: 15000 });
     const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '12mm', right: '12mm', bottom: '12mm', left: '12mm' } });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${budget.number}.pdf"`);
     res.send(pdf);
+  } catch (error) {
+    console.error('Erro ao gerar PDF do orçamento:', error);
+    res.status(500).json({ error: 'Não foi possível gerar o PDF do orçamento agora.' });
   } finally {
-    await browser.close();
+    if (browser) await browser.close();
   }
 }
 

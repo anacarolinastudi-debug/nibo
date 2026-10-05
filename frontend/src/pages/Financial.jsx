@@ -476,7 +476,16 @@ export default function Financial() {
       window.open(url, '_blank', 'noopener,noreferrer');
       window.setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (error) {
-      window.alert(error.response?.data?.error || 'Não foi possível emitir o orçamento.');
+      let message = error.response?.data?.error;
+      if (!message && error.response?.data instanceof Blob) {
+        try {
+          const text = await error.response.data.text();
+          message = JSON.parse(text).error;
+        } catch {
+          message = '';
+        }
+      }
+      window.alert(message || 'Não foi possível emitir o orçamento.');
     }
   }
 
