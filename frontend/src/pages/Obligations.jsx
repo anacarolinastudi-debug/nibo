@@ -2172,8 +2172,7 @@ function buildCalendarTasks(links, year, month) {
       if (!isLinkActiveForDueDate(link, dueDate)) return null;
       const statusRecords = link.statusRecords || [];
       const statusRecord = statusRecords.find((record) => record.year === year && record.month === month + 1);
-      const legacyStatus = statusRecords.length === 0 && !isFutureCompetence(year, month) && link.taskStatus !== 'EM_ABERTO' ? link.taskStatus : null;
-      const taskStatus = storedMovements[statusStorageKey(link.id, year, month)] || statusRecord?.taskStatus || legacyStatus || 'EM_ABERTO';
+      const taskStatus = storedMovements[statusStorageKey(link.id, year, month)] || statusRecord?.taskStatus || 'EM_ABERTO';
       return {
         id: link.id,
         client: link.client.name,
@@ -2235,11 +2234,6 @@ function getDemandDueDate(demand, year, month) {
   if (demand.recurrence === 'QUARTERLY') return monthDiff % 3 === 0 ? selectedDate : null;
   if (demand.recurrence === 'YEARLY') return month === baseDate.getMonth() ? selectedDate : null;
   return monthDiff === 0 ? selectedDate : null;
-}
-
-function isFutureCompetence(year, month) {
-  const today = new Date();
-  return year > today.getFullYear() || (year === today.getFullYear() && month > today.getMonth());
 }
 
 function demandCategoryLabel(category) {
