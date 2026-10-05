@@ -600,6 +600,110 @@ async function removeReceipt(req, res) {
   res.status(204).send();
 }
 
+// ---------- Orçamentos ----------
+
+const budgetSchema = z.object({
+  clientId: z.string().uuid(),
+  description: z.string().min(2, 'Descrição é obrigatória.'),
+  amount: z.number().positive('Valor precisa ser maior que zero.'),
+  type: z.enum(['RECEITA', 'DESPESA']).optional().default('RECEITA'),
+  status: z.enum(['DRAFT', 'SENT', 'APPROVED', 'REJECTED']).optional().default('DRAFT'),
+  validUntil: z.string().datetime().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
+async function nextBudgetNumber(accountingFirmId) {
+  const year = new Date().getFullYear();
+  const prefix = `ORC-${year}-`;
+  const count = await prisma.financialBudget.count({
+    where: { accountingFirmId, number: { startsWith: prefix } },
+  });
+  return `${prefix}${String(count + 1).padStart(4, '0')}`;
+}
+
+async function listBudgets(req, res) {
+  const where = req.user.role === 'CLIENT'
+    ? { clientId: req.user.clientId }
+    : { accountingFirmId: req.user.accountingFirmId };
+
+  const budgets = await prisma.financialBudget.findMany({
+    where,
+    include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+  res.json(budgets);
+}
+
+async function createBudget(req, res) {
+  if (req.user.role === 'CLIENT') req.body.clientId = req.user.clientId;
+  const data = budgetSchema.parse(req.body);
+
+  const client = await prisma.client.findFirst({
+    where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
+  });
+  if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+  const budget = await prisma.financialBudget.create({
+    data: {
+      number: await nextBudgetNumber(req.user.accountingFirmId),
+      description: data.description,
+      amount: data.amount,
+      type: data.type,
+      status: data.status,
+      validUntil: data.validUntil ? new Date(data.validUntil) : null,
+      notes: data.notes || null,
+      accountingFirmId: req.user.accountingFirmId,
+      clientId: client.id,
+    },
+    include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+  });
+
+  res.status(201).json(budget);
+}
+
+async function updateBudget(req, res) {
+  const data = budgetSchema.partial().parse(req.body);
+  const existing = await prisma.financialBudget.findFirst({
+    where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Orçamento não encontrado.' });
+
+  let clientId = existing.clientId;
+  if (data.clientId) {
+    const client = await prisma.client.findFirst({
+      where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
+    });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+    clientId = client.id;
+  }
+
+  const budget = await prisma.financialBudget.update({
+    where: { id: existing.id },
+    data: {
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.amount !== undefined ? { amount: data.amount } : {}),
+      ...(data.type !== undefined ? { type: data.type } : {}),
+      ...(data.status !== undefined ? { status: data.status } : {}),
+      ...(data.validUntil !== undefined ? { validUntil: data.validUntil ? new Date(data.validUntil) : null } : {}),
+      ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
+      clientId,
+    },
+    include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
+  });
+
+  res.json(budget);
+}
+
+async function removeBudget(req, res) {
+  const existing = await prisma.financialBudget.findFirst({
+    where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+  });
+  if (!existing) return res.status(404).json({ error: 'Orçamento não encontrado.' });
+
+  await prisma.financialBudget.delete({ where: { id: existing.id } });
+  res.status(204).send();
+}
+
 function receiptHtml(receipt, req) {
   const firm = receipt.accountingFirm;
   const logoSrc = logoSource(firm.logoUrl, req);
@@ -761,5 +865,6 @@ module.exports = {
   listCategories, createCategory,
   listTransactions, createTransaction, updateTransaction, markPaid, removeTransaction,
   listReceipts, createReceipt, updateReceipt, removeReceipt, receiptPdf,
+  listBudgets, createBudget, updateBudget, removeBudget,
   summary,
 };

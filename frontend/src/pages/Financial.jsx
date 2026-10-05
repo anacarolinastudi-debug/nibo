@@ -226,12 +226,79 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
   );
 }
 
+function BudgetDrawer({ clients, budget, onClose, onSaved }) {
+  const [form, setForm] = useState({
+    clientId: budget?.client?.id || budget?.clientId || clients[0]?.id || '',
+    description: budget?.description || '',
+    amount: budget?.amount ? String(budget.amount) : '',
+    type: budget?.type || 'RECEITA',
+    status: budget?.status || 'DRAFT',
+    validUntil: inputDate(budget?.validUntil),
+    notes: budget?.notes || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+
+  useEffect(() => {
+    if (!form.clientId && clients[0]?.id) set('clientId', clients[0].id);
+  }, [clients, form.clientId]);
+
+  async function save(e) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        ...form,
+        amount: Number(String(form.amount).replace(',', '.')),
+        validUntil: toIsoDate(form.validUntil),
+      };
+      const response = budget
+        ? await api.put(`/financial/budgets/${budget.id}`, payload)
+        : await api.post('/financial/budgets', payload);
+      onSaved(response.data);
+    } catch (error) {
+      window.alert(error.response?.data?.error || 'Não foi possível salvar o orçamento.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40">
+      <form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(780px,92vw)] flex-col bg-white shadow-xl">
+        <header className="flex h-16 items-center justify-between border-b px-6">
+          <h2 className="text-2xl font-semibold">{budget ? 'Editar orçamento' : 'Novo orçamento'}</h2>
+          <button type="button" onClick={onClose}><X /></button>
+        </header>
+        <div className="flex-1 space-y-6 overflow-y-auto p-6">
+          <div className="grid grid-cols-2 gap-5">
+            <label className="block text-sm"><span className="mb-1 block font-medium">Cliente</span><select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3">{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+            <label className="block text-sm"><span className="mb-1 block font-medium">Valor</span><input required type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => set('amount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+          </div>
+          <label className="block text-sm"><span className="mb-1 block font-medium">Descrição</span><input required value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Ex.: Honorários mensais, abertura de empresa..." className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+          <div className="grid grid-cols-3 gap-5">
+            <label className="block text-sm"><span className="mb-1 block font-medium">Tipo</span><select value={form.type} onChange={(e) => set('type', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="RECEITA">Entrada</option><option value="DESPESA">Saída</option></select></label>
+            <label className="block text-sm"><span className="mb-1 block font-medium">Status</span><select value={form.status} onChange={(e) => set('status', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="DRAFT">Rascunho</option><option value="SENT">Enviado</option><option value="APPROVED">Aprovado</option><option value="REJECTED">Reprovado</option></select></label>
+            <label className="block text-sm"><span className="mb-1 block font-medium">Validade</span><input type="date" value={form.validUntil} onChange={(e) => set('validUntil', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+          </div>
+          <label className="block text-sm"><span className="mb-1 block font-medium">Observações</span><textarea value={form.notes} onChange={(e) => set('notes', e.target.value)} rows={5} placeholder="Condições, escopo do serviço, forma de pagamento..." className="w-full rounded border border-[#d8dfe3] px-3 py-2" /></label>
+        </div>
+        <footer className="flex justify-end gap-3 border-t p-4">
+          <button type="button" onClick={onClose} className="px-5 py-2 text-[#16829b]">Cancelar</button>
+          <button disabled={saving || clients.length === 0} className="rounded bg-[#2693d2] px-6 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar orçamento'}</button>
+        </footer>
+      </form>
+    </div>
+  );
+}
+
 export default function Financial() {
   const [tab, setTab] = useState('Movimentações');
   const [clients, setClients] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [annualTransactions, setAnnualTransactions] = useState([]);
   const [receipts, setReceipts] = useState([]);
+  const [budgets, setBudgets] = useState([]);
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ type: '', status: '', clientId: '', month: String(new Date().getMonth() + 1), year: String(new Date().getFullYear()) });
   const [drawer, setDrawer] = useState(null);
@@ -270,9 +337,14 @@ export default function Financial() {
     setReceipts(data);
   }
 
+  async function loadBudgets() {
+    const { data } = await api.get('/financial/budgets');
+    setBudgets(data);
+  }
+
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadClients(), loadTransactions(), loadAnnualTransactions(), loadReceipts()]).finally(() => setLoading(false));
+    Promise.all([loadClients(), loadTransactions(), loadAnnualTransactions(), loadReceipts(), loadBudgets()]).finally(() => setLoading(false));
   }, []);
   useEffect(() => {
     loadTransactions().catch(() => setTransactions([]));
@@ -285,6 +357,13 @@ export default function Financial() {
     .filter((item) => `${item.description} ${item.client?.name || ''} ${item.category?.name || ''}`.toLowerCase().includes(query.toLowerCase())),
   [monthlyTransactions, filters.status, query]);
   const filteredReceipts = useMemo(() => receipts.filter((item) => `${item.number} ${item.client?.name || ''} ${item.client?.cnpj || ''} ${item.description}`.toLowerCase().includes(query.toLowerCase())), [receipts, query]);
+  const filteredBudgets = useMemo(() => budgets.filter((item) => `${item.number} ${item.client?.name || ''} ${item.client?.cnpj || ''} ${item.description} ${budgetStatusLabel(item.status)}`.toLowerCase().includes(query.toLowerCase())), [budgets, query]);
+  const budgetSummary = useMemo(() => {
+    const total = filteredBudgets.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    const open = filteredBudgets.filter((item) => ['DRAFT', 'SENT'].includes(item.status)).length;
+    const approved = filteredBudgets.filter((item) => item.status === 'APPROVED').reduce((sum, item) => sum + Number(item.amount || 0), 0);
+    return { total, open, approved, count: filteredBudgets.length };
+  }, [filteredBudgets]);
   const summary = useMemo(() => {
     const entradas = filteredTransactions.filter((item) => item.type === 'RECEITA').reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const saidas = filteredTransactions.filter((item) => item.type === 'DESPESA').reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -346,6 +425,12 @@ export default function Financial() {
     loadAnnualTransactions();
   }
 
+  async function removeBudget(budget) {
+    if (!window.confirm(`Excluir o orçamento ${budget.number}?`)) return;
+    await api.delete(`/financial/budgets/${budget.id}`);
+    loadBudgets();
+  }
+
   async function openReceipt(receipt) {
     try {
       const response = await api.get(`/financial/receipts/${receipt.id}/pdf`, { responseType: 'blob' });
@@ -383,14 +468,15 @@ export default function Financial() {
       <main className="ml-[282px]">
         <FirmHeader className="px-6" />
         <div className="flex h-[45px] items-end gap-14 border-b px-6 text-sm">
-          {['Movimentações', 'Recibos'].map((item) => <button key={item} onClick={() => setTab(item)} className={`h-full border-b-2 px-1 ${tab === item ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{item}</button>)}
+          {['Movimentações', 'Recibos', 'Orçamento'].map((item) => <button key={item} onClick={() => { setTab(item); setQuery(''); }} className={`h-full border-b-2 px-1 ${tab === item ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{item}</button>)}
         </div>
         <section className="p-6">
           <div className="mb-6 flex items-center justify-between">
             <div><h1 className="text-2xl font-semibold">Financeiro</h1><p className="mt-1 text-sm text-[#68737a]">Controle entradas, saídas, pendências e recibos por cliente.</p></div>
             <div className="flex gap-3">
-              <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'transaction' })} className="flex items-center gap-2 rounded border border-[#2693d2] px-5 py-2.5 text-[#16829b] disabled:opacity-50"><Plus size={17} /> Nova movimentação</button>
-              <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'receipt-new' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} /> Novo recibo</button>
+              {tab === 'Movimentações' && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'transaction' })} className="flex items-center gap-2 rounded border border-[#2693d2] px-5 py-2.5 text-[#16829b] disabled:opacity-50"><Plus size={17} /> Nova movimentação</button>}
+              {tab !== 'Orçamento' && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'receipt-new' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} /> Novo recibo</button>}
+              {tab === 'Orçamento' && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'budget' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} /> Novo orçamento</button>}
             </div>
           </div>
 
@@ -462,12 +548,67 @@ export default function Financial() {
               </div>
             </>
           )}
+
+          {tab === 'Orçamento' && (
+            <>
+              <div className="mb-5 grid grid-cols-[minmax(320px,520px)_180px_180px_180px] gap-4">
+                <SearchBox value={query} onChange={setQuery} placeholder="Cliente, CNPJ, número, status ou descrição" />
+                <SummaryMini label="Orçamentos" value={budgetSummary.count} />
+                <SummaryMini label="Em aberto" value={budgetSummary.open} />
+                <SummaryMini label="Aprovados" value={money(budgetSummary.approved)} />
+              </div>
+              <div className="mb-4 rounded border border-[#dfe5e8] bg-[#fbfcfd] px-4 py-3 text-sm">
+                <span className="text-[#68737a]">Total listado: </span><strong>{money(budgetSummary.total)}</strong>
+              </div>
+              <div className="overflow-x-auto rounded border">
+                <table className="w-full min-w-[1050px] text-left text-sm">
+                  <thead className="bg-[#f3f3f3]"><tr><th className="px-5 py-3">Número</th><th className="px-5 py-3">Cliente</th><th className="px-5 py-3">Descrição</th><th className="px-5 py-3">Status</th><th className="px-5 py-3">Validade</th><th className="px-5 py-3">Tipo</th><th className="px-5 py-3 text-right">Valor</th><th className="w-48 px-5 py-3"></th></tr></thead>
+                  <tbody>
+                    {filteredBudgets.map((budget) => (
+                      <tr key={budget.id} className="border-t">
+                        <td className="px-5 py-4 font-semibold text-[#16829b]">{budget.number}</td>
+                        <td className="px-5 py-4">{budget.client?.name}<small className="block text-[#68737a]">{budget.client?.cnpj}</small></td>
+                        <td className="px-5 py-4">{budget.description}{budget.notes && <small className="mt-1 block text-[#68737a]">{budget.notes}</small>}</td>
+                        <td className="px-5 py-4"><BudgetStatus status={budget.status} /></td>
+                        <td className="px-5 py-4">{datePt(budget.validUntil)}</td>
+                        <td className="px-5 py-4">{budget.type === 'RECEITA' ? 'Entrada' : 'Saída'}</td>
+                        <td className="px-5 py-4 text-right font-semibold">{money(budget.amount)}</td>
+                        <td className="px-5 py-4"><div className="flex justify-end gap-2"><button onClick={() => setDrawer({ type: 'budget', budget })} className="inline-flex items-center gap-2 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /> Editar</button><button onClick={() => removeBudget(budget)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button></div></td>
+                      </tr>
+                    ))}
+                    {!loading && filteredBudgets.length === 0 && <tr><td colSpan={8} className="px-5 py-10 text-center text-[#78838a]">Nenhum orçamento cadastrado ainda.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </section>
       </main>
       {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); loadAnnualTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
       {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); loadAnnualTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
+      {drawer?.type === 'budget' && <BudgetDrawer clients={clients} budget={drawer.budget} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadBudgets(); }} />}
     </div>
   );
+}
+
+function budgetStatusLabel(status) {
+  const labels = {
+    DRAFT: 'Rascunho',
+    SENT: 'Enviado',
+    APPROVED: 'Aprovado',
+    REJECTED: 'Reprovado',
+  };
+  return labels[status] || status || '-';
+}
+
+function BudgetStatus({ status }) {
+  const colors = {
+    DRAFT: 'bg-zinc-100 text-zinc-700',
+    SENT: 'bg-blue-50 text-blue-700',
+    APPROVED: 'bg-emerald-50 text-emerald-700',
+    REJECTED: 'bg-red-50 text-red-700',
+  };
+  return <span className={`rounded px-2 py-1 text-xs font-semibold ${colors[status] || 'bg-zinc-100 text-zinc-700'}`}>{budgetStatusLabel(status)}</span>;
 }
 
 function SummaryCard({ label, value, tone }) {

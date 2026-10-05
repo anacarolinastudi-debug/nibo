@@ -25,4 +25,9 @@ router.put('/receipts/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateRecei
 router.get('/receipts/:id/pdf', ctrl.receiptPdf);
 router.delete('/receipts/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeReceipt);
 
+router.get('/budgets', ctrl.listBudgets);
+router.post('/budgets', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createBudget);
+router.put('/budgets/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateBudget);
+router.delete('/budgets/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeBudget);
+
 module.exports = router;

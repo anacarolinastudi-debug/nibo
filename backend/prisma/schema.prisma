@@ -49,6 +49,7 @@ model AccountingFirm {
   users              User[]
   clients            Client[]
   financialCategories FinancialCategory[]
+  financialBudgets    FinancialBudget[]
   obligations        Obligation[]
   obligationGroups   ObligationGroup[]
   obligationRobots   ObligationRobot[]
@@ -179,6 +180,7 @@ model Client {
   financialAccounts  FinancialAccount[]
   financialTransactions FinancialTransaction[]
   financialReceipts  FinancialReceipt[]
+  financialBudgets   FinancialBudget[]
   invoices           Invoice[]
   employees          Employee[]
   contacts           ClientContact[]
@@ -888,6 +890,30 @@ model FinancialReceipt {
   @@index([accountingFirmId])
   @@index([clientId])
   @@map("financial_receipts")
+}
+
+model FinancialBudget {
+  id          String          @id @default(uuid())
+  number      String
+  description String
+  amount      Decimal         @db.Decimal(14, 2)
+  type        TransactionType @default(RECEITA)
+  status      String          @default("DRAFT")
+  validUntil  DateTime?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+
+  clientId String
+  client   Client @relation(fields: [clientId], references: [id])
+
+  @@unique([accountingFirmId, number])
+  @@index([accountingFirmId])
+  @@index([clientId])
+  @@map("financial_budgets")
 }
 
 // ---------------------------------------------------------------------
