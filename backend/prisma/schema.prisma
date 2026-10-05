@@ -899,6 +899,7 @@ model FinancialBudget {
   amount      Decimal         @db.Decimal(14, 2)
   type        TransactionType @default(RECEITA)
   status      String          @default("DRAFT")
+  items       Json?
   validUntil  DateTime?
   notes       String?
   createdAt   DateTime        @default(now())

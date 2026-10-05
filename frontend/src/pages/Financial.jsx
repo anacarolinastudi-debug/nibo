@@ -227,10 +227,13 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
 }
 
 function BudgetDrawer({ clients, budget, onClose, onSaved }) {
+  const initialItems = Array.isArray(budget?.items) && budget.items.length
+    ? budget.items
+    : [{ service: budget?.description || '', amount: budget?.amount ? String(budget.amount) : '' }];
   const [form, setForm] = useState({
-    clientId: budget?.client?.id || budget?.clientId || clients[0]?.id || '',
+    clientId: budget?.client?.id || budget?.clientId || '',
     description: budget?.description || '',
-    amount: budget?.amount ? String(budget.amount) : '',
+    items: initialItems.map((item) => ({ service: item.service || '', amount: item.amount ? String(item.amount) : '' })),
     type: budget?.type || 'RECEITA',
     status: budget?.status || 'DRAFT',
     validUntil: inputDate(budget?.validUntil),
@@ -238,10 +241,10 @@ function BudgetDrawer({ clients, budget, onClose, onSaved }) {
   });
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-
-  useEffect(() => {
-    if (!form.clientId && clients[0]?.id) set('clientId', clients[0].id);
-  }, [clients, form.clientId]);
+  const budgetTotal = form.items.reduce((sum, item) => sum + Number(String(item.amount || 0).replace(',', '.')), 0);
+  const updateItem = (index, key, value) => set('items', form.items.map((item, itemIndex) => (itemIndex === index ? { ...item, [key]: value } : item)));
+  const addItem = () => set('items', [...form.items, { service: '', amount: '' }]);
+  const removeItem = (index) => set('items', form.items.filter((_, itemIndex) => itemIndex !== index));
 
   async function save(e) {
     e.preventDefault();
@@ -249,7 +252,12 @@ function BudgetDrawer({ clients, budget, onClose, onSaved }) {
     try {
       const payload = {
         ...form,
-        amount: Number(String(form.amount).replace(',', '.')),
+        description: form.items.map((item) => item.service.trim()).filter(Boolean).join(', '),
+        amount: budgetTotal,
+        items: form.items.map((item) => ({
+          service: item.service.trim(),
+          amount: Number(String(item.amount).replace(',', '.')),
+        })),
         validUntil: toIsoDate(form.validUntil),
       };
       const response = budget
@@ -271,11 +279,26 @@ function BudgetDrawer({ clients, budget, onClose, onSaved }) {
           <button type="button" onClick={onClose}><X /></button>
         </header>
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
-          <div className="grid grid-cols-2 gap-5">
-            <label className="block text-sm"><span className="mb-1 block font-medium">Cliente</span><select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3">{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
-            <label className="block text-sm"><span className="mb-1 block font-medium">Valor</span><input required type="number" min="0.01" step="0.01" value={form.amount} onChange={(e) => set('amount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
-          </div>
-          <label className="block text-sm"><span className="mb-1 block font-medium">Descrição</span><input required value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Ex.: Honorários mensais, abertura de empresa..." className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+          <label className="block text-sm"><span className="mb-1 block font-medium">Cliente</span><select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="">Selecione...</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+          <section className="rounded border border-[#dfe5e8]">
+            <div className="flex items-center justify-between border-b bg-[#f6f8fa] px-4 py-3">
+              <h3 className="font-semibold">Serviços do orçamento</h3>
+              <button type="button" onClick={addItem} className="inline-flex items-center gap-2 rounded border border-[#2693d2] px-3 py-1.5 text-sm text-[#16829b]"><Plus size={15} /> Adicionar linha</button>
+            </div>
+            <div className="space-y-3 p-4">
+              {form.items.map((item, index) => (
+                <div key={index} className="grid grid-cols-[1fr_160px_42px] gap-3">
+                  <label className="block text-sm"><span className="mb-1 block font-medium">Serviço</span><input required value={item.service} onChange={(e) => updateItem(index, 'service', e.target.value)} placeholder="Ex.: Honorários mensais" className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+                  <label className="block text-sm"><span className="mb-1 block font-medium">Valor</span><input required type="number" min="0.01" step="0.01" value={item.amount} onChange={(e) => updateItem(index, 'amount', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+                  <button type="button" disabled={form.items.length === 1} onClick={() => removeItem(index)} title="Remover linha" className="mt-6 h-10 rounded border border-[#dfe5e8] text-[#16829b] disabled:opacity-40"><Trash2 className="mx-auto" size={16} /></button>
+                </div>
+              ))}
+              <div className="flex justify-end border-t pt-3 text-sm">
+                <span className="mr-3 text-[#68737a]">Total do orçamento</span>
+                <strong className="text-lg">{money(budgetTotal)}</strong>
+              </div>
+            </div>
+          </section>
           <div className="grid grid-cols-3 gap-5">
             <label className="block text-sm"><span className="mb-1 block font-medium">Tipo</span><select value={form.type} onChange={(e) => set('type', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="RECEITA">Entrada</option><option value="DESPESA">Saída</option></select></label>
             <label className="block text-sm"><span className="mb-1 block font-medium">Status</span><select value={form.status} onChange={(e) => set('status', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="DRAFT">Rascunho</option><option value="SENT">Enviado</option><option value="APPROVED">Aprovado</option><option value="REJECTED">Reprovado</option></select></label>
@@ -568,7 +591,14 @@ export default function Financial() {
                       <tr key={budget.id} className="border-t">
                         <td className="px-5 py-4 font-semibold text-[#16829b]">{budget.number}</td>
                         <td className="px-5 py-4">{budget.client?.name}<small className="block text-[#68737a]">{budget.client?.cnpj}</small></td>
-                        <td className="px-5 py-4">{budget.description}{budget.notes && <small className="mt-1 block text-[#68737a]">{budget.notes}</small>}</td>
+                        <td className="px-5 py-4">
+                          {Array.isArray(budget.items) && budget.items.length ? (
+                            <div className="space-y-1">
+                              {budget.items.map((item, index) => <div key={`${budget.id}-${index}`}>{item.service} <small className="text-[#68737a]">({money(item.amount)})</small></div>)}
+                            </div>
+                          ) : budget.description}
+                          {budget.notes && <small className="mt-1 block text-[#68737a]">{budget.notes}</small>}
+                        </td>
                         <td className="px-5 py-4"><BudgetStatus status={budget.status} /></td>
                         <td className="px-5 py-4">{datePt(budget.validUntil)}</td>
                         <td className="px-5 py-4">{budget.type === 'RECEITA' ? 'Entrada' : 'Saída'}</td>

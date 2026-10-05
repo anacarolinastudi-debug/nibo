@@ -604,13 +604,31 @@ async function removeReceipt(req, res) {
 
 const budgetSchema = z.object({
   clientId: z.string().uuid(),
-  description: z.string().min(2, 'Descrição é obrigatória.'),
-  amount: z.number().positive('Valor precisa ser maior que zero.'),
+  description: z.string().optional().nullable(),
+  amount: z.number().positive('Valor precisa ser maior que zero.').optional(),
+  items: z.array(z.object({
+    service: z.string().min(2, 'Serviço é obrigatório.'),
+    amount: z.number().positive('Valor precisa ser maior que zero.'),
+  })).min(1, 'Informe ao menos um serviço.').optional(),
   type: z.enum(['RECEITA', 'DESPESA']).optional().default('RECEITA'),
   status: z.enum(['DRAFT', 'SENT', 'APPROVED', 'REJECTED']).optional().default('DRAFT'),
   validUntil: z.string().datetime().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
+
+function budgetPayload(data) {
+  const items = Array.isArray(data.items) ? data.items.map((item) => ({
+    service: item.service.trim(),
+    amount: Number(item.amount),
+  })) : [];
+  const amount = items.length
+    ? items.reduce((sum, item) => sum + item.amount, 0)
+    : Number(data.amount || 0);
+  const description = (data.description || items.map((item) => item.service).join(', ')).trim();
+  if (!description) throw new Error('Descrição é obrigatória.');
+  if (amount <= 0) throw new Error('Valor precisa ser maior que zero.');
+  return { items, amount, description };
+}
 
 async function nextBudgetNumber(accountingFirmId) {
   const year = new Date().getFullYear();
@@ -642,12 +660,14 @@ async function createBudget(req, res) {
     where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
   });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  const prepared = budgetPayload(data);
 
   const budget = await prisma.financialBudget.create({
     data: {
       number: await nextBudgetNumber(req.user.accountingFirmId),
-      description: data.description,
-      amount: data.amount,
+      description: prepared.description,
+      amount: prepared.amount,
+      items: prepared.items.length ? prepared.items : null,
       type: data.type,
       status: data.status,
       validUntil: data.validUntil ? new Date(data.validUntil) : null,
@@ -676,12 +696,14 @@ async function updateBudget(req, res) {
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
     clientId = client.id;
   }
+  const prepared = budgetPayload({ ...existing, ...data });
 
   const budget = await prisma.financialBudget.update({
     where: { id: existing.id },
     data: {
-      ...(data.description !== undefined ? { description: data.description } : {}),
-      ...(data.amount !== undefined ? { amount: data.amount } : {}),
+      description: prepared.description,
+      amount: prepared.amount,
+      items: prepared.items.length ? prepared.items : null,
       ...(data.type !== undefined ? { type: data.type } : {}),
       ...(data.status !== undefined ? { status: data.status } : {}),
       ...(data.validUntil !== undefined ? { validUntil: data.validUntil ? new Date(data.validUntil) : null } : {}),
