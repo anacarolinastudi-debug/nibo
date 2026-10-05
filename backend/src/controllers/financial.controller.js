@@ -603,7 +603,8 @@ async function removeReceipt(req, res) {
 // ---------- Orçamentos ----------
 
 const budgetSchema = z.object({
-  clientId: z.string().uuid(),
+  clientId: z.string().uuid().optional().nullable(),
+  clientName: z.string().optional().nullable(),
   description: z.string().optional().nullable(),
   amount: z.number().positive('Valor precisa ser maior que zero.').optional(),
   items: z.array(z.object({
@@ -656,10 +657,15 @@ async function createBudget(req, res) {
   if (req.user.role === 'CLIENT') req.body.clientId = req.user.clientId;
   const data = budgetSchema.parse(req.body);
 
-  const client = await prisma.client.findFirst({
-    where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
-  });
-  if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  let client = null;
+  if (data.clientId) {
+    client = await prisma.client.findFirst({
+      where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
+    });
+    if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  }
+  const clientName = client?.name || String(data.clientName || '').trim();
+  if (!clientName) return res.status(400).json({ error: 'Informe o cliente ou digite o nome do cliente.' });
   const prepared = budgetPayload(data);
 
   const budget = await prisma.financialBudget.create({
@@ -673,7 +679,8 @@ async function createBudget(req, res) {
       validUntil: data.validUntil ? new Date(data.validUntil) : null,
       notes: data.notes || null,
       accountingFirmId: req.user.accountingFirmId,
-      clientId: client.id,
+      clientId: client?.id || null,
+      clientName,
     },
     include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
   });
@@ -688,14 +695,22 @@ async function updateBudget(req, res) {
   });
   if (!existing) return res.status(404).json({ error: 'Orçamento não encontrado.' });
 
-  let clientId = existing.clientId;
+  let clientId = existing.clientId || null;
+  let clientName = existing.clientName || null;
   if (data.clientId) {
     const client = await prisma.client.findFirst({
       where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
     });
     if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
     clientId = client.id;
+    clientName = client.name;
+  } else if (data.clientId === null || data.clientId === '') {
+    clientId = null;
+    clientName = String(data.clientName || '').trim();
+  } else if (data.clientName !== undefined) {
+    clientName = String(data.clientName || '').trim();
   }
+  if (!clientName) return res.status(400).json({ error: 'Informe o cliente ou digite o nome do cliente.' });
   const prepared = budgetPayload({ ...existing, ...data });
 
   const budget = await prisma.financialBudget.update({
@@ -709,6 +724,7 @@ async function updateBudget(req, res) {
       ...(data.validUntil !== undefined ? { validUntil: data.validUntil ? new Date(data.validUntil) : null } : {}),
       ...(data.notes !== undefined ? { notes: data.notes || null } : {}),
       clientId,
+      clientName,
     },
     include: { client: { select: { id: true, name: true, cnpj: true, email: true } } },
   });

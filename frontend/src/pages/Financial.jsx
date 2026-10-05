@@ -230,8 +230,11 @@ function BudgetDrawer({ clients, budget, onClose, onSaved }) {
   const initialItems = Array.isArray(budget?.items) && budget.items.length
     ? budget.items
     : [{ service: budget?.description || '', amount: budget?.amount ? String(budget.amount) : '' }];
+  const initialClientMode = budget?.client?.id || budget?.clientId ? 'registered' : 'external';
   const [form, setForm] = useState({
+    clientMode: initialClientMode,
     clientId: budget?.client?.id || budget?.clientId || '',
+    clientName: budget?.clientName || '',
     description: budget?.description || '',
     items: initialItems.map((item) => ({ service: item.service || '', amount: item.amount ? String(item.amount) : '' })),
     type: budget?.type || 'RECEITA',
@@ -252,6 +255,8 @@ function BudgetDrawer({ clients, budget, onClose, onSaved }) {
     try {
       const payload = {
         ...form,
+        clientId: form.clientMode === 'registered' ? form.clientId : null,
+        clientName: form.clientMode === 'external' ? form.clientName.trim() : '',
         description: form.items.map((item) => item.service.trim()).filter(Boolean).join(', '),
         amount: budgetTotal,
         items: form.items.map((item) => ({
@@ -279,7 +284,17 @@ function BudgetDrawer({ clients, budget, onClose, onSaved }) {
           <button type="button" onClick={onClose}><X /></button>
         </header>
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
-          <label className="block text-sm"><span className="mb-1 block font-medium">Cliente</span><select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="">Selecione...</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+          <section className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" onClick={() => setForm((current) => ({ ...current, clientMode: 'registered', clientName: '' }))} className={`h-10 rounded border text-sm ${form.clientMode === 'registered' ? 'border-[#2693d2] bg-[#eef8fc] text-[#16829b]' : 'border-[#d8dfe3] text-[#68737a]'}`}>Cliente cadastrado</button>
+              <button type="button" onClick={() => setForm((current) => ({ ...current, clientMode: 'external', clientId: '' }))} className={`h-10 rounded border text-sm ${form.clientMode === 'external' ? 'border-[#2693d2] bg-[#eef8fc] text-[#16829b]' : 'border-[#d8dfe3] text-[#68737a]'}`}>Cliente avulso</button>
+            </div>
+            {form.clientMode === 'registered' ? (
+              <label className="block text-sm"><span className="mb-1 block font-medium">Cliente</span><select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3"><option value="">Selecione...</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
+            ) : (
+              <label className="block text-sm"><span className="mb-1 block font-medium">Nome do cliente</span><input required value={form.clientName} onChange={(e) => set('clientName', e.target.value)} placeholder="Digite o nome do cliente" className="h-10 w-full rounded border border-[#d8dfe3] px-3" /></label>
+            )}
+          </section>
           <section className="rounded border border-[#dfe5e8]">
             <div className="flex items-center justify-between border-b bg-[#f6f8fa] px-4 py-3">
               <h3 className="font-semibold">Serviços do orçamento</h3>
@@ -380,7 +395,7 @@ export default function Financial() {
     .filter((item) => `${item.description} ${item.client?.name || ''} ${item.category?.name || ''}`.toLowerCase().includes(query.toLowerCase())),
   [monthlyTransactions, filters.status, query]);
   const filteredReceipts = useMemo(() => receipts.filter((item) => `${item.number} ${item.client?.name || ''} ${item.client?.cnpj || ''} ${item.description}`.toLowerCase().includes(query.toLowerCase())), [receipts, query]);
-  const filteredBudgets = useMemo(() => budgets.filter((item) => `${item.number} ${item.client?.name || ''} ${item.client?.cnpj || ''} ${item.description} ${budgetStatusLabel(item.status)}`.toLowerCase().includes(query.toLowerCase())), [budgets, query]);
+  const filteredBudgets = useMemo(() => budgets.filter((item) => `${item.number} ${item.client?.name || item.clientName || ''} ${item.client?.cnpj || ''} ${item.description} ${budgetStatusLabel(item.status)}`.toLowerCase().includes(query.toLowerCase())), [budgets, query]);
   const budgetSummary = useMemo(() => {
     const total = filteredBudgets.reduce((sum, item) => sum + Number(item.amount || 0), 0);
     const open = filteredBudgets.filter((item) => ['DRAFT', 'SENT'].includes(item.status)).length;
@@ -590,7 +605,7 @@ export default function Financial() {
                     {filteredBudgets.map((budget) => (
                       <tr key={budget.id} className="border-t">
                         <td className="px-5 py-4 font-semibold text-[#16829b]">{budget.number}</td>
-                        <td className="px-5 py-4">{budget.client?.name}<small className="block text-[#68737a]">{budget.client?.cnpj}</small></td>
+                        <td className="px-5 py-4">{budget.client?.name || budget.clientName}<small className="block text-[#68737a]">{budget.client?.cnpj || (budget.client ? '' : 'Cliente avulso')}</small></td>
                         <td className="px-5 py-4">
                           {Array.isArray(budget.items) && budget.items.length ? (
                             <div className="space-y-1">

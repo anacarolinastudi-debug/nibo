@@ -908,8 +908,9 @@ model FinancialBudget {
   accountingFirmId String
   accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
 
-  clientId String
-  client   Client @relation(fields: [clientId], references: [id])
+  clientName String?
+  clientId   String?
+  client     Client? @relation(fields: [clientId], references: [id])
 
   @@unique([accountingFirmId, number])
   @@index([accountingFirmId])
