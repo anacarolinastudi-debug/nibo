@@ -745,7 +745,6 @@ async function removeBudget(req, res) {
 function budgetHtml(budget, req) {
   const firm = budget.accountingFirm;
   const logoSrc = logoSource(firm.logoUrl, req);
-  const firmAddress = [firm.street, firm.number, firm.neighborhood, firm.city, firm.state].filter(Boolean).join(', ');
   const clientName = budget.client?.name || budget.clientName || '-';
   const clientDoc = budget.client?.cnpj || '';
   const clientAddress = budget.client ? [budget.client.street, budget.client.number, budget.client.neighborhood, budget.client.city, budget.client.state].filter(Boolean).join(', ') : '';
@@ -760,39 +759,41 @@ function budgetHtml(budget, req) {
 <head>
   <meta charset="utf-8" />
   <style>
+    @page { size: A4; margin: 8mm; }
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 36px; color: #33383b; font-family: Arial, sans-serif; font-size: 13px; }
-    .page { border: 1px solid #d7dde2; min-height: 100%; padding: 32px; }
-    .header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #0b4f8f; padding-bottom: 22px; }
+    body { margin: 0; padding: 0; color: #33383b; font-family: Arial, sans-serif; font-size: 12px; }
+    .page { border: 1px solid #d7dde2; min-height: 100%; padding: 22px 26px; }
+    .header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #0b4f8f; padding-bottom: 16px; }
     .brand { display: flex; gap: 16px; align-items: flex-start; }
-    .logo { width: 86px; height: 86px; object-fit: contain; border: 1px solid #e1e6ea; border-radius: 6px; padding: 6px; }
-    h1 { margin: 0; color: #0b4f8f; font-size: 32px; letter-spacing: 1px; }
+    .logo { max-width: 120px; max-height: 76px; object-fit: contain; }
+    h1 { margin: 0; color: #0b4f8f; font-size: 30px; letter-spacing: 1px; }
     .muted { color: #69747b; line-height: 1.45; }
-    .number { text-align: right; font-size: 14px; }
-    .amount-box { margin-top: 16px; background: #eef8fc; border: 1px solid #c7e8f5; border-radius: 6px; padding: 14px 18px; text-align: right; }
-    .amount-box strong { display: block; font-size: 24px; color: #0b4f8f; margin-top: 4px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 28px; }
+    .number { text-align: right; font-size: 13px; }
+    .number p { margin: 0 0 9px; }
+    .amount-box { margin-top: 10px; background: #eef8fc; border: 1px solid #c7e8f5; border-radius: 6px; padding: 10px 14px; text-align: right; }
+    .amount-box strong { display: block; font-size: 22px; color: #0b4f8f; margin-top: 3px; }
+    .client-box { margin-top: 18px; border: 1px solid #e1e6ea; border-radius: 6px; padding: 12px 14px; }
     .label { margin: 0 0 6px; color: #69747b; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
-    .box { border: 1px solid #e1e6ea; border-radius: 6px; padding: 16px; min-height: 100px; }
-    table { width: 100%; border-collapse: collapse; margin-top: 30px; }
-    th { background: #f2f4f5; border: 1px solid #dfe5e8; padding: 10px; text-align: left; font-size: 12px; }
-    td { border: 1px solid #dfe5e8; padding: 12px 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 18px; page-break-inside: avoid; }
+    th { background: #f2f4f5; border: 1px solid #dfe5e8; padding: 8px; text-align: left; font-size: 12px; }
+    td { border: 1px solid #dfe5e8; padding: 8px; vertical-align: top; }
     .right { text-align: right; }
-    .totals { margin-left: auto; width: 320px; margin-top: 20px; }
-    .totals div { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #e5e9ec; }
-    .totals .grand { font-size: 18px; font-weight: 700; color: #0b4f8f; }
-    .notes { margin-top: 34px; border-top: 1px solid #e5e9ec; padding-top: 20px; white-space: pre-wrap; line-height: 1.55; }
-    .footer { margin-top: 44px; color: #69747b; font-size: 12px; text-align: center; }
+    .totals { margin-left: auto; width: 280px; margin-top: 12px; }
+    .totals div { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #e5e9ec; }
+    .totals .grand { font-size: 17px; font-weight: 700; color: #0b4f8f; }
+    .notes { margin-top: 16px; border-top: 1px solid #e5e9ec; padding-top: 12px; white-space: pre-wrap; line-height: 1.35; font-size: 11px; page-break-inside: avoid; }
+    .notes p { margin: 0; }
+    .footer { margin-top: 18px; color: #69747b; font-size: 11px; text-align: center; }
   </style>
 </head>
 <body>
   <div class="page">
     <div class="header">
       <div class="brand">
-        ${logoSrc ? `<img class="logo" src="${logoSrc}" alt="Logotipo" />` : ''}
+        ${logoSrc ? `<img class="logo" src="${logoSrc}" alt="Logotipo" onerror="this.style.display='none'" />` : ''}
         <div>
           <h1>ORÇAMENTO</h1>
-          <p class="muted"><strong>${escapeHtml(firm.name)}</strong><br>${escapeHtml(firm.cnpj || '')}<br>${escapeHtml(firm.email || '')}<br>${escapeHtml(firmAddress)}</p>
+          <p class="muted"><strong>${escapeHtml(firm.name)}</strong></p>
         </div>
       </div>
       <div class="number">
@@ -806,17 +807,10 @@ function budgetHtml(budget, req) {
       </div>
     </div>
 
-    <div class="grid">
-      <div class="box">
-        <p class="label">Cliente</p>
-        <strong>${escapeHtml(clientName)}</strong>
-        <p class="muted">${escapeHtml(clientDoc)}${clientAddress ? `<br>${escapeHtml(clientAddress)}` : ''}</p>
-      </div>
-      <div class="box">
-        <p class="label">Condições</p>
-        <p><strong>Status:</strong> ${escapeHtml(budgetStatusText(budget.status))}</p>
-        <p><strong>Tipo:</strong> ${budget.type === 'DESPESA' ? 'Saída' : 'Entrada'}</p>
-      </div>
+    <div class="client-box">
+      <p class="label">Cliente</p>
+      <strong>${escapeHtml(clientName)}</strong>
+      <p class="muted">${escapeHtml(clientDoc)}${clientAddress ? `<br>${escapeHtml(clientAddress)}` : ''}</p>
     </div>
 
     <table>
@@ -861,7 +855,7 @@ async function budgetPdf(req, res) {
     browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
     await page.setContent(budgetHtml(budget, req), { waitUntil: 'domcontentloaded', timeout: 15000 });
-    const pdf = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '12mm', right: '12mm', bottom: '12mm', left: '12mm' } });
+    const pdf = await page.pdf({ format: 'A4', printBackground: true, scale: 0.9, margin: { top: '8mm', right: '8mm', bottom: '8mm', left: '8mm' } });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="${budget.number}.pdf"`);
     res.send(pdf);
