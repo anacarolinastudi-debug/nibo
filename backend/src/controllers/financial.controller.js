@@ -942,8 +942,8 @@ function receiptHtml(receipt, req) {
   <meta charset="utf-8" />
   <style>
     * { box-sizing: border-box; }
-    body { margin: 0; padding: 36px; color: #33383b; font-family: Arial, sans-serif; font-size: 13px; }
-    .page { border: 1px solid #d7dde2; min-height: 100%; padding: 32px; }
+    body { margin: 0; padding: 24px; color: #33383b; font-family: Arial, sans-serif; font-size: 13px; }
+    .page { border: 1px solid #d7dde2; padding: 24px; }
     .header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #0b4f8f; padding-bottom: 22px; }
     .brand { display: flex; gap: 16px; align-items: flex-start; }
     .logo { max-width: 140px; max-height: 90px; object-fit: contain; }
@@ -962,9 +962,9 @@ function receiptHtml(receipt, req) {
     .totals { margin-left: auto; width: 320px; margin-top: 20px; }
     .totals div { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #e5e9ec; }
     .totals .grand { font-size: 18px; font-weight: 700; color: #0b4f8f; }
-    .notes { margin-top: 34px; border-top: 1px solid #e5e9ec; padding-top: 20px; }
+    .notes { margin-top: 24px; border-top: 1px solid #e5e9ec; padding-top: 16px; }
     .notes p:last-child { white-space: pre-wrap; line-height: 1.45; }
-    .footer { margin-top: 44px; color: #69747b; font-size: 12px; text-align: center; }
+    .footer { margin-top: 24px; color: #69747b; font-size: 12px; text-align: center; }
   </style>
 </head>
 <body>
