@@ -182,6 +182,7 @@ async function syncMissingReceiptTransactions(accountingFirmId) {
 
 async function listTransactions(req, res) {
   const { clientId, type, status, month, year, includeRecurring } = req.query;
+  const throughYear = req.query.throughYear ? z.coerce.number().int().min(Number(year)).max(Number(year) + 1).parse(req.query.throughYear) : Number(year);
 
   if (req.user.role !== 'CLIENT') {
     await syncMissingReceiptTransactions(req.user.accountingFirmId);
@@ -196,7 +197,7 @@ async function listTransactions(req, res) {
 
   if (year) {
     const start = month ? new Date(Date.UTC(Number(year), Number(month) - 1, 1)) : new Date(Date.UTC(Number(year), 0, 1));
-    const end = month ? new Date(Date.UTC(Number(year), Number(month), 1)) : new Date(Date.UTC(Number(year) + 1, 0, 1));
+    const end = month ? new Date(Date.UTC(Number(year), Number(month), 1)) : new Date(Date.UTC(throughYear + 1, 0, 1));
     if (includeRecurring) {
       where.OR = [
         { dueDate: { gte: start, lt: end } },
@@ -223,6 +224,13 @@ async function listTransactions(req, res) {
     ...(item.recurrenceInfinite && year && month
       ? { projectedId: occurrenceId(item.id, Number(year), Number(month)) }
       : {}),
+    ...(item.recurrenceInfinite && year ? { projectedIds: Object.fromEntries(
+      Array.from({ length: 24 }, (_, index) => {
+        const targetYear = Number(year) + Math.floor(index / 12);
+        const targetMonth = index % 12 + 1;
+        return [`${targetYear}-${targetMonth}`, occurrenceId(item.id, targetYear, targetMonth)];
+      }),
+    ) } : {}),
   })));
 }
 
@@ -430,6 +438,9 @@ const receiptSchema = z.object({
   description: z.string().min(2, 'Descrição é obrigatória.'),
   amount: z.number().positive('Valor precisa ser maior que zero.'),
   transactionId: z.string().uuid().optional().nullable(),
+  recurrenceSourceId: z.string().uuid().optional(),
+  recurrenceYear: z.number().int().min(2000).max(9999).optional(),
+  recurrenceMonth: z.number().int().min(1).max(12).optional(),
   issueDate: z.string().datetime().optional(),
   dueDate: z.string().datetime().optional().nullable(),
   paymentDate: z.string().datetime().optional().nullable(),
@@ -477,22 +488,44 @@ async function createReceipt(req, res) {
   const paid = Boolean(data.paymentDate);
   const receipt = await prisma.$transaction(async (tx) => {
     let transaction;
-    if (data.transactionId) {
-      transaction = await tx.financialTransaction.findFirst({
-        where: { id: data.transactionId, clientId: client.id, receipt: null },
+    let transactionId = data.transactionId;
+    let previousImpact = 0;
+    if (data.recurrenceSourceId) {
+      const source = await tx.financialTransaction.findFirst({
+        where: { id: data.recurrenceSourceId, clientId: client.id },
       });
-      if (!transaction) throw new Error('Movimentação não encontrada ou já vinculada a um recibo.');
+      if (!source?.recurrenceInfinite || !data.recurrenceYear || !data.recurrenceMonth) {
+        throw Object.assign(new Error('Recorrencia invalida para este recibo.'), { status: 400 });
+      }
+      const dueDate = occurrenceDate(source.dueDate, data.recurrenceYear, data.recurrenceMonth);
+      if (dueDate <= new Date(source.dueDate) || (data.dueDate && dueDate.toISOString().slice(0, 10) !== data.dueDate.slice(0, 10))) {
+        throw Object.assign(new Error('Vencimento invalido para esta recorrencia.'), { status: 400 });
+      }
+      transactionId = occurrenceId(source.id, data.recurrenceYear, data.recurrenceMonth);
+      await tx.financialTransaction.upsert({
+        where: { id: transactionId }, update: {},
+        create: { id: transactionId, description: source.description, amount: source.amount,
+          type: source.type, dueDate, status: 'PENDING', notes: source.notes,
+          clientId: source.clientId, accountId: source.accountId, categoryId: source.categoryId,
+          recurrence: 'NONE', recurrenceInfinite: false },
+      });
+    }
+    if (transactionId) {
+      transaction = await tx.financialTransaction.findFirst({
+        where: { id: transactionId, clientId: client.id, receipt: null },
+      });
+      if (!transaction) throw Object.assign(new Error('Movimentação não encontrada ou já vinculada a um recibo.'), { status: 409 });
+      previousImpact = transaction.status === 'PAID' ? Number(transaction.amount) * (transaction.type === 'RECEITA' ? 1 : -1) : 0;
       transaction = await tx.financialTransaction.update({
         where: { id: transaction.id },
         data: {
           description: data.description,
           amount: data.amount,
-          type: 'RECEITA',
           status: paid ? 'PAID' : transaction.status,
           dueDate: data.dueDate ? new Date(data.dueDate) : transaction.dueDate,
           paidAt: data.paymentDate ? new Date(data.paymentDate) : transaction.paidAt,
-          accountId,
-          categoryId,
+          accountId: transaction.accountId,
+          categoryId: transaction.categoryId,
         },
       });
     } else {
@@ -511,8 +544,9 @@ async function createReceipt(req, res) {
       });
     }
 
-    if (paid) {
-      await tx.financialAccount.update({ where: { id: accountId }, data: { balance: { increment: data.amount } } });
+    const nextImpact = transaction.status === 'PAID' ? Number(transaction.amount) * (transaction.type === 'RECEITA' ? 1 : -1) : 0;
+    if (nextImpact !== previousImpact) {
+      await tx.financialAccount.update({ where: { id: transaction.accountId }, data: { balance: { increment: nextImpact - previousImpact } } });
     }
 
     return tx.financialReceipt.create({
@@ -522,7 +556,7 @@ async function createReceipt(req, res) {
         amount: data.amount,
         issueDate: data.issueDate ? new Date(data.issueDate) : new Date(),
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        paymentDate: data.paymentDate ? new Date(data.paymentDate) : null,
+        paymentDate: transaction.paidAt || null,
         paymentMethod: data.paymentMethod || null,
         notes: data.notes || null,
         accountingFirmId: req.user.accountingFirmId,
@@ -569,6 +603,9 @@ async function updateReceipt(req, res) {
 
   const receipt = await prisma.$transaction(async (tx) => {
     let transactionId = existing.transactionId;
+    const direction = existing.transaction?.type === 'DESPESA' ? -1 : 1;
+    const previousImpact = existing.transaction?.status === 'PAID' ? Number(existing.transaction.amount) * direction : 0;
+    const nextImpact = nextPaid ? Number(nextAmount) * direction : 0;
     if (transactionId) {
       await tx.financialTransaction.update({
         where: { id: transactionId },
@@ -600,6 +637,12 @@ async function updateReceipt(req, res) {
       transactionId = transaction.id;
     }
 
+    if (nextImpact !== previousImpact) {
+      await tx.financialAccount.update({
+        where: { id: existing.transaction?.accountId || accountId },
+        data: { balance: { increment: nextImpact - previousImpact } },
+      });
+    }
     return tx.financialReceipt.update({
       where: { id: existing.id },
       data: {
@@ -623,12 +666,19 @@ async function updateReceipt(req, res) {
 async function removeReceipt(req, res) {
   const existing = await prisma.financialReceipt.findFirst({
     where: { id: req.params.id, accountingFirmId: req.user.accountingFirmId },
+    include: { transaction: true },
   });
   if (!existing) return res.status(404).json({ error: 'Recibo não encontrado.' });
 
   await prisma.$transaction(async (tx) => {
     await tx.financialReceipt.delete({ where: { id: existing.id } });
     if (existing.transactionId) {
+      if (existing.transaction?.status === 'PAID') {
+        await tx.financialAccount.update({
+          where: { id: existing.transaction.accountId },
+          data: { balance: { increment: Number(existing.transaction.amount) * (existing.transaction.type === 'RECEITA' ? -1 : 1) } },
+        });
+      }
       await tx.financialTransaction.delete({ where: { id: existing.transactionId } });
     }
   });
@@ -961,7 +1011,7 @@ function receiptHtml(receipt, req) {
 
     <div class="grid">
       <div class="box">
-        <p class="label">Recebemos de</p>
+        <p class="label">${receipt.transaction?.type === 'DESPESA' ? 'Pago a' : 'Recebemos de'}</p>
         <strong>${escapeHtml(receipt.client.name)}</strong>
         <p class="muted">${escapeHtml(receipt.client.cnpj || '')}<br>${escapeHtml(receipt.client.email || '')}<br>${escapeHtml(clientAddress)}</p>
       </div>
@@ -1008,7 +1058,7 @@ async function receiptPdf(req, res) {
 
   const receipt = await prisma.financialReceipt.findFirst({
     where,
-    include: { accountingFirm: true, client: true },
+    include: { accountingFirm: true, client: true, transaction: true },
   });
   if (!receipt) return res.status(404).json({ error: 'Recibo não encontrado.' });
 

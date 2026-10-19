@@ -5,6 +5,7 @@ import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
+import { buildMonthlyTransactions, summarizeTransactions, buildFinancialChart } from '../utils/financialProjection.mjs';
 
 function money(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -21,43 +22,6 @@ function toIsoDate(value) {
 
 function inputDate(value) {
   return value ? new Date(value).toISOString().slice(0, 10) : '';
-}
-
-function safeDateForMonth(year, monthIndex, day) {
-  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-  return new Date(Date.UTC(year, monthIndex, Math.min(day, lastDay)));
-}
-
-function buildMonthlyTransactions(items, filters) {
-  const year = Number(filters.year);
-  const monthIndex = Number(filters.month) - 1;
-  if (!year || monthIndex < 0) return items;
-
-  return items.flatMap((item) => {
-    const dueDate = new Date(item.dueDate);
-    const sameMonth = dueDate.getUTCFullYear() === year && dueDate.getUTCMonth() === monthIndex;
-    const rows = sameMonth ? [item] : [];
-
-    if (item.recurrenceInfinite && !sameMonth) {
-      const selectedDate = safeDateForMonth(year, monthIndex, dueDate.getUTCDate());
-      if (selectedDate > dueDate) {
-        rows.push({
-          ...item,
-          id: item.projectedId || `${item.id}-projected-${year}-${monthIndex + 1}`,
-          sourceId: item.id,
-          dueDate: selectedDate.toISOString(),
-          status: 'PENDING',
-          paidAt: null,
-          receipt: null,
-          projected: true,
-          notes: item.notes || 'Recorrência projetada',
-        });
-      }
-    }
-
-    return rows;
-  }).filter((row) => !row.projected || !items.some((item) => item.id === row.id))
-    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 }
 
 function SettlementDrawer({ transaction, onClose, onSaved }) {
@@ -207,6 +171,9 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
   const [form, setForm] = useState({
     clientId: receipt?.client?.id || receipt?.clientId || clients[0]?.id || '',
     transactionId: receipt?.transactionId || receipt?.transaction?.id || '',
+    recurrenceSourceId: receipt?.recurrenceSourceId,
+    recurrenceYear: receipt?.recurrenceYear,
+    recurrenceMonth: receipt?.recurrenceMonth,
     description: receipt?.description || 'HONORÁRIOS CONTÁBEIS',
     amount: receipt?.amount ? String(receipt.amount) : '',
     issueDate: inputDate(receipt?.issueDate) || new Date().toISOString().slice(0, 10),
@@ -227,7 +194,7 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
     setSaving(true);
     try {
       const payload = { ...form, transactionId: form.transactionId || null, amount: Number(String(form.amount).replace(',', '.')), issueDate: toIsoDate(form.issueDate), dueDate: toIsoDate(form.dueDate), paymentDate: toIsoDate(form.paymentDate) };
-      const response = receipt ? await api.put(`/financial/receipts/${receipt.id}`, payload) : await api.post('/financial/receipts', payload);
+      const response = receipt?.id ? await api.put(`/financial/receipts/${receipt.id}`, payload) : await api.post('/financial/receipts', payload);
       onSaved(response.data);
     } catch (error) {
       window.alert(error.response?.data?.error || 'Não foi possível salvar o recibo.');
@@ -239,7 +206,7 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/40">
       <form onSubmit={save} className="absolute inset-y-0 right-0 flex w-[min(820px,92vw)] flex-col bg-white shadow-xl">
-        <header className="flex h-16 items-center justify-between border-b px-6"><h2 className="text-2xl font-semibold">{receipt ? 'Editar recibo' : 'Novo recibo'}</h2><button type="button" onClick={onClose}><X /></button></header>
+        <header className="flex h-16 items-center justify-between border-b px-6"><h2 className="text-2xl font-semibold">{receipt?.id ? 'Editar recibo' : 'Novo recibo'}</h2><button type="button" onClick={onClose}><X /></button></header>
         <div className="flex-1 space-y-6 overflow-y-auto p-6">
           <div className="grid grid-cols-2 gap-5">
             <label className="block text-sm"><span className="mb-1 block font-medium">Cliente</span><select required value={form.clientId} onChange={(e) => set('clientId', e.target.value)} className="h-10 w-full rounded border border-[#d8dfe3] bg-white px-3">{clients.map((client) => <option key={client.id} value={client.id}>{client.name}</option>)}</select></label>
@@ -368,6 +335,9 @@ export default function Financial() {
   const [tab, setTab] = useState('Movimentações');
   const [clients, setClients] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [projectionTransactions, setProjectionTransactions] = useState([]);
+  const [chartRange, setChartRange] = useState('month');
+  const [projectionError, setProjectionError] = useState('');
   const [receipts, setReceipts] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [query, setQuery] = useState('');
@@ -416,6 +386,19 @@ export default function Financial() {
     return () => { active = false; };
   }, [filters.type, filters.clientId, filters.month, filters.year]);
 
+  useEffect(() => {
+    if (chartRange !== 'year') return;
+    let active = true;
+    setProjectionTransactions([]);
+    setProjectionError('');
+    api.get('/financial/transactions', { params: {
+      year: filters.year, throughYear: Number(filters.year) + 1, includeRecurring: '1',
+      type: filters.type || undefined, clientId: filters.clientId || undefined,
+    } }).then(({ data }) => { if (active) setProjectionTransactions(data); })
+      .catch(() => { if (active) setProjectionError('Nao foi possivel carregar as projecoes.'); });
+    return () => { active = false; };
+  }, [chartRange, filters.year, filters.type, filters.clientId, transactions]);
+
   const monthlyTransactions = useMemo(() => buildMonthlyTransactions(transactions, filters), [transactions, filters]);
   const filteredTransactions = useMemo(() => monthlyTransactions
     .filter((item) => !filters.status || item.status === filters.status)
@@ -429,22 +412,10 @@ export default function Financial() {
     const approved = filteredBudgets.filter((item) => item.status === 'APPROVED').reduce((sum, item) => sum + Number(item.amount || 0), 0);
     return { total, open, approved, count: filteredBudgets.length };
   }, [filteredBudgets]);
-  const summary = useMemo(() => {
-    const entradas = filteredTransactions.filter((item) => item.type === 'RECEITA').reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const saidas = filteredTransactions.filter((item) => item.type === 'DESPESA').reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    const pendentes = filteredTransactions.filter((item) => item.status !== 'PAID').reduce((sum, item) => sum + Number(item.amount || 0), 0);
-    return { entradas, saidas, saldo: entradas - saidas, pendentes };
-  }, [filteredTransactions]);
-  const monthlyProjection = useMemo(() => {
-    const days = new Date(Number(filters.year), Number(filters.month), 0).getDate();
-    const rows = Array.from({ length: days || 31 }, (_, index) => ({ month: String(index + 1).padStart(2, '0'), entradas: 0, saidas: 0 }));
-    filteredTransactions.forEach((item) => {
-      const row = rows[new Date(item.dueDate).getUTCDate() - 1];
-      if (row) row[item.type === 'RECEITA' ? 'entradas' : 'saidas'] += Number(item.amount || 0);
-    });
-    const max = Math.max(1, ...rows.flatMap((row) => [row.entradas, row.saidas]));
-    return rows.map((row) => ({ ...row, entradaPct: Math.round((row.entradas / max) * 100), saidaPct: Math.round((row.saidas / max) * 100) }));
-  }, [filteredTransactions, filters.year, filters.month]);
+  const summary = useMemo(() => summarizeTransactions(filteredTransactions), [filteredTransactions]);
+  const chartRows = useMemo(() => buildFinancialChart(chartRange === 'year' ? projectionTransactions : transactions, {
+    ...filters, range: chartRange, query,
+  }), [transactions, projectionTransactions, filters, chartRange, query]);
 
   async function markPaid(transaction) {
     setDrawer({ type: 'settlement', transaction });
@@ -503,13 +474,25 @@ export default function Financial() {
   }
 
   function receiptFromTransaction(transaction) {
+    if (transaction.receipt) {
+      setTab('Recibos');
+      setQuery(transaction.receipt.number);
+      return;
+    }
+    setTab('Recibos');
+    setQuery('');
     setDrawer({
       type: 'receipt-new',
       receipt: {
         clientId: transaction.clientId || transaction.client?.id,
         client: transaction.client,
         description: transaction.description,
-        transactionId: transaction.id,
+        transactionId: transaction.projected ? '' : transaction.id,
+        ...(transaction.projected ? {
+          recurrenceSourceId: transaction.sourceId,
+          recurrenceYear: new Date(transaction.dueDate).getUTCFullYear(),
+          recurrenceMonth: new Date(transaction.dueDate).getUTCMonth() + 1,
+        } : {}),
         amount: transaction.amount,
         issueDate: new Date().toISOString(),
         dueDate: transaction.dueDate,
@@ -546,9 +529,14 @@ export default function Financial() {
                 <SummaryCard label="Entradas" value={money(summary.entradas)} tone="green" />
                 <SummaryCard label="Saídas" value={money(summary.saidas)} tone="red" />
                 <SummaryCard label="Saldo" value={money(summary.saldo)} tone={summary.saldo >= 0 ? 'blue' : 'red'} />
-                <SummaryCard label="Pendentes" value={money(summary.pendentes)} tone="amber" />
+                <div className="rounded border border-[#dfe5e8] bg-amber-50 p-4 text-sm">
+                  <p className="mb-2 text-xs uppercase text-[#68737a]">Pendências</p>
+                  <div className="flex flex-wrap justify-between gap-1"><span>A receber</span><strong className="text-emerald-700">+ {money(summary.aReceber)}</strong></div>
+                  <div className="mt-1 flex flex-wrap justify-between gap-1"><span>A pagar</span><strong className="text-red-700">- {money(summary.aPagar)}</strong></div>
+                  <div className="mt-2 flex flex-wrap justify-between gap-1 border-t border-amber-200 pt-2"><span>Saldo pendente</span><strong className={summary.saldoPendente < 0 ? 'text-red-700' : 'text-emerald-700'}>{money(summary.saldoPendente)}</strong></div>
+                </div>
               </div>
-              <MonthlyProjection rows={monthlyProjection} period={`${monthOptions.find((month) => month.value === filters.month)?.label || ''}/${filters.year}`} />
+              <MonthlyProjection rows={chartRows} range={chartRange} onRangeChange={setChartRange} error={projectionError} period={`${monthOptions.find((month) => month.value === filters.month)?.label || ''}/${filters.year}`} />
               <div className="mb-5 grid grid-cols-[minmax(260px,1fr)_160px_170px_220px_140px_120px] gap-3">
                 <SearchBox value={query} onChange={setQuery} placeholder="Cliente, descrição ou categoria" />
                 <Select value={filters.type} onChange={(value) => setFilters((current) => ({ ...current, type: value }))} options={[['', 'Todos os tipos'], ['RECEITA', 'Entradas'], ['DESPESA', 'Saídas']]} />
@@ -568,15 +556,15 @@ export default function Financial() {
                         <td className="px-5 py-4">{item.status === 'PAID' ? (item.type === 'RECEITA' ? 'Recebido' : 'Pago') : 'Pendente'}{item.paidAt && <small className="mt-1 block text-[#68737a]">{datePt(item.paidAt)}</small>}</td>
                         <td className={`px-5 py-4 text-right font-semibold ${item.type === 'RECEITA' ? 'text-emerald-700' : 'text-red-700'}`}>{item.type === 'RECEITA' ? '+' : '-'} {money(item.amount)}</td>
                         <td className="px-5 py-4">
-                          <div className="flex justify-end gap-2">
+                          <div className="flex justify-end gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
                             {item.projected ? <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button> : (
                               <>
                                 {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button>}
-                                {item.type === 'RECEITA' && !item.receipt && <button onClick={() => receiptFromTransaction(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Recibo</button>}
                                 <button onClick={() => setDrawer({ type: 'transaction', transaction: item })} title="Editar" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
                                 <button onClick={() => removeTransaction(item)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
                               </>
                             )}
+                            <button onClick={() => receiptFromTransaction(item)} title={item.receipt ? 'Ver recibo na aba Recibos' : 'Gerar recibo na aba Recibos'} className="inline-flex items-center gap-1 rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><FileText size={16} />{item.receipt ? 'Ver recibo' : 'Gerar recibo'}</button>
                           </div>
                         </td>
                       </tr>
@@ -645,7 +633,7 @@ export default function Financial() {
       </main>
       {drawer?.type === 'settlement' && <SettlementDrawer transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={async () => { await Promise.all([loadTransactions(), loadReceipts()]); setDrawer(null); }} />}
       {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
-      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
+      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); setTab('Recibos'); setQuery(saved.number); }} />}
       {drawer?.type === 'budget' && <BudgetDrawer clients={clients} budget={drawer.budget} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadBudgets(); }} />}
     </div>
   );
@@ -676,30 +664,43 @@ function SummaryCard({ label, value, tone }) {
   return <div className={`rounded border border-[#dfe5e8] p-4 ${colors[tone] || 'bg-white'}`}><p className="text-xs uppercase text-[#68737a]">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></div>;
 }
 
-function MonthlyProjection({ rows, period }) {
+function MonthlyProjection({ rows, period, range, onRangeChange, error }) {
   return (
     <section className="mb-6 rounded border border-[#dfe5e8] bg-white p-4">
-      <div className="mb-4 flex items-center gap-2">
-        <BarChart3 size={18} className="text-[#16829b]" />
-        <h2 className="font-semibold">Entradas e saídas por dia · {period}</h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2"><BarChart3 size={18} className="shrink-0 text-[#16829b]" /><h2 className="font-semibold">{range === 'year' ? 'Projeção de entradas e saídas · 12 meses a partir de' : 'Entradas e saídas por dia ·'} {period}</h2></div>
+        <div className="inline-flex shrink-0 rounded border p-0.5 text-xs" role="group" aria-label="Periodo do grafico">
+          {[['month', 'Mês selecionado'], ['year', 'Próximos 12 meses']].map(([value, label]) => <button key={value} type="button" aria-pressed={range === value} onClick={() => onRangeChange(value)} className={`rounded px-3 py-2 ${range === value ? 'bg-[#eef8fc] font-semibold text-[#16829b]' : 'text-[#68737a]'}`}>{label}</button>)}
+        </div>
       </div>
-      <div className="overflow-x-auto"><div className="grid min-w-[900px] gap-1" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
+      {error && range === 'year' && <p role="alert" className="mb-3 text-sm text-red-700">{error}</p>}
+      <div className="overflow-x-auto"><div className={`grid gap-1 ${range === 'year' ? 'min-w-[600px]' : 'min-w-[900px]'}`} style={{ gridTemplateColumns: `repeat(${rows.length || 1}, minmax(0, 1fr))` }}>
         {rows.map((row) => (
-          <div key={row.month} className="min-w-0">
+          <div key={row.key} className="min-w-0">
             <div className="mb-2 flex h-28 items-end gap-1 rounded bg-[#f6f8fa] px-2 py-2">
-              <span title={`Entradas: ${money(row.entradas)}`} className="w-1/2 rounded-t bg-emerald-500" style={{ height: `${Math.max(row.entradas ? 8 : 0, row.entradaPct)}%` }} />
-              <span title={`Saídas: ${money(row.saidas)}`} className="w-1/2 rounded-t bg-red-400" style={{ height: `${Math.max(row.saidas ? 8 : 0, row.saidaPct)}%` }} />
+              <ChartBar realized={row.recebido} forecast={row.aReceber} max={row.max} income label={row.label} />
+              <ChartBar realized={row.pago} forecast={row.aPagar} max={row.max} label={row.label} />
             </div>
-            <p className="text-center text-xs capitalize text-[#68737a]">{row.month}</p>
+            <p className="text-center text-xs capitalize text-[#68737a]">{row.label}</p>
           </div>
         ))}
       </div></div>
-      <div className="mt-3 flex gap-4 text-xs text-[#68737a]">
-        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-emerald-500" /> Entradas</span>
-        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-red-400" /> Saídas</span>
+      <div className="mt-3 flex flex-wrap gap-4 text-xs text-[#68737a]">
+        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-emerald-500" /> Recebido</span>
+        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-red-400" /> Pago</span>
+        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded border border-dashed border-emerald-600 bg-emerald-100" /> A receber (projeção)</span>
+        <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded border border-dashed border-red-500 bg-red-100" /> A pagar (projeção)</span>
       </div>
     </section>
   );
+}
+
+function ChartBar({ realized, forecast, max, income, label }) {
+  const total = realized + forecast;
+  return <div role="img" aria-label={`${label}: ${income ? 'Recebido' : 'Pago'} ${money(realized)}; ${income ? 'A receber' : 'A pagar'} ${money(forecast)}`} title={`${income ? 'Recebido' : 'Pago'}: ${money(realized)}\n${income ? 'A receber (projeção)' : 'A pagar (projeção)'}: ${money(forecast)}`} className="flex w-1/2 flex-col justify-end" style={{ height: `${total ? Math.max(3, total / max * 100) : 0}%` }}>
+    {forecast > 0 && <span className={`block min-h-px rounded-t border border-dashed ${income ? 'border-emerald-600 bg-emerald-100' : 'border-red-500 bg-red-100'}`} style={{ flex: forecast }} />}
+    {realized > 0 && <span className={`block min-h-px ${income ? 'bg-emerald-500' : 'bg-red-400'}`} style={{ flex: realized }} />}
+  </div>;
 }
 
 function SummaryMini({ label, value }) {
