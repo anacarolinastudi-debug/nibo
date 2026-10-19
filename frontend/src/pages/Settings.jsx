@@ -19,6 +19,7 @@ const apiOrigin = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').
 
 function assetUrl(url) {
   if (!url) return '';
+  if (/^data:image\/(png|jpeg|bmp|webp);base64,/i.test(url)) return url;
   if (/^https?:\/\//i.test(url)) return url;
   return `${apiOrigin}${url.startsWith('/') ? url : `/${url}`}`;
 }

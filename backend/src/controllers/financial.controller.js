@@ -1,9 +1,8 @@
 const { z } = require('zod');
-const fs = require('fs');
-const path = require('path');
 const { chromium } = require('playwright');
 const prisma = require('../lib/prisma');
 const { occurrenceId, occurrenceDate } = require('../utils/financialRecurrence');
+const { resolveLogoSource: logoSource, preserveFirmLogo } = require('../utils/firmLogo');
 const DEFAULT_RECEIPT_NOTES = `Obrigado por fazer negócios conosco.
 
 Termos & Condições
@@ -34,34 +33,6 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-}
-
-function logoMime(fileName) {
-  const ext = path.extname(fileName || '').toLowerCase();
-  if (ext === '.png') return 'image/png';
-  if (ext === '.jpg' || ext === '.jpeg') return 'image/jpeg';
-  if (ext === '.bmp') return 'image/bmp';
-  if (ext === '.webp') return 'image/webp';
-  return '';
-}
-
-function apiBaseUrl(req) {
-  const configured = process.env.PUBLIC_API_URL || `${req.protocol}://${req.get('host')}`;
-  return configured.replace(/\/+$/, '');
-}
-
-function logoSource(logoUrl, req) {
-  if (!logoUrl) return '';
-  if (/^https?:\/\//i.test(logoUrl)) return logoUrl;
-  if (!logoUrl.startsWith('/uploads/')) return '';
-
-  const filePath = path.join(__dirname, '..', '..', 'uploads', path.basename(logoUrl));
-  if (fs.existsSync(filePath)) {
-    const mime = logoMime(filePath);
-    if (mime) return `data:${mime};base64,${fs.readFileSync(filePath).toString('base64')}`;
-  }
-
-  return `${apiBaseUrl(req)}${logoUrl}`;
 }
 
 // ---------- Contas bancárias ----------
@@ -942,6 +913,7 @@ async function budgetPdf(req, res) {
   });
   if (!budget) return res.status(404).json({ error: 'Orçamento não encontrado.' });
 
+  budget.accountingFirm = await preserveFirmLogo(budget.accountingFirm, prisma);
   let browser;
   try {
     browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
@@ -974,13 +946,13 @@ function receiptHtml(receipt, req) {
     .page { border: 1px solid #d7dde2; min-height: 100%; padding: 32px; }
     .header { display: flex; justify-content: space-between; gap: 24px; border-bottom: 2px solid #0b4f8f; padding-bottom: 22px; }
     .brand { display: flex; gap: 16px; align-items: flex-start; }
-    .logo { width: 86px; height: 86px; object-fit: contain; border: 1px solid #e1e6ea; border-radius: 6px; padding: 6px; }
+    .logo { max-width: 140px; max-height: 90px; object-fit: contain; }
     h1 { margin: 0; color: #0b4f8f; font-size: 34px; letter-spacing: 1px; }
     .muted { color: #69747b; line-height: 1.45; }
     .number { text-align: right; font-size: 14px; }
     .amount-box { margin-top: 16px; background: #eef8fc; border: 1px solid #c7e8f5; border-radius: 6px; padding: 14px 18px; text-align: right; }
     .amount-box strong { display: block; font-size: 24px; color: #0b4f8f; margin-top: 4px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 28px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 28px; margin-top: 28px; }
     .label { margin: 0 0 6px; color: #69747b; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .box { border: 1px solid #e1e6ea; border-radius: 6px; padding: 16px; min-height: 112px; }
     table { width: 100%; border-collapse: collapse; margin-top: 30px; }
@@ -1021,11 +993,6 @@ function receiptHtml(receipt, req) {
         <p class="label">${receipt.transaction?.type === 'DESPESA' ? 'Pago a' : 'Recebemos de'}</p>
         <strong>${escapeHtml(receipt.client.name)}</strong>
         <p class="muted">${escapeHtml(receipt.client.cnpj || '')}<br>${escapeHtml(receipt.client.email || '')}<br>${escapeHtml(clientAddress)}</p>
-      </div>
-      <div class="box">
-        <p class="label">Pagamento</p>
-        <p><strong>Data:</strong> ${datePt(receipt.paymentDate)}</p>
-        <p><strong>Forma:</strong> ${escapeHtml(receipt.paymentMethod || '-')}</p>
       </div>
     </div>
 
@@ -1069,6 +1036,7 @@ async function receiptPdf(req, res) {
   });
   if (!receipt) return res.status(404).json({ error: 'Recibo não encontrado.' });
 
+  receipt.accountingFirm = await preserveFirmLogo(receipt.accountingFirm, prisma);
   const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
   try {
     const page = await browser.newPage();

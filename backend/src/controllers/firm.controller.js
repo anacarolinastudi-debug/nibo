@@ -2,6 +2,7 @@ const { z } = require('zod');
 const prisma = require('../lib/prisma');
 const certCrypto = require('../utils/certCrypto');
 const { inspectPfx } = require('../utils/certInspect');
+const { logoDataUrl, preserveFirmLogo } = require('../utils/firmLogo');
 
 function serializeFirm(firm) {
   return {
@@ -32,7 +33,7 @@ function serializeFirm(firm) {
 
 async function getFirm(req, res) {
   const firm = await prisma.accountingFirm.findUnique({ where: { id: req.user.accountingFirmId } });
-  res.json(serializeFirm(firm));
+  res.json(serializeFirm(await preserveFirmLogo(firm, prisma)));
 }
 
 const updateFirmSchema = z.object({
@@ -59,7 +60,7 @@ async function uploadLogo(req, res) {
   if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado.' });
   const firm = await prisma.accountingFirm.update({
     where: { id: req.user.accountingFirmId },
-    data: { logoUrl: `/uploads/${req.file.filename}` },
+    data: { logoUrl: logoDataUrl(req.file.buffer) },
   });
   res.json(serializeFirm(firm));
 }
