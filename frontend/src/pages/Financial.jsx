@@ -6,6 +6,7 @@ import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import SideMenuSection from '../components/SideMenuSection';
 import { buildMonthlyTransactions, summarizeTransactions, buildFinancialChart } from '../utils/financialProjection.mjs';
+import { DEFAULT_RECEIPT_NOTES } from '../utils/receiptDefaults';
 
 function money(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -180,7 +181,7 @@ function ReceiptDrawer({ clients, receipt, onClose, onSaved }) {
     dueDate: inputDate(receipt?.dueDate),
     paymentDate: inputDate(receipt?.paymentDate),
     paymentMethod: receipt?.paymentMethod || '',
-    notes: receipt?.notes || '',
+    notes: receipt?.id ? (receipt.notes || '') : (receipt?.notes ?? DEFAULT_RECEIPT_NOTES),
   });
   const [saving, setSaving] = useState(false);
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -497,7 +498,7 @@ export default function Financial() {
         issueDate: new Date().toISOString(),
         dueDate: transaction.dueDate,
         paymentDate: transaction.status === 'PAID' ? (transaction.paidAt || new Date().toISOString()) : null,
-        notes: transaction.notes || '',
+        notes: DEFAULT_RECEIPT_NOTES,
       },
     });
   }

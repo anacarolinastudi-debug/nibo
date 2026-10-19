@@ -48,6 +48,13 @@ test('receipt for an already settled income does not count the balance again', a
   const receipt = await create({ transactionId: sourceId, paymentDate: '2026-09-30T00:00:00.000Z' });
   assert.equal(balanceDelta, 0);
   assert.equal(receipt.transactionId, sourceId);
+  assert.match(receipt.notes, /^Obrigado por fazer negócios conosco\.\n\nTermos & Condições/);
+  assert.match(receipt.notes, /Agradecemos pela compreensão e colaboração\.$/);
+});
+
+test('receipt notes remain editable, including an explicitly empty value', async () => {
+  assert.equal((await create({ notes: 'Texto personalizado' })).notes, 'Texto personalizado');
+  assert.equal((await create({ notes: '' })).notes, '');
 });
 test('receipt for a recurring projection saves only that occurrence without settling it', async () => {
   const receipt = await create({ recurrenceSourceId: sourceId, recurrenceYear: 2026, recurrenceMonth: 10, dueDate: '2026-10-30T00:00:00.000Z' });

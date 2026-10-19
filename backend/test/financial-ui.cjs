@@ -82,6 +82,7 @@ async function main() {
     assert.match(await page.getByRole('heading', { name: /Entradas e sa/ }).innerText(), /novembro\/2026/);
     await page.getByRole('button', { name: 'Gerar recibo', exact: true }).click();
     await page.getByRole('heading', { name: 'Novo recibo', exact: true }).waitFor();
+    assert.match(await page.locator('textarea').inputValue(), /^Obrigado por fazer negócios conosco\.\n\nTermos & Condições/);
     await page.getByRole('button', { name: 'Salvar recibo', exact: true }).click();
     await page.locator('tbody').getByText('REC-2026-0001', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Movimentações', exact: true }).click();

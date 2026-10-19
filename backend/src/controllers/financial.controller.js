@@ -4,6 +4,12 @@ const path = require('path');
 const { chromium } = require('playwright');
 const prisma = require('../lib/prisma');
 const { occurrenceId, occurrenceDate } = require('../utils/financialRecurrence');
+const DEFAULT_RECEIPT_NOTES = `Obrigado por fazer negócios conosco.
+
+Termos & Condições
+Lembramos que o não pagamento dos serviços dentro do prazo estabelecido implicará na paralisação imediata dos mesmos. Essa medida é essencial para mantermos a saúde financeira da empresa e garantir a continuidade da prestação de serviços de qualidade.
+
+Agradecemos pela compreensão e colaboração.`;
 
 // Mesma lógica de escopo usada em demandas: cliente só vê o que é dele,
 // time interno vê tudo do escritório.
@@ -558,7 +564,7 @@ async function createReceipt(req, res) {
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         paymentDate: transaction.paidAt || null,
         paymentMethod: data.paymentMethod || null,
-        notes: data.notes || null,
+        notes: data.notes ?? DEFAULT_RECEIPT_NOTES,
         accountingFirmId: req.user.accountingFirmId,
         clientId: client.id,
         transactionId: transaction.id,
@@ -985,6 +991,7 @@ function receiptHtml(receipt, req) {
     .totals div { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #e5e9ec; }
     .totals .grand { font-size: 18px; font-weight: 700; color: #0b4f8f; }
     .notes { margin-top: 34px; border-top: 1px solid #e5e9ec; padding-top: 20px; }
+    .notes p:last-child { white-space: pre-wrap; line-height: 1.45; }
     .footer { margin-top: 44px; color: #69747b; font-size: 12px; text-align: center; }
   </style>
 </head>
