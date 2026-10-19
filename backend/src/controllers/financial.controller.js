@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
 const prisma = require('../lib/prisma');
+const { occurrenceId, occurrenceDate } = require('../utils/financialRecurrence');
 
 // Mesma lógica de escopo usada em demandas: cliente só vê o que é dele,
 // time interno vê tudo do escritório.
@@ -194,8 +195,8 @@ async function listTransactions(req, res) {
   };
 
   if (year) {
-    const start = month ? new Date(Number(year), Number(month) - 1, 1) : new Date(Number(year), 0, 1);
-    const end = month ? new Date(Number(year), Number(month), 1) : new Date(Number(year) + 1, 0, 1);
+    const start = month ? new Date(Date.UTC(Number(year), Number(month) - 1, 1)) : new Date(Date.UTC(Number(year), 0, 1));
+    const end = month ? new Date(Date.UTC(Number(year), Number(month), 1)) : new Date(Date.UTC(Number(year) + 1, 0, 1));
     if (includeRecurring) {
       where.OR = [
         { dueDate: { gte: start, lt: end } },
@@ -217,7 +218,12 @@ async function listTransactions(req, res) {
     orderBy: { dueDate: 'asc' },
   });
 
-  res.json(transactions);
+  res.json(transactions.map((item) => ({
+    ...item,
+    ...(item.recurrenceInfinite && year && month
+      ? { projectedId: occurrenceId(item.id, Number(year), Number(month)) }
+      : {}),
+  })));
 }
 
 async function createTransaction(req, res) {
@@ -345,22 +351,52 @@ async function updateTransaction(req, res) {
 }
 
 async function markPaid(req, res) {
+  const data = z.object({
+    paidAt: z.string().datetime().optional(),
+    year: z.number().int().min(2000).max(9999).optional(),
+    month: z.number().int().min(1).max(12).optional(),
+  }).refine((value) => (value.year === undefined) === (value.month === undefined), {
+    message: 'Informe o ano e o mes da recorrencia.',
+  }).parse(req.body || {});
   const existing = await prisma.financialTransaction.findFirst({
     where: { id: req.params.id, ...clientScope(req.user) },
   });
   if (!existing) return res.status(404).json({ error: 'Lançamento não encontrado.' });
-  if (existing.status === 'PAID') return res.json(existing);
-
-  const transaction = await prisma.financialTransaction.update({
-    where: { id: req.params.id },
-    data: { status: 'PAID', paidAt: new Date() },
-  });
-
-  // Atualiza o saldo da conta bancária
-  const delta = transaction.type === 'RECEITA' ? Number(transaction.amount) : -Number(transaction.amount);
-  await prisma.financialAccount.update({
-    where: { id: transaction.accountId },
-    data: { balance: { increment: delta } },
+  const dueDate = data.year ? occurrenceDate(existing.dueDate, data.year, data.month) : null;
+  if (dueDate && (!existing.recurrenceInfinite || dueDate <= new Date(existing.dueDate))) {
+    return res.status(400).json({ error: 'Competencia invalida para esta recorrencia.' });
+  }
+  const paidAt = data.paidAt ? new Date(data.paidAt) : new Date();
+  const transaction = await prisma.$transaction(async (tx) => {
+    let target = existing;
+    if (dueDate) {
+      // A stable ID makes retries and concurrent settlements refer to the same occurrence.
+      target = await tx.financialTransaction.upsert({
+        where: { id: occurrenceId(existing.id, data.year, data.month) },
+        update: {},
+        create: {
+          id: occurrenceId(existing.id, data.year, data.month),
+          description: existing.description, amount: existing.amount, type: existing.type,
+          dueDate, status: 'PENDING', notes: existing.notes,
+          clientId: existing.clientId, accountId: existing.accountId, categoryId: existing.categoryId,
+          recurrence: 'NONE', recurrenceInfinite: false,
+        },
+      });
+    }
+    const changed = await tx.financialTransaction.updateMany({
+      where: { id: target.id, status: { not: 'PAID' } },
+      data: { status: 'PAID', paidAt },
+    });
+    if (changed.count) {
+      const delta = target.type === 'RECEITA' ? Number(target.amount) : -Number(target.amount);
+      await tx.financialAccount.update({
+        where: { id: target.accountId }, data: { balance: { increment: delta } },
+      });
+      await tx.financialReceipt.updateMany({
+        where: { transactionId: target.id }, data: { paymentDate: paidAt },
+      });
+    }
+    return tx.financialTransaction.findUnique({ where: { id: target.id } });
   });
 
   res.json(transaction);

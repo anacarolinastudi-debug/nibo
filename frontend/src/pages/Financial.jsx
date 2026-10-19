@@ -43,7 +43,8 @@ function buildMonthlyTransactions(items, filters) {
       if (selectedDate > dueDate) {
         rows.push({
           ...item,
-          id: `${item.id}-projected-${year}-${monthIndex + 1}`,
+          id: item.projectedId || `${item.id}-projected-${year}-${monthIndex + 1}`,
+          sourceId: item.id,
           dueDate: selectedDate.toISOString(),
           status: 'PENDING',
           paidAt: null,
@@ -55,7 +56,40 @@ function buildMonthlyTransactions(items, filters) {
     }
 
     return rows;
-  });
+  }).filter((row) => !row.projected || !items.some((item) => item.id === row.id))
+    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+}
+
+function SettlementDrawer({ transaction, onClose, onSaved }) {
+  const [paidAt, setPaidAt] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Cuiaba' }));
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const incoming = transaction.type === 'RECEITA';
+  async function save(event) {
+    event.preventDefault();
+    if (saving) return;
+    setSaving(true);
+    setError('');
+    try {
+      const date = new Date(transaction.dueDate);
+      await api.patch(`/financial/transactions/${transaction.sourceId || transaction.id}/pay`, {
+        paidAt: `${paidAt}T12:00:00.000Z`,
+        ...(transaction.projected ? { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1 } : {}),
+      });
+      await onSaved();
+    } catch (failure) {
+      setError(failure.response?.data?.error || 'Nao foi possivel registrar a baixa. Tente novamente.');
+    } finally { setSaving(false); }
+  }
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <form onSubmit={save} className="w-full max-w-md rounded bg-white shadow-xl">
+      <header className="flex items-center justify-between border-b p-5"><h2 className="text-xl font-semibold">{incoming ? 'Baixar recebimento' : 'Baixar pagamento'}</h2><button type="button" disabled={saving} onClick={onClose} title="Fechar"><X /></button></header>
+      <div className="space-y-4 p-5"><p>{transaction.description}</p><p>{transaction.client?.name}</p><strong className="block text-xl">{money(transaction.amount)}</strong><p className="text-sm">Vencimento: {datePt(transaction.dueDate)}</p>
+        <label className="block text-sm">{incoming ? 'Data do recebimento *' : 'Data do pagamento *'}<input required type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} className="mt-1 h-10 w-full rounded border px-3" /></label>
+        {error && <p role="alert" className="text-sm text-red-700">{error}</p>}</div>
+      <footer className="flex justify-end gap-3 border-t p-4"><button type="button" disabled={saving} onClick={onClose}>Cancelar</button><button disabled={saving} className="rounded bg-[#2693d2] px-4 py-2 text-white disabled:opacity-50">{saving ? 'Salvando...' : 'Confirmar baixa'}</button></footer>
+    </form>
+  </div>;
 }
 
 function FinancialMenu() {
@@ -334,7 +368,6 @@ export default function Financial() {
   const [tab, setTab] = useState('Movimentações');
   const [clients, setClients] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [annualTransactions, setAnnualTransactions] = useState([]);
   const [receipts, setReceipts] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [query, setQuery] = useState('');
@@ -359,17 +392,6 @@ export default function Financial() {
     setTransactions(data);
   }
 
-  async function loadAnnualTransactions() {
-    const params = Object.fromEntries(Object.entries({
-      year: filters.year,
-      type: filters.type,
-      clientId: filters.clientId,
-      includeRecurring: '1',
-    }).filter(([, value]) => value));
-    const { data } = await api.get('/financial/transactions', { params });
-    setAnnualTransactions(data);
-  }
-
   async function loadReceipts() {
     const { data } = await api.get('/financial/receipts');
     setReceipts(data);
@@ -382,12 +404,17 @@ export default function Financial() {
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([loadClients(), loadTransactions(), loadAnnualTransactions(), loadReceipts(), loadBudgets()]).finally(() => setLoading(false));
+    Promise.all([loadClients(), loadReceipts(), loadBudgets()]).finally(() => setLoading(false));
   }, []);
   useEffect(() => {
-    loadTransactions().catch(() => setTransactions([]));
-    loadAnnualTransactions().catch(() => setAnnualTransactions([]));
-  }, [filters]);
+    let active = true;
+    const params = { type: filters.type || undefined, clientId: filters.clientId || undefined, month: filters.month, year: filters.year, includeRecurring: '1' };
+    setTransactions([]);
+    api.get('/financial/transactions', { params }).then(({ data }) => {
+      if (active) setTransactions(data);
+    }).catch(() => { if (active) setTransactions([]); });
+    return () => { active = false; };
+  }, [filters.type, filters.clientId, filters.month, filters.year]);
 
   const monthlyTransactions = useMemo(() => buildMonthlyTransactions(transactions, filters), [transactions, filters]);
   const filteredTransactions = useMemo(() => monthlyTransactions
@@ -408,42 +435,19 @@ export default function Financial() {
     const pendentes = filteredTransactions.filter((item) => item.status !== 'PAID').reduce((sum, item) => sum + Number(item.amount || 0), 0);
     return { entradas, saidas, saldo: entradas - saidas, pendentes };
   }, [filteredTransactions]);
-  const annualProjection = useMemo(() => {
-    const rows = Array.from({ length: 12 }, (_, index) => ({
-      month: new Date(Number(filters.year) || new Date().getFullYear(), index, 1).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''),
-      entradas: 0,
-      saidas: 0,
-    }));
-    annualTransactions.forEach((item) => {
-      const date = new Date(item.dueDate);
-      const targetYear = Number(filters.year);
-      const amount = Number(item.amount || 0);
-      const addToMonth = (monthIndex, projected = false) => {
-        const occurrenceStatus = projected ? 'PENDING' : item.status;
-        if (filters.status && occurrenceStatus !== filters.status) return;
-        const row = rows[monthIndex];
-        if (!row) return;
-        if (item.type === 'RECEITA') row.entradas += amount;
-        if (item.type === 'DESPESA') row.saidas += amount;
-        if (projected) row.projected = true;
-      };
-
-      if (date.getUTCFullYear() === targetYear) addToMonth(date.getUTCMonth());
-      if (item.recurrenceInfinite) {
-        const startMonth = date.getUTCFullYear() < targetYear ? 0 : date.getUTCMonth() + 1;
-        for (let monthIndex = startMonth; monthIndex < 12; monthIndex += 1) {
-          addToMonth(monthIndex, true);
-        }
-      }
+  const monthlyProjection = useMemo(() => {
+    const days = new Date(Number(filters.year), Number(filters.month), 0).getDate();
+    const rows = Array.from({ length: days || 31 }, (_, index) => ({ month: String(index + 1).padStart(2, '0'), entradas: 0, saidas: 0 }));
+    filteredTransactions.forEach((item) => {
+      const row = rows[new Date(item.dueDate).getUTCDate() - 1];
+      if (row) row[item.type === 'RECEITA' ? 'entradas' : 'saidas'] += Number(item.amount || 0);
     });
     const max = Math.max(1, ...rows.flatMap((row) => [row.entradas, row.saidas]));
     return rows.map((row) => ({ ...row, entradaPct: Math.round((row.entradas / max) * 100), saidaPct: Math.round((row.saidas / max) * 100) }));
-  }, [annualTransactions, filters.year]);
+  }, [filteredTransactions, filters.year, filters.month]);
 
   async function markPaid(transaction) {
-    await api.patch(`/financial/transactions/${transaction.id}/pay`);
-    loadTransactions();
-    loadAnnualTransactions();
+    setDrawer({ type: 'settlement', transaction });
   }
 
   async function removeTransaction(transaction) {
@@ -451,7 +455,6 @@ export default function Financial() {
     if (!window.confirm(`Excluir a movimentação "${transaction.description}"?${linkedText}`)) return;
     await api.delete(`/financial/transactions/${transaction.id}`);
     loadTransactions();
-    loadAnnualTransactions();
     loadReceipts();
   }
 
@@ -460,7 +463,6 @@ export default function Financial() {
     await api.delete(`/financial/receipts/${receipt.id}`);
     loadReceipts();
     loadTransactions();
-    loadAnnualTransactions();
   }
 
   async function removeBudget(budget) {
@@ -546,7 +548,7 @@ export default function Financial() {
                 <SummaryCard label="Saldo" value={money(summary.saldo)} tone={summary.saldo >= 0 ? 'blue' : 'red'} />
                 <SummaryCard label="Pendentes" value={money(summary.pendentes)} tone="amber" />
               </div>
-              <AnnualProjection rows={annualProjection} />
+              <MonthlyProjection rows={monthlyProjection} period={`${monthOptions.find((month) => month.value === filters.month)?.label || ''}/${filters.year}`} />
               <div className="mb-5 grid grid-cols-[minmax(260px,1fr)_160px_170px_220px_140px_120px] gap-3">
                 <SearchBox value={query} onChange={setQuery} placeholder="Cliente, descrição ou categoria" />
                 <Select value={filters.type} onChange={(value) => setFilters((current) => ({ ...current, type: value }))} options={[['', 'Todos os tipos'], ['RECEITA', 'Entradas'], ['DESPESA', 'Saídas']]} />
@@ -563,13 +565,13 @@ export default function Financial() {
                       <tr key={item.id} className="border-t">
                         <td className="px-5 py-4">{datePt(item.dueDate)}</td><td className="px-5 py-4">{item.client?.name || '-'}</td><td className="px-5 py-4">{item.description}{item.projected && <small className="ml-2 rounded bg-[#eef8fc] px-2 py-0.5 text-[11px] text-[#16829b]">Recorrência</small>}{item.notes && <small className="mt-1 block text-[#68737a]">{item.notes}</small>}</td><td className="px-5 py-4">{item.category?.name || '-'}</td>
                         <td className="px-5 py-4"><span className={`rounded px-2 py-1 text-xs ${item.type === 'RECEITA' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{item.type === 'RECEITA' ? 'Entrada' : 'Saída'}</span></td>
-                        <td className="px-5 py-4">{item.status === 'PAID' ? 'Pago' : 'Pendente'}</td>
+                        <td className="px-5 py-4">{item.status === 'PAID' ? (item.type === 'RECEITA' ? 'Recebido' : 'Pago') : 'Pendente'}{item.paidAt && <small className="mt-1 block text-[#68737a]">{datePt(item.paidAt)}</small>}</td>
                         <td className={`px-5 py-4 text-right font-semibold ${item.type === 'RECEITA' ? 'text-emerald-700' : 'text-red-700'}`}>{item.type === 'RECEITA' ? '+' : '-'} {money(item.amount)}</td>
                         <td className="px-5 py-4">
                           <div className="flex justify-end gap-2">
-                            {item.projected ? <span className="rounded bg-[#f6f8fa] px-3 py-2 text-xs text-[#68737a]">Projetada</span> : (
+                            {item.projected ? <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button> : (
                               <>
-                                {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Baixar</button>}
+                                {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button>}
                                 {item.type === 'RECEITA' && !item.receipt && <button onClick={() => receiptFromTransaction(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">Recibo</button>}
                                 <button onClick={() => setDrawer({ type: 'transaction', transaction: item })} title="Editar" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
                                 <button onClick={() => removeTransaction(item)} title="Excluir" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
@@ -641,8 +643,9 @@ export default function Financial() {
           )}
         </section>
       </main>
-      {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); loadAnnualTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
-      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); loadAnnualTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
+      {drawer?.type === 'settlement' && <SettlementDrawer transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={async () => { await Promise.all([loadTransactions(), loadReceipts()]); setDrawer(null); }} />}
+      {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
+      {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); if (drawer.type === 'receipt-new') openReceipt(saved); }} />}
       {drawer?.type === 'budget' && <BudgetDrawer clients={clients} budget={drawer.budget} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadBudgets(); }} />}
     </div>
   );
@@ -673,14 +676,14 @@ function SummaryCard({ label, value, tone }) {
   return <div className={`rounded border border-[#dfe5e8] p-4 ${colors[tone] || 'bg-white'}`}><p className="text-xs uppercase text-[#68737a]">{label}</p><strong className="mt-2 block text-2xl">{value}</strong></div>;
 }
 
-function AnnualProjection({ rows }) {
+function MonthlyProjection({ rows, period }) {
   return (
     <section className="mb-6 rounded border border-[#dfe5e8] bg-white p-4">
       <div className="mb-4 flex items-center gap-2">
         <BarChart3 size={18} className="text-[#16829b]" />
-        <h2 className="font-semibold">Projeção anual de entradas e saídas</h2>
+        <h2 className="font-semibold">Entradas e saídas por dia · {period}</h2>
       </div>
-      <div className="grid grid-cols-12 gap-3">
+      <div className="overflow-x-auto"><div className="grid min-w-[900px] gap-1" style={{ gridTemplateColumns: `repeat(${rows.length}, minmax(0, 1fr))` }}>
         {rows.map((row) => (
           <div key={row.month} className="min-w-0">
             <div className="mb-2 flex h-28 items-end gap-1 rounded bg-[#f6f8fa] px-2 py-2">
@@ -690,7 +693,7 @@ function AnnualProjection({ rows }) {
             <p className="text-center text-xs capitalize text-[#68737a]">{row.month}</p>
           </div>
         ))}
-      </div>
+      </div></div>
       <div className="mt-3 flex gap-4 text-xs text-[#68737a]">
         <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-emerald-500" /> Entradas</span>
         <span className="inline-flex items-center gap-2"><i className="h-2.5 w-2.5 rounded bg-red-400" /> Saídas</span>
