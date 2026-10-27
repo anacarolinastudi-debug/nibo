@@ -66,6 +66,7 @@ app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/ecac', ecacRoutes);
 app.use('/api/firm', firmRoutes);
 app.use('/api/departments', departmentsRoutes);
+app.use('/api/content', require('./routes/content.routes'));
 
 // Precisa ser o último middleware
 app.use(errorHandler);

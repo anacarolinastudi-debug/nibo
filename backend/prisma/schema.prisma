@@ -66,6 +66,7 @@ model AccountingFirm {
   departments        Department[]
   firmRoles          FirmRole[]
   passwordResetRequests PasswordResetRequest[]
+  contentProjects       ContentProject[]
 
   @@map("accounting_firms")
 }
@@ -74,6 +75,20 @@ enum UserRole {
   ADMIN       // dono/gestor do escritório
   ACCOUNTANT  // contador/colaborador interno
   CLIENT      // usuário do portal do cliente
+}
+
+model ContentProject {
+  id               String         @id @default(uuid())
+  title            String
+  status           String         @default("DRAFT")
+  settings         Json
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id], onDelete: Cascade)
+
+  @@index([accountingFirmId, updatedAt])
+  @@map("content_projects")
 }
 
 model User {

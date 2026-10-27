@@ -4,6 +4,7 @@ import { Archive, Building2, ClipboardCheck, ClipboardList, ContactRound, Extern
 import api from '../api/client';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
+import ContentMenuLink from '../components/ContentMenuLink';
 import SideMenuSection from '../components/SideMenuSection';
 
 const regimes = { PESSOA_FISICA: 'Pessoa Física', MEI: 'MEI', SIMPLES_NACIONAL: 'Simples Nacional', LUCRO_PRESUMIDO: 'Lucro Presumido', LUCRO_REAL: 'Lucro Real' };
@@ -28,6 +29,7 @@ function ClientMenu({ tab, setTab }) {
         <Link to="/relacionamento" className="mb-4 mt-1 flex items-center gap-2 text-[#68737a]"><MessageCircle size={16} /> Relacionamento</Link>
         <Link to="/radar-ecac" className="mb-4 flex items-center gap-2 text-[#68737a]">Radar e-CAC <b className="rounded bg-emerald-400 px-1.5 py-0.5 text-[10px] text-white">NOVO</b></Link>
         <Link to="/financeiro" className="mb-4 flex items-center gap-2 text-[#68737a]"><WalletCards size={16} /> Financeiro</Link>
+        <ContentMenuLink />
         <p className="mb-4 border-t pt-4 text-xs font-semibold text-[#7b858c]">CADASTROS</p>
         <SideMenuSection icon={Users} label="Clientes" to="/clientes" active open={openSection === 'clientes'} onToggle={() => toggleSection('clientes')}>
           {['Meus clientes', 'Contatos'].map((item) => (

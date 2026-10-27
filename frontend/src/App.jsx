@@ -15,6 +15,7 @@ import FormEditor from './pages/FormEditor';
 import Relationship from './pages/Relationship';
 import RadarEcac from './pages/RadarEcac';
 import Settings from './pages/Settings';
+import ContentStudio from './pages/ContentStudio';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -27,6 +28,7 @@ export default function App() {
       <Route path="/demandas" element={<ProtectedRoute><Demands /></ProtectedRoute>} />
       <Route path="/clientes" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
       <Route path="/financeiro" element={<ProtectedRoute><Financial /></ProtectedRoute>} />
+      <Route path="/conteudos" element={<ProtectedRoute><ContentStudio /></ProtectedRoute>} />
       <Route path="/notas-fiscais" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
       <Route path="/folha-pagamento" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/documentos" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
