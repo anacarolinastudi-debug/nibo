@@ -31,6 +31,7 @@ async function call(path = '', { role = 'ADMIN', firm = 'firm-a', method = 'GET'
 test('only authenticated office staff can access content', async () => {
   assert.equal((await call('', { anonymous: true })).status, 401);
   assert.equal((await call('', { role: 'CLIENT' })).status, 403);
+  assert.equal((await call('', { firm: '' })).status, 403);
   assert.equal((await call('', { role: 'ACCOUNTANT' })).status, 200);
 });
 test('saved content is scoped to its firm and survives reads and edits', async () => {
