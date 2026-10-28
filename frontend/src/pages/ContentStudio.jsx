@@ -1,22 +1,28 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Check, Copy, Download, FilePlus2, ImagePlus, Plus, RefreshCw, Save, Search, Trash2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Copy, Download, FilePlus2, ImagePlus, KeyRound, Plus, RefreshCw, Save, Search, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import ContentMenuLink from '../components/ContentMenuLink';
-import { DEFAULT_CONTENT, drawContent, emptySlide, guidedDraft } from '../utils/contentCanvas';
+import { DEFAULT_CONTENT, drawContent, emptySlide } from '../utils/contentCanvas';
+import { loadContentAssets } from '../utils/contentAssets';
+import { AiConnectionDialog, ContentAiDialog } from '../components/ContentAiDialogs';
 
 const inputClass = 'mt-1 w-full rounded border border-[#d8dfe3] bg-white px-3 py-2 text-sm text-[#3f4548]';
 const copy = (value) => JSON.parse(JSON.stringify(value));
-const templates = [['cover', 'Capa editorial'], ['tip', 'Dica prática'], ['quote', 'Frase de marca']];
+const templates = [['cover', 'Institucional'], ['tip', 'Informativo'], ['quote', 'Frase']];
 function Field({ label, children }) { return <label className="block text-sm font-medium">{label}{children}</label>; }
 function IconButton({ title, children, ...props }) { return <button type="button" title={title} aria-label={title} {...props} className="grid h-9 w-9 shrink-0 place-items-center rounded border text-[#16829b] hover:bg-[#eef8fc] disabled:opacity-40">{children}</button>; }
 function ArtCanvas({ settings, index = 0, firm, logo, small = false, canvasRef }) {
   const ownRef = useRef(null);
   const ref = canvasRef || ownRef;
-  useEffect(() => { drawContent(ref.current, settings, index, firm?.name, logo); }, [settings, index, firm?.name, logo]);
+  useEffect(() => {
+    let active = true;
+    loadContentAssets().then((background) => { if (active && ref.current) drawContent(ref.current, settings, index, firm?.name, logo, background); }).catch(() => {});
+    return () => { active = false; };
+  }, [settings, index, firm?.name, logo]);
   return <canvas ref={ref} width={small ? 216 : 1080} height={small ? 270 : 1350} aria-label={`Arte do slide ${index + 1}`} className="block h-auto w-full aspect-[4/5]" />;
 }
 function StudioMenu() {
@@ -45,8 +51,12 @@ export default function ContentStudio() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [draft, setDraft] = useState(null);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [connectionOpen, setConnectionOpen] = useState(false);
+  const [studio, setStudio] = useState({ configured: false, customKey: false, logoUrl: null });
+  const [assetsReady, setAssetsReady] = useState(false);
   const canvasRef = useRef(null);
+  const logoFileRef = useRef(null);
   const dirty = saved ? JSON.stringify(record) !== saved : JSON.stringify(record) !== JSON.stringify({ id: null, title: 'Novo conteúdo', status: 'DRAFT', settings: DEFAULT_CONTENT });
   const settings = record.settings;
   const slide = settings.slides[current];
@@ -59,19 +69,26 @@ export default function ContentStudio() {
     Promise.all([api.get('/firm'), api.get('/content')]).then(([office, library]) => {
       if (active) { setFirm(office.data); setProjects(library.data); }
     }).catch(() => { if (active) setError('Não foi possível carregar os conteúdos.'); }).finally(() => { if (active) setLoading(false); });
+    api.get('/content/settings').then(({ data }) => { if (active) setStudio(data); }).catch(() => {});
     return () => { active = false; };
   }, [allowed]);
   useEffect(() => {
+    let active = true;
+    loadContentAssets().then(() => { if (active) setAssetsReady(true); }).catch(() => { if (active) setError('Não foi possível carregar as fontes ou o fundo das artes. Atualize a página para tentar novamente.'); });
+    return () => { active = false; };
+  }, []);
+  useEffect(() => {
     setLogo(null);
-    if (!firm?.logoUrl) return;
+    const source = studio.logoUrl || firm?.logoUrl;
+    if (!source) return;
     let active = true;
     const image = new Image(); image.crossOrigin = 'anonymous';
     image.onload = () => { if (active) setLogo(image); };
     image.onerror = () => { if (active) setError('Não foi possível carregar a logo do escritório.'); };
     const origin = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
-    image.src = /^(data:|https?:)/.test(firm.logoUrl) ? firm.logoUrl : origin + firm.logoUrl;
+    image.src = /^(data:|https?:)/.test(source) ? source : origin + source;
     return () => { active = false; };
-  }, [firm?.logoUrl]);
+  }, [firm?.logoUrl, studio.logoUrl]);
   useEffect(() => {
     const warn = (event) => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
     const guardNavigation = (event) => {
@@ -130,9 +147,10 @@ export default function ContentStudio() {
   }
   async function download(all) {
     if (busy) return;
-    if (firm?.logoUrl && !logo) { setError('Aguarde o carregamento da logo do escritório antes de exportar.'); return; }
+    if ((studio.logoUrl || firm?.logoUrl) && !logo) { setError('Aguarde o carregamento da logo do escritório antes de exportar.'); return; }
     setBusy(true); setError('');
     try {
+      const background = await loadContentAssets();
       const name = record.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() || 'conteudo';
       let blob;
       if (all && settings.slides.length > 1) {
@@ -140,16 +158,25 @@ export default function ContentStudio() {
         const zip = new JSZip();
         for (let index = 0; index < settings.slides.length; index += 1) {
           const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 1350;
-          drawContent(canvas, settings, index, firm?.name, logo);
+          drawContent(canvas, settings, index, firm?.name, logo, background);
           zip.file(`${name}-${String(index + 1).padStart(2, '0')}.png`, await new Promise((resolve) => canvas.toBlob(resolve, 'image/png')));
         }
         blob = await zip.generateAsync({ type: 'blob' });
-      } else blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png'));
+      } else { drawContent(canvasRef.current, settings, current, firm?.name, logo, background); blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png')); }
       if (!blob) throw new Error('Imagem indisponivel');
       const url = URL.createObjectURL(blob); const link = document.createElement('a');
       link.href = url; link.download = all && settings.slides.length > 1 ? `${name}.zip` : `${name}-slide-${current + 1}.png`; link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch { setError('Não foi possível exportar. Confira a logo e tente novamente.'); }
+    finally { setBusy(false); }
+  }
+  async function uploadStudioLogo(event) {
+    const file = event.target.files?.[0]; event.target.value = '';
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { setError('A logo deve ter no máximo 2 MB.'); return; }
+    setBusy(true); setError('');
+    try { const form = new FormData(); form.append('file', file); const { data } = await api.post('/content/settings/logo', form); setStudio((current) => ({ ...current, logoUrl: data.logoUrl })); }
+    catch (failure) { setError(failure.response?.data?.error || 'Não foi possível atualizar a logo dos conteúdos.'); }
     finally { setBusy(false); }
   }
   if (!allowed) return <div className="p-8">Esta área está disponível para a equipe do escritório. <Link to="/">Voltar</Link></div>;
@@ -169,9 +196,13 @@ export default function ContentStudio() {
               <div className="flex gap-1 rounded border bg-white p-1">{[[1, 'Post único'], [5, 'Carrossel']].map(([count, label]) => <button key={count} onClick={() => resizeSlides(count)} aria-pressed={count === 1 ? settings.slides.length === 1 : settings.slides.length > 1} className={`flex-1 rounded px-2 py-2 text-sm ${(count === 1) === (settings.slides.length === 1) ? 'bg-[#dce5ef] font-semibold' : ''}`}>{label}</button>)}</div>
               {settings.slides.length > 1 && <Field label="Quantidade de slides"><input type="number" min={2} max={10} value={settings.slides.length} onChange={(event) => { const count = Number(event.target.value); if (count >= 2 && count <= 10) resizeSlides(count); }} className={inputClass} /></Field>}
               <Field label="Modelo visual"><select value={settings.template} onChange={(event) => setSettings({ template: event.target.value })} className={inputClass}>{templates.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-              <div className="flex items-center justify-between border-t pt-4"><b className="text-sm">Slide {current + 1}</b><button onClick={() => setDraft({ topic: '', audience: '' })} className="text-xs text-[#16829b]">Rascunho guiado</button></div>
+              <Field label="Fundo"><select value={settings.background || 'organic'} onChange={(event) => setSettings({ background: event.target.value })} className={inputClass}><option value="organic">Orgânico azul</option><option value="plain">Azul liso</option></select></Field>
+              <button onClick={() => setAiOpen(true)} className="inline-flex w-full items-center justify-center gap-2 rounded bg-[#2693d2] px-3 py-2 text-sm text-white"><Sparkles size={16} /> Gerar com IA</button>
+              {user?.role === 'ADMIN' && <div className="flex flex-wrap gap-3 text-xs text-[#16829b]"><button onClick={() => setConnectionOpen(true)} className="inline-flex items-center gap-1"><KeyRound size={14} /> Configurar IA</button><button onClick={() => logoFileRef.current?.click()} className="inline-flex items-center gap-1"><Upload size={14} /> Atualizar logo</button><input ref={logoFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/bmp" className="hidden" onChange={uploadStudioLogo} /></div>}
+              <div className="border-t pt-4"><b className="text-sm">Slide {current + 1}</b></div>
               <Field label="Etiqueta"><input value={slide.eyebrow} maxLength={60} onChange={(event) => setSlide('eyebrow', event.target.value)} className={inputClass} /></Field>
               <Field label="Título do slide"><textarea value={slide.headline} maxLength={200} onChange={(event) => setSlide('headline', event.target.value)} rows={3} className={inputClass} /></Field>
+              <Field label="Palavras em destaque"><input value={slide.highlight || ''} maxLength={100} onChange={(event) => setSlide('highlight', event.target.value)} className={inputClass} /></Field>
               <Field label="Texto de apoio"><textarea value={slide.body} maxLength={800} onChange={(event) => setSlide('body', event.target.value)} rows={4} className={inputClass} /></Field>
               <Field label="Rodapé"><input value={slide.footer} maxLength={100} onChange={(event) => setSlide('footer', event.target.value)} className={inputClass} /></Field>
               <Field label="Cor de destaque"><input type="color" value={settings.accent} onChange={(event) => setSettings({ accent: event.target.value })} className="mt-2 h-9 w-full cursor-pointer rounded border bg-white p-1" /></Field>
@@ -181,8 +212,10 @@ export default function ContentStudio() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm"><b>Slide {current + 1} de {settings.slides.length}</b><span className="text-[#68737a]">1080 × 1350 · 4:5</span><div className="flex gap-2"><IconButton title="Mover slide para a esquerda" disabled={current === 0 || busy} onClick={() => moveSlide(-1)}><ArrowLeft size={16} /></IconButton><IconButton title="Mover slide para a direita" disabled={current === settings.slides.length - 1 || busy} onClick={() => moveSlide(1)}><ArrowRight size={16} /></IconButton><IconButton title="Duplicar slide" disabled={settings.slides.length >= 10 || busy} onClick={() => { const slides = [...settings.slides]; slides.splice(current + 1, 0, { ...slide }); setSettings({ slides }); setCurrent(current + 1); }}><Copy size={16} /></IconButton><IconButton title="Excluir slide" disabled={settings.slides.length === 1 || busy} onClick={() => { if (window.confirm('Excluir este slide?')) { setSettings({ slides: settings.slides.filter((_, index) => index !== current) }); setCurrent(Math.max(0, current - 1)); } }}><Trash2 size={16} /></IconButton></div></div>
               <div className="flex justify-center border bg-[#eef2f5] p-3"><div className="w-full max-w-[420px]"><ArtCanvas settings={settings} index={current} firm={firm} logo={logo} canvasRef={canvasRef} /></div></div>
               <div className="mt-3 flex gap-2 overflow-x-auto pb-2">{settings.slides.map((_, index) => <button key={index} aria-label={`Selecionar slide ${index + 1}`} aria-pressed={current === index} onClick={() => setCurrent(index)} className={`w-[68px] shrink-0 border-2 ${current === index ? 'border-[#2693d2]' : 'border-transparent'}`}><ArtCanvas small settings={settings} index={index} firm={firm} logo={logo} /><span className="block py-1 text-xs">{index + 1}</span></button>)}</div>
-              <div className="mt-3 flex flex-wrap gap-3"><button onClick={() => download(false)} disabled={busy || loading} className="inline-flex items-center gap-2 rounded border px-4 py-2 text-sm text-[#16829b] disabled:opacity-50"><Download size={16} /> Baixar PNG</button>{settings.slides.length > 1 && <button onClick={() => download(true)} disabled={busy || loading} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Download size={16} /> Baixar carrossel ZIP</button>}</div>
+              <div className="mt-3 flex flex-wrap gap-3"><button onClick={() => download(false)} disabled={busy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded border px-4 py-2 text-sm text-[#16829b] disabled:opacity-50"><Download size={16} /> Baixar PNG</button>{settings.slides.length > 1 && <button onClick={() => download(true)} disabled={busy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Download size={16} /> Baixar carrossel ZIP</button>}</div>
               <div className="mt-6"><Field label="Legenda da publicação"><textarea disabled={busy} maxLength={5000} rows={4} value={settings.caption} onChange={(event) => setSettings({ caption: event.target.value })} className={inputClass} /></Field></div>
+              {settings.reviewNotes && <div className="mt-4 border-l-2 border-amber-400 bg-amber-50 p-3 text-sm"><b>Pontos para revisar</b><p className="mt-1 whitespace-pre-wrap">{settings.reviewNotes}</p></div>}
+              {settings.sources?.length > 0 && <div className="mt-4 text-sm"><b>Fontes consultadas</b>{settings.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="mt-2 block break-words text-[#16829b] underline">{source.title}</a>)}</div>}
             </div>
           </div>
         </> : <>
@@ -192,6 +225,7 @@ export default function ContentStudio() {
         </>}
       </section>
     </main>
-    {draft && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><form onSubmit={(event) => { event.preventDefault(); if (window.confirm('Substituir os textos dos slides pelo novo rascunho?')) { setSettings({ slides: guidedDraft(draft.topic, draft.audience, settings.slides.length) }); setCurrent(0); setDraft(null); } }} className="w-full max-w-md rounded bg-white p-6 shadow-xl"><div className="mb-5 flex items-center justify-between"><h2 className="text-xl font-semibold">Rascunho guiado</h2><IconButton title="Fechar rascunho" onClick={() => setDraft(null)}><X size={16} /></IconButton></div><div className="space-y-4"><Field label="Tema *"><input required maxLength={200} value={draft.topic} onChange={(event) => setDraft({ ...draft, topic: event.target.value })} className={inputClass} /></Field><Field label="Público"><input maxLength={100} value={draft.audience} onChange={(event) => setDraft({ ...draft, audience: event.target.value })} className={inputClass} /></Field></div><button className="mt-5 inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-white"><Check size={16} /> Criar rascunho</button></form></div>}
+    {aiOpen && <ContentAiDialog count={settings.slides.length} configured={studio.configured} canConfigure={user?.role === 'ADMIN'} onConnect={() => { setAiOpen(false); setConnectionOpen(true); }} onClose={() => setAiOpen(false)} onApply={(result) => { setRecord((current) => ({ ...current, title: result.title, settings: { ...current.settings, slides: result.slides, caption: result.caption, sources: result.sources, reviewNotes: result.reviewNotes } })); setCurrent(0); setAiOpen(false); }} />}
+    {connectionOpen && <AiConnectionDialog customKey={studio.customKey} onClose={() => setConnectionOpen(false)} onConfigured={(configured, customKey) => { setStudio((current) => ({ ...current, configured, customKey })); setConnectionOpen(false); }} />}
   </div>;
 }

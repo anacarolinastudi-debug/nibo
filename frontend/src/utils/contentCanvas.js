@@ -1,8 +1,8 @@
 export const DEFAULT_CONTENT = {
-  template: 'cover', accent: '#54c7df', fontSize: 82, caption: '',
-  slides: [{ eyebrow: 'GESTÃO DO SEU NEGÓCIO', headline: 'Clareza para cuidar melhor da sua empresa', body: 'Organize as informações do seu negócio e conte com uma contabilidade próxima.', footer: 'SALVE PARA CONSULTAR' }],
+  template: 'cover', accent: '#63b0ff', fontSize: 82, caption: '', background: 'organic',
+  slides: [{ eyebrow: 'GESTÃO DO SEU NEGÓCIO', headline: 'Clareza para cuidar melhor da sua empresa', highlight: 'empresa', body: 'Organize as informações do seu negócio e conte com uma contabilidade próxima.', footer: 'SALVE PARA CONSULTAR' }],
 };
-export const emptySlide = () => ({ eyebrow: '', headline: 'Novo slide', body: '', footer: '' });
+export const emptySlide = () => ({ eyebrow: '', headline: 'Novo slide', highlight: '', body: '', footer: '' });
 
 export function wrapLines(ctx, text, width) {
   const lines = [];
@@ -20,53 +20,86 @@ export function wrapLines(ctx, text, width) {
   return lines;
 }
 
-function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, centered = false) {
+function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, centered = false, family = 'Montserrat', highlight = '', accent = color) {
   let lines;
   do {
-    ctx.font = `${weight} ${size}px Arial`;
+    ctx.font = `${weight} ${size}px "${family}"`;
     lines = wrapLines(ctx, text, width);
     if (lines.length * size * 1.2 <= height || size <= 16) break;
     size -= 2;
   } while (size > 0);
   ctx.fillStyle = color;
-  ctx.textAlign = centered ? 'center' : 'left';
-  lines.forEach((line, index) => ctx.fillText(line, centered ? x + width / 2 : x, y + index * size * 1.2));
+  ctx.textAlign = 'left';
+  const normalize = (word) => word.toLocaleLowerCase('pt-BR').replace(/[^\p{L}\p{N}]/gu, '');
+  const highlighted = new Set(highlight.split(/\s+/).map(normalize).filter(Boolean));
+  lines.forEach((line, index) => {
+    let at = centered ? x + (width - ctx.measureText(line).width) / 2 : x;
+    for (const token of line.match(/\s+|\S+/g) || []) {
+      ctx.fillStyle = highlighted.has(normalize(token)) ? accent : color;
+      ctx.fillText(token, at, y + index * size * 1.2);
+      at += ctx.measureText(token).width;
+    }
+  });
   ctx.textAlign = 'left';
   return lines.length * size * 1.2;
 }
 
-export function drawContent(canvas, settings, index, firmName, logo) {
+const logoBoundsCache = new WeakMap();
+function logoBounds(image) {
+  if (logoBoundsCache.has(image)) return logoBoundsCache.get(image);
+  const scratch = document.createElement('canvas'); scratch.width = image.naturalWidth; scratch.height = image.naturalHeight;
+  const ctx = scratch.getContext('2d'); ctx.drawImage(image, 0, 0);
+  const { data } = ctx.getImageData(0, 0, scratch.width, scratch.height);
+  let left = scratch.width, top = scratch.height, right = 0, bottom = 0;
+  let transparent = false;
+  for (let at = 3; at < data.length; at += 64 * 4) if (data[at] < 200) { transparent = true; break; }
+  for (let y = 0; y < scratch.height; y += 2) for (let x = 0; x < scratch.width; x += 2) {
+    const at = (y * scratch.width + x) * 4;
+    if (data[at + 3] > 50 && (transparent || Math.min(data[at], data[at + 1], data[at + 2]) < 215)) {
+      left = Math.min(left, x); right = Math.max(right, x); top = Math.min(top, y); bottom = Math.max(bottom, y);
+    }
+  }
+  const padding = 12;
+  const bounds = right > left && bottom > top ? [Math.max(0, left - padding), Math.max(0, top - padding), Math.min(scratch.width - Math.max(0, left - padding), right - left + padding * 2), Math.min(scratch.height - Math.max(0, top - padding), bottom - top + padding * 2)] : [0, 0, scratch.width, scratch.height];
+  logoBoundsCache.set(image, bounds);
+  return bounds;
+}
+
+export function drawContent(canvas, settings, index, firmName, logo, background) {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(canvas.width / 1080, 0, 0, canvas.height / 1350, 0, 0);
   ctx.clearRect(0, 0, 1080, 1350);
   ctx.textBaseline = 'top';
   const slide = settings.slides[index] || emptySlide();
-  const light = settings.template === 'tip';
-  const ink = light ? '#102c46' : '#ffffff';
-  const muted = light ? '#435668' : '#d9edf5';
-  ctx.fillStyle = light ? '#ffffff' : '#102c46'; ctx.fillRect(0, 0, 1080, 1350);
-  ctx.fillStyle = settings.accent; ctx.fillRect(0, 0, 1080, 14);
+  const ink = '#ffffff';
+  const muted = '#e4effb';
+  ctx.fillStyle = '#051d40'; ctx.fillRect(0, 0, 1080, 1350);
+  if (background && settings.background !== 'plain') {
+    const scale = Math.max(1080 / background.naturalWidth, 1350 / background.naturalHeight);
+    const width = background.naturalWidth * scale, height = background.naturalHeight * scale;
+    ctx.drawImage(background, (1080 - width) / 2, (1350 - height) / 2, width, height);
+  }
   if (logo?.naturalWidth) {
-    const scale = Math.min(360 / logo.naturalWidth, 118 / logo.naturalHeight);
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(66, 64, 380, 138);
-    ctx.drawImage(logo, 76, 74, logo.naturalWidth * scale, logo.naturalHeight * scale);
-  } else textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700);
-  textBlock(ctx, slide.eyebrow.toUpperCase(), 72, 260, 936, 82, 24, light ? '#164c78' : settings.accent, 700);
+    const [sx, sy, sw, sh] = logoBounds(logo);
+    const scale = Math.min(430 / sw, 112 / sh);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(60, 58, sw * scale + 24, sh * scale + 24);
+    ctx.drawImage(logo, sx, sy, sw, sh, 72, 70, sw * scale, sh * scale);
+  } else textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700, false, 'Libre Baskerville');
+  textBlock(ctx, slide.eyebrow.toUpperCase(), 72, 258, 936, 72, 23, settings.accent, 600);
+  const headline = (x, y, width, height, centered = false) => textBlock(ctx, settings.template === 'tip' ? slide.headline.toUpperCase() : slide.headline, x, y, width, height, settings.fontSize, ink, settings.template === 'tip' ? 800 : settings.template === 'quote' ? 400 : 700, centered, settings.template === 'tip' ? 'Montserrat' : 'Libre Baskerville', slide.highlight || '', settings.accent);
   if (settings.template === 'quote') {
-    ctx.fillStyle = settings.accent; ctx.font = '160px Georgia'; ctx.fillText('\u201c', 72, 340);
-    textBlock(ctx, slide.headline, 100, 440, 880, 400, settings.fontSize, ink, 700, true);
+    headline(100, 415, 880, 430, true);
     textBlock(ctx, slide.body, 100, 910, 880, 245, 34, muted, 400, true);
-  } else if (light) {
-    textBlock(ctx, slide.headline, 72, 360, 936, 310, settings.fontSize, ink, 700);
+  } else if (settings.template === 'tip') {
+    headline(72, 345, 936, 320);
     ctx.fillStyle = settings.accent; ctx.fillRect(72, 720, 936, 8);
     textBlock(ctx, slide.body, 72, 790, 936, 350, 38, muted);
   } else {
-    const titleHeight = textBlock(ctx, slide.headline, 100, 365, 908, 440, settings.fontSize, ink, 700);
-    ctx.fillStyle = settings.accent; ctx.fillRect(72, 365, 8, Math.max(130, titleHeight));
-    textBlock(ctx, slide.body, 100, Math.max(820, 415 + titleHeight), 880, 300, 34, muted);
+    const titleHeight = headline(72, 355, 936, 430);
+    ctx.fillStyle = settings.accent; ctx.fillRect(72, 405 + titleHeight, 110, 5);
+    textBlock(ctx, slide.body, 72, Math.max(820, 455 + titleHeight), 936, 260, 34, muted);
   }
-  ctx.fillStyle = light ? '#dfe8ef' : '#527086'; ctx.fillRect(72, 1180, 936, 1);
-  textBlock(ctx, slide.footer.toUpperCase(), 72, 1220, 805, 75, 21, ink, 700);
+  textBlock(ctx, slide.footer, 72, 1220, 805, 75, 21, ink, 600);
   textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 925, 1220, 100, 40, 21, muted);
 }
 

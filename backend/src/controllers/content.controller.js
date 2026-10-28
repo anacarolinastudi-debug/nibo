@@ -8,9 +8,13 @@ const schema = z.object({
     template: z.enum(['cover', 'tip', 'quote']),
     accent: z.string().regex(/^#[a-fA-F0-9]{6}$/),
     fontSize: z.number().int().min(48).max(112),
+    background: z.enum(['organic', 'plain']).optional(),
     caption: z.string().max(5000).default(''),
+    reviewNotes: z.string().max(1500).optional(),
+    sources: z.array(z.object({ title: z.string().max(300), url: z.string().url().startsWith('https://').max(2048) })).max(12).optional(),
     slides: z.array(z.object({
       eyebrow: z.string().max(60), headline: z.string().max(200),
+      highlight: z.string().max(100).optional(),
       body: z.string().max(800), footer: z.string().max(100),
     })).min(1).max(10),
   }),

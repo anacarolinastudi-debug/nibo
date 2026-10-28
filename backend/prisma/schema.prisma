@@ -67,6 +67,7 @@ model AccountingFirm {
   firmRoles          FirmRole[]
   passwordResetRequests PasswordResetRequest[]
   contentProjects       ContentProject[]
+  contentStudioSettings ContentStudioSettings?
 
   @@map("accounting_firms")
 }
@@ -89,6 +90,16 @@ model ContentProject {
 
   @@index([accountingFirmId, updatedAt])
   @@map("content_projects")
+}
+
+model ContentStudioSettings {
+  accountingFirmId String         @id
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id], onDelete: Cascade)
+  apiKeyEncrypted  String?
+  logoUrl          String?
+  updatedAt        DateTime       @updatedAt
+
+  @@map("content_studio_settings")
 }
 
 model User {

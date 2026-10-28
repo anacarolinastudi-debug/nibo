@@ -9,8 +9,9 @@ async function main() {
   const root = path.resolve(__dirname, '../../frontend/dist');
   const output = path.resolve(__dirname, '../../tmp/content-studio'); fs.mkdirSync(output, { recursive: true });
   const server = http.createServer((req, res) => {
-    const file = req.url.startsWith('/assets/') ? path.join(root, req.url) : path.join(root, 'index.html');
-    res.setHeader('Content-Type', file.endsWith('.js') ? 'text/javascript' : file.endsWith('.css') ? 'text/css' : 'text/html');
+    const file = req.url.startsWith('/assets/') || req.url.startsWith('/content/') ? path.join(root, req.url) : path.join(root, 'index.html');
+    const types = { '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.woff': 'font/woff', '.png': 'image/png' };
+    res.setHeader('Content-Type', types[path.extname(file)] || 'text/html');
     res.end(fs.readFileSync(file));
   });
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -22,13 +23,20 @@ async function main() {
     page.on('dialog', (dialog) => dialog.accept());
     const user = { id: 'content-user', name: 'Teste', role: 'ADMIN', accountingFirmId: 'firm' };
     const projects = [];
-    const logoPath = path.resolve(__dirname, '../../tmp/young-logo-recovered.png');
+    const logoPath = path.resolve(__dirname, '../../frontend/public/content/young-logo-official-v2.png');
     const logoUrl = fs.existsSync(logoPath) ? `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}` : null;
     await page.addInitScript(({ user }) => { localStorage.setItem('token', 'content-test'); localStorage.setItem('user', JSON.stringify(user)); }, { user });
     await page.route('**/api/**', async (route) => {
       const request = route.request(), url = new URL(request.url()); let data = [];
       if (url.pathname.endsWith('/auth/me')) data = user;
       if (url.pathname.endsWith('/firm')) data = { id: 'firm', name: 'Young Contábil', logoUrl };
+      if (url.pathname.endsWith('/content/settings')) data = { configured: true, customKey: true, logoUrl };
+      if (url.pathname.endsWith('/content/generate')) {
+        const brief = request.postDataJSON();
+        assert.equal(brief.topic, 'Organização financeira');
+        assert.equal(brief.context, 'Contabilidade próxima para pequenos empresários');
+        data = { title: 'Conteúdo com IA', caption: 'Uma rotina organizada ajuda a cuidar da empresa.', reviewNotes: '', sources: [], slides: Array.from({ length: brief.count }, (_, index) => ({ eyebrow: index ? `PASSO ${index}` : 'PARA SUA EMPRESA', headline: index ? `Organize a rotina ${index}` : 'Clareza para cuidar da sua empresa', highlight: 'empresa', body: index ? 'Separe as informações, acompanhe os registros e converse com a sua contabilidade.' : 'Uma contabilidade próxima para transformar informação em decisões mais seguras.', footer: '@youngcontabil' })) };
+      }
       if (url.pathname.endsWith('/content')) {
         if (request.method() === 'POST') { data = { ...request.postDataJSON(), id: 'content-1', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }; projects.push(data); }
         else data = projects;
@@ -38,6 +46,8 @@ async function main() {
     });
     await page.goto(`http://127.0.0.1:${server.address().port}/conteudos`);
     await page.getByRole('button', { name: 'Salvar', exact: true }).waitFor();
+    await page.waitForFunction(() => document.fonts.check('700 82px "Libre Baskerville"') && document.fonts.check('800 82px "Montserrat"'));
+    await page.getByRole('button', { name: 'Baixar PNG', exact: true }).isEnabled();
     await page.getByRole('button', { name: 'Carrossel', exact: true }).click();
     await page.getByLabel(/^Nome do conteúdo/).fill('Carrossel de teste');
     await page.getByLabel(/^Título do slide/).fill('Organize o financeiro');
@@ -68,12 +78,23 @@ async function main() {
     assert.equal(await page.getByLabel(/^Nome do conteúdo/).inputValue(), 'Carrossel de teste');
     await page.getByRole('button', { name: 'Selecionar slide 2', exact: true }).click();
     assert.equal(await page.getByLabel(/^Título do slide/).inputValue(), 'Segundo slide com outro texto');
+    await page.getByRole('button', { name: 'Gerar com IA', exact: true }).click();
+    const dialog = page.getByRole('dialog', { name: 'Gerar conteúdo com IA', exact: true });
+    await dialog.getByLabel('Tema', { exact: true }).fill('Organização financeira');
+    await dialog.getByLabel('Contexto ou texto de referência', { exact: true }).fill('Contabilidade próxima para pequenos empresários');
+    await dialog.getByRole('button', { name: 'Gerar conteúdo', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Usar no editor', exact: true }).click();
+    assert.equal(await page.getByLabel(/^Título do slide/).inputValue(), 'Clareza para cuidar da sua empresa');
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click();
+    await page.getByText('Salvo no sistema', { exact: true }).waitFor();
     await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
+    const artData = await page.locator('canvas').first().evaluate((canvas) => canvas.toDataURL().split(',')[1]);
+    fs.writeFileSync(path.join(output, 'refined-art.png'), Buffer.from(artData, 'base64'));
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });
     assert.deepEqual(errors, []);
-    console.log('PASS: editor, distinct templates/slides, nonblank canvas, save/reopen, PNG 1080x1350, valid ZIP, mobile layout.');
+    console.log('PASS: fonts loaded, original logo, organic background, AI theme/context/review/apply, editor save/reopen, valid PNG/ZIP and mobile layout.');
   } finally { if (browser) await browser.close(); await new Promise((resolve) => server.close(resolve)); }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });
