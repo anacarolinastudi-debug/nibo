@@ -23,7 +23,7 @@ async function main() {
     page.on('dialog', (dialog) => dialog.accept());
     const user = { id: 'content-user', name: 'Teste', role: 'ADMIN', accountingFirmId: 'firm' };
     const projects = [];
-    const logoPath = path.resolve(__dirname, '../../frontend/public/content/young-logo-official-v2.png');
+    const logoPath = path.resolve(__dirname, '../../frontend/public/content/young-logo-dark-v3.png');
     const logoUrl = fs.existsSync(logoPath) ? `data:image/png;base64,${fs.readFileSync(logoPath).toString('base64')}` : null;
     await page.addInitScript(({ user }) => { localStorage.setItem('token', 'content-test'); localStorage.setItem('user', JSON.stringify(user)); }, { user });
     await page.route('**/api/**', async (route) => {
@@ -90,6 +90,13 @@ async function main() {
     await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
     const artData = await page.locator('canvas').first().evaluate((canvas) => canvas.toDataURL().split(',')[1]);
     fs.writeFileSync(path.join(output, 'refined-art.png'), Buffer.from(artData, 'base64'));
+    const readingArea = await page.locator('canvas').first().evaluate((canvas) => {
+      const ctx = canvas.getContext('2d');
+      const pixel = (x, y) => Array.from(ctx.getImageData(Math.round(x * canvas.width / 1080), Math.round(y * canvas.height / 1350), 1, 1).data);
+      return { header: pixel(65, 75), body: pixel(40, 850) };
+    });
+    assert.ok(Math.max(...readingArea.header.slice(0, 3)) < 100, 'transparent logo must not have a white plaque');
+    assert.ok(Math.max(...readingArea.body.slice(0, 3)) < 65, 'waves must remain subdued behind body text');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });

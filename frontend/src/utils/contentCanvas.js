@@ -61,6 +61,7 @@ function logoBounds(image) {
   }
   const padding = 12;
   const bounds = right > left && bottom > top ? [Math.max(0, left - padding), Math.max(0, top - padding), Math.min(scratch.width - Math.max(0, left - padding), right - left + padding * 2), Math.min(scratch.height - Math.max(0, top - padding), bottom - top + padding * 2)] : [0, 0, scratch.width, scratch.height];
+  bounds.transparent = transparent;
   logoBoundsCache.set(image, bounds);
   return bounds;
 }
@@ -78,26 +79,35 @@ export function drawContent(canvas, settings, index, firmName, logo, background)
     const scale = Math.max(1080 / background.naturalWidth, 1350 / background.naturalHeight);
     const width = background.naturalWidth * scale, height = background.naturalHeight * scale;
     ctx.drawImage(background, (1080 - width) / 2, (1350 - height) / 2, width, height);
+    // A continuous veil keeps the organic detail away from the reading area.
+    const veil = ctx.createLinearGradient(0, 0, 0, 1350);
+    veil.addColorStop(0, 'rgba(3, 20, 43, 0.15)');
+    veil.addColorStop(0.22, 'rgba(3, 20, 43, 0.72)');
+    veil.addColorStop(0.58, 'rgba(3, 20, 43, 0.94)');
+    veil.addColorStop(0.84, 'rgba(3, 20, 43, 0.94)');
+    veil.addColorStop(1, 'rgba(3, 20, 43, 0.4)');
+    ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1350);
   }
   if (logo?.naturalWidth) {
-    const [sx, sy, sw, sh] = logoBounds(logo);
-    const scale = Math.min(430 / sw, 112 / sh);
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(60, 58, sw * scale + 24, sh * scale + 24);
-    ctx.drawImage(logo, sx, sy, sw, sh, 72, 70, sw * scale, sh * scale);
+    const bounds = logoBounds(logo);
+    const [sx, sy, sw, sh] = bounds;
+    const scale = Math.min(500 / sw, 112 / sh);
+    if (!bounds.transparent) { ctx.fillStyle = '#ffffff'; ctx.fillRect(60, 70, sw * scale + 24, sh * scale + 24); }
+    ctx.drawImage(logo, sx, sy, sw, sh, 72, 82, sw * scale, sh * scale);
   } else textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700, false, 'Libre Baskerville');
   textBlock(ctx, slide.eyebrow.toUpperCase(), 72, 258, 936, 72, 23, settings.accent, 600);
   const headline = (x, y, width, height, centered = false) => textBlock(ctx, settings.template === 'tip' ? slide.headline.toUpperCase() : slide.headline, x, y, width, height, settings.fontSize, ink, settings.template === 'tip' ? 800 : settings.template === 'quote' ? 400 : 700, centered, settings.template === 'tip' ? 'Montserrat' : 'Libre Baskerville', slide.highlight || '', settings.accent);
   if (settings.template === 'quote') {
     headline(100, 415, 880, 430, true);
-    textBlock(ctx, slide.body, 100, 910, 880, 245, 34, muted, 400, true);
+    textBlock(ctx, slide.body, 100, 910, 880, 245, 38, ink, 400, true);
   } else if (settings.template === 'tip') {
     headline(72, 345, 936, 320);
     ctx.fillStyle = settings.accent; ctx.fillRect(72, 720, 936, 8);
-    textBlock(ctx, slide.body, 72, 790, 936, 350, 38, muted);
+    textBlock(ctx, slide.body, 72, 790, 936, 350, 38, ink);
   } else {
     const titleHeight = headline(72, 355, 936, 430);
     ctx.fillStyle = settings.accent; ctx.fillRect(72, 405 + titleHeight, 110, 5);
-    textBlock(ctx, slide.body, 72, Math.max(820, 455 + titleHeight), 936, 260, 34, muted);
+    textBlock(ctx, slide.body, 72, Math.max(790, 455 + titleHeight), 936, 320, 38, ink);
   }
   textBlock(ctx, slide.footer, 72, 1220, 805, 75, 21, ink, 600);
   textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 925, 1220, 100, 40, 21, muted);
