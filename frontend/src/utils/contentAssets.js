@@ -6,6 +6,7 @@ import '@fontsource/montserrat/800.css';
 
 let fontsPromise;
 let backgroundPromise;
+let lightLogoPromise;
 export function loadContentAssets() {
   if (!fontsPromise) fontsPromise = Promise.all([
     document.fonts.load('400 40px "Libre Baskerville"', 'Gestão contábil'),
@@ -20,5 +21,11 @@ export function loadContentAssets() {
     image.onerror = () => { backgroundPromise = null; reject(new Error('Não foi possível carregar o fundo das artes.')); };
     image.src = `${import.meta.env.BASE_URL}content/organic-navy-v1.png`;
   });
-  return Promise.all([fontsPromise, backgroundPromise]).then(([, background]) => background);
+  if (!lightLogoPromise) lightLogoPromise = new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => { lightLogoPromise = null; reject(new Error('Não foi possível carregar a marca para fundo branco.')); };
+    image.src = `${import.meta.env.BASE_URL}content/young-logo-official-v2.png`;
+  });
+  return Promise.all([fontsPromise, backgroundPromise, lightLogoPromise]).then(([, background, lightLogo]) => ({ background, lightLogo }));
 }

@@ -56,3 +56,11 @@ test('staff can delete their own saved content', async () => {
   assert.equal((await call(`/${item.id}`, { method: 'DELETE' })).status, 204);
   assert.equal((await (await call()).json()).length, 0);
 });
+test('white editorial layout and company profile persist in saved projects', async () => {
+  const settings = { ...project.settings, background: 'white', profileHandle: '@youngcontabil' };
+  const response = await call('', { method: 'POST', body: { ...project, settings } });
+  assert.equal(response.status, 201);
+  const saved = await response.json();
+  assert.equal(saved.settings.background, 'white');
+  assert.equal(saved.settings.profileHandle, '@youngcontabil');
+});

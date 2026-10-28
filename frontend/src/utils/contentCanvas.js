@@ -1,5 +1,5 @@
 export const DEFAULT_CONTENT = {
-  template: 'cover', accent: '#63b0ff', fontSize: 82, caption: '', background: 'organic',
+  template: 'cover', accent: '#63b0ff', fontSize: 82, caption: '', background: 'organic', profileHandle: '@youngcontabil',
   slides: [{ eyebrow: 'GESTÃO DO SEU NEGÓCIO', headline: 'Clareza para cuidar melhor da sua empresa', highlight: 'empresa', body: 'Organize as informações do seu negócio e conte com uma contabilidade próxima.', footer: 'SALVE PARA CONSULTAR' }],
 };
 export const emptySlide = () => ({ eyebrow: '', headline: 'Novo slide', highlight: '', body: '', footer: '' });
@@ -20,7 +20,7 @@ export function wrapLines(ctx, text, width) {
   return lines;
 }
 
-function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, centered = false, family = 'Montserrat', highlight = '', accent = color) {
+function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, centered = false, family = 'Montserrat', highlight = '', accent = color, underline = false) {
   let lines;
   do {
     ctx.font = `${weight} ${size}px "${family}"`;
@@ -37,6 +37,7 @@ function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, ce
     for (const token of line.match(/\s+|\S+/g) || []) {
       ctx.fillStyle = highlighted.has(normalize(token)) ? accent : color;
       ctx.fillText(token, at, y + index * size * 1.2);
+      if (underline) ctx.fillRect(at, y + index * size * 1.2 + size * 1.08, ctx.measureText(token).width, 2);
       at += ctx.measureText(token).width;
     }
   });
@@ -66,12 +67,29 @@ function logoBounds(image) {
   return bounds;
 }
 
-export function drawContent(canvas, settings, index, firmName, logo, background) {
+export function drawContent(canvas, settings, index, firmName, logo, background, lightLogo) {
   const ctx = canvas.getContext('2d');
   ctx.setTransform(canvas.width / 1080, 0, 0, canvas.height / 1350, 0, 0);
   ctx.clearRect(0, 0, 1080, 1350);
   ctx.textBaseline = 'top';
   const slide = settings.slides[index] || emptySlide();
+  if (settings.background === 'white') {
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1080, 1350);
+    if (lightLogo?.naturalWidth) {
+      const [sx, sy, sw, sh] = logoBounds(lightLogo);
+      ctx.drawImage(lightLogo, sx, sy, sw * 0.22, sh, 100, 180, 100, 100);
+    }
+    textBlock(ctx, firmName || 'Young Contábil', 225, 190, 735, 50, 34, '#17191c', 800);
+    textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 225, 240, 735, 45, 29, '#72777c', 400);
+    const accent = settings.accent === '#63b0ff' ? '#0965ba' : settings.accent;
+    if (slide.eyebrow) textBlock(ctx, slide.eyebrow.toUpperCase(), 100, 335, 880, 45, 22, '#66717b', 600);
+    const titleHeight = textBlock(ctx, slide.headline, 100, 410, 880, 300, Math.min(settings.fontSize, 68), '#17191c', 800, false, 'Montserrat', slide.highlight || '', accent);
+    const bodyY = Math.max(620, 455 + titleHeight);
+    textBlock(ctx, slide.body, 100, bodyY, 880, 1100 - bodyY, 43, '#202327', 400);
+    textBlock(ctx, slide.footer, 100, 1160, 790, 90, 30, '#17191c', 600, false, 'Montserrat', '', '#17191c', true);
+    if (settings.slides.length > 1) textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 910, 1245, 100, 40, 20, '#72777c');
+    return;
+  }
   const ink = '#ffffff';
   const muted = '#e4effb';
   ctx.fillStyle = '#051d40'; ctx.fillRect(0, 0, 1080, 1350);

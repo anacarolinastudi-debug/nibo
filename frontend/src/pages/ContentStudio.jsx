@@ -20,7 +20,7 @@ function ArtCanvas({ settings, index = 0, firm, logo, small = false, canvasRef }
   const ref = canvasRef || ownRef;
   useEffect(() => {
     let active = true;
-    loadContentAssets().then((background) => { if (active && ref.current) drawContent(ref.current, settings, index, firm?.name, logo, background); }).catch(() => {});
+    loadContentAssets().then(({ background, lightLogo }) => { if (active && ref.current) drawContent(ref.current, settings, index, firm?.name, logo, background, lightLogo); }).catch(() => {});
     return () => { active = false; };
   }, [settings, index, firm?.name, logo]);
   return <canvas ref={ref} width={small ? 216 : 1080} height={small ? 270 : 1350} aria-label={`Arte do slide ${index + 1}`} className="block h-auto w-full aspect-[4/5]" />;
@@ -150,7 +150,7 @@ export default function ContentStudio() {
     if ((studio.logoUrl || firm?.logoUrl) && !logo) { setError('Aguarde o carregamento da logo do escritório antes de exportar.'); return; }
     setBusy(true); setError('');
     try {
-      const background = await loadContentAssets();
+      const { background, lightLogo } = await loadContentAssets();
       const name = record.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() || 'conteudo';
       let blob;
       if (all && settings.slides.length > 1) {
@@ -158,11 +158,11 @@ export default function ContentStudio() {
         const zip = new JSZip();
         for (let index = 0; index < settings.slides.length; index += 1) {
           const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 1350;
-          drawContent(canvas, settings, index, firm?.name, logo, background);
+          drawContent(canvas, settings, index, firm?.name, logo, background, lightLogo);
           zip.file(`${name}-${String(index + 1).padStart(2, '0')}.png`, await new Promise((resolve) => canvas.toBlob(resolve, 'image/png')));
         }
         blob = await zip.generateAsync({ type: 'blob' });
-      } else { drawContent(canvasRef.current, settings, current, firm?.name, logo, background); blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png')); }
+      } else { drawContent(canvasRef.current, settings, current, firm?.name, logo, background, lightLogo); blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png')); }
       if (!blob) throw new Error('Imagem indisponivel');
       const url = URL.createObjectURL(blob); const link = document.createElement('a');
       link.href = url; link.download = all && settings.slides.length > 1 ? `${name}.zip` : `${name}-slide-${current + 1}.png`; link.click();
@@ -196,7 +196,8 @@ export default function ContentStudio() {
               <div className="flex gap-1 rounded border bg-white p-1">{[[1, 'Post único'], [5, 'Carrossel']].map(([count, label]) => <button key={count} onClick={() => resizeSlides(count)} aria-pressed={count === 1 ? settings.slides.length === 1 : settings.slides.length > 1} className={`flex-1 rounded px-2 py-2 text-sm ${(count === 1) === (settings.slides.length === 1) ? 'bg-[#dce5ef] font-semibold' : ''}`}>{label}</button>)}</div>
               {settings.slides.length > 1 && <Field label="Quantidade de slides"><input type="number" min={2} max={10} value={settings.slides.length} onChange={(event) => { const count = Number(event.target.value); if (count >= 2 && count <= 10) resizeSlides(count); }} className={inputClass} /></Field>}
               <Field label="Modelo visual"><select value={settings.template} onChange={(event) => setSettings({ template: event.target.value })} className={inputClass}>{templates.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-              <Field label="Fundo"><select value={settings.background || 'organic'} onChange={(event) => setSettings({ background: event.target.value })} className={inputClass}><option value="organic">Orgânico azul</option><option value="plain">Azul liso</option></select></Field>
+              <Field label="Fundo"><select value={settings.background || 'organic'} onChange={(event) => setSettings({ background: event.target.value })} className={inputClass}><option value="organic">Orgânico azul</option><option value="plain">Azul liso</option><option value="white">Branco editorial</option></select></Field>
+              {settings.background === 'white' && <Field label="Perfil da empresa"><input maxLength={100} value={settings.profileHandle ?? '@youngcontabil'} onChange={(event) => setSettings({ profileHandle: event.target.value })} className={inputClass} /></Field>}
               <button onClick={() => setAiOpen(true)} className="inline-flex w-full items-center justify-center gap-2 rounded bg-[#2693d2] px-3 py-2 text-sm text-white"><Sparkles size={16} /> Gerar com IA</button>
               {user?.role === 'ADMIN' && <div className="flex flex-wrap gap-3 text-xs text-[#16829b]"><button onClick={() => setConnectionOpen(true)} className="inline-flex items-center gap-1"><KeyRound size={14} /> Configurar IA</button><button onClick={() => logoFileRef.current?.click()} className="inline-flex items-center gap-1"><Upload size={14} /> Atualizar logo</button><input ref={logoFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/bmp" className="hidden" onChange={uploadStudioLogo} /></div>}
               <div className="border-t pt-4"><b className="text-sm">Slide {current + 1}</b></div>
