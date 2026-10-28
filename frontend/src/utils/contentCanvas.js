@@ -106,13 +106,13 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     veil.addColorStop(1, 'rgba(3, 20, 43, 0.4)');
     ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1350);
   }
-  if (logo?.naturalWidth) {
+  if (settings.background !== 'plain' && logo?.naturalWidth) {
     const bounds = logoBounds(logo);
     const [sx, sy, sw, sh] = bounds;
     const scale = Math.min(500 / sw, 112 / sh);
     if (!bounds.transparent) { ctx.fillStyle = '#ffffff'; ctx.fillRect(60, 70, sw * scale + 24, sh * scale + 24); }
     ctx.drawImage(logo, sx, sy, sw, sh, 72, 82, sw * scale, sh * scale);
-  } else textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700, false, 'Libre Baskerville');
+  } else if (settings.background !== 'plain') textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700, false, 'Libre Baskerville');
   textBlock(ctx, slide.eyebrow.toUpperCase(), 72, 258, 936, 72, 23, settings.accent, 600);
   const headline = (x, y, width, height, centered = false) => textBlock(ctx, settings.template === 'tip' ? slide.headline.toUpperCase() : slide.headline, x, y, width, height, settings.fontSize, ink, settings.template === 'tip' ? 800 : settings.template === 'quote' ? 400 : 700, centered, settings.template === 'tip' ? 'Montserrat' : 'Libre Baskerville', slide.highlight || '', settings.accent);
   if (settings.template === 'quote') {
@@ -127,8 +127,12 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     ctx.fillStyle = settings.accent; ctx.fillRect(72, 405 + titleHeight, 110, 5);
     textBlock(ctx, slide.body, 72, Math.max(790, 455 + titleHeight), 936, 320, 38, ink);
   }
-  textBlock(ctx, slide.footer, 72, 1220, 805, 75, 21, ink, 600);
-  textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 925, 1220, 100, 40, 21, muted);
+  if (settings.background === 'plain') {
+    textBlock(ctx, '@youngcontabil', 72, 1250, 936, 50, 28, ink, 400, true);
+  } else {
+    textBlock(ctx, slide.footer, 72, 1220, 805, 75, 21, ink, 600);
+    textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 925, 1220, 100, 40, 21, muted);
+  }
 }
 
 export function guidedDraft(topic, audience, count) {

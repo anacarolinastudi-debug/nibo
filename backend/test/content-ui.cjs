@@ -114,6 +114,11 @@ async function main() {
     const whiteDownload = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Baixar PNG', exact: true }).click();
     assert.ok((await whiteDownload).suggestedFilename().endsWith('.png'));
+    await page.getByLabel(/^Fundo/).selectOption('plain');
+    await page.getByLabel(/^Modelo visual/).selectOption('quote');
+    await page.waitForFunction(() => { const c = document.querySelector('canvas'); return c.getContext('2d').getImageData(0, 0, 1, 1).data[0] === 5; });
+    const plainData = await page.locator('canvas').first().evaluate((canvas) => canvas.toDataURL().split(',')[1]);
+    fs.writeFileSync(path.join(output, 'plain-blue.png'), Buffer.from(plainData, 'base64'));
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });
