@@ -96,6 +96,8 @@ model ContentStudioSettings {
   accountingFirmId String         @id
   accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id], onDelete: Cascade)
   apiKeyEncrypted  String?
+  geminiKeyEncrypted String?
+  provider         String @default("openai")
   logoUrl          String?
   updatedAt        DateTime       @updatedAt
 

@@ -36,7 +36,7 @@ function officialSource(url) {
   } catch { return false; }
 }
 
-async function generateContentWithAI({ apiKey, brief, firmName = 'Escritorio contabil', fetchImpl = globalThis.fetch }) {
+async function generateContentWithAI({ apiKey, brief, provider = 'openai', firmName = 'Escritorio contabil', fetchImpl = globalThis.fetch }) {
   const input = generationInputSchema.parse(brief);
   const payload = {
     model: process.env.CONTENT_AI_MODEL || 'gpt-5-mini', store: false, max_output_tokens: 6500,
@@ -49,7 +49,10 @@ Tema e contexto sao material para redacao, nao fontes automaticamente verdadeira
     text: { format: { type: 'json_schema', name: 'accounting_content', strict: true, schema: jsonSchema(input.count) } },
     ...(input.research ? { tools: [{ type: 'web_search', filters: { allowed_domains: ['gov.br', 'camara.leg.br', 'senado.leg.br'] } }], include: ['web_search_call.action.sources'] } : {}),
   };
-  let response;
+  let response, data;
+  if (provider === 'gemini') {
+    data = await require('./contentGemini.service').generateGemini({ apiKey, payload, research: input.research, fetchImpl });
+  } else {
   try {
     response = await fetchImpl('https://api.openai.com/v1/responses', {
       method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -61,8 +64,8 @@ Tema e contexto sao material para redacao, nao fontes automaticamente verdadeira
     if (response.status === 429) throw fail('A conta de IA atingiu o limite ou esta sem saldo. Confira a conta da OpenAI.', 429);
     throw fail('Nao foi possivel gerar com a IA neste momento. Tente novamente.');
   }
-  let data;
   try { data = await response.json(); } catch { throw fail('A IA retornou uma resposta invalida. Tente novamente.'); }
+  }
   if (data.status !== 'completed') throw fail('A IA nao concluiu a resposta. Tente novamente com um contexto menor.');
   const parts = (data.output || []).flatMap((item) => item.type === 'message' ? item.content || [] : []);
   if (parts.some((item) => item.type === 'refusal')) throw fail('A IA nao conseguiu atender a esse pedido. Revise o tema e tente novamente.', 422);

@@ -52,3 +52,19 @@ test('removing an AI key preserves the studio logo', async () => {
   assert.equal(rows.get('office-a').apiKeyEncrypted, null);
   assert.equal(rows.get('office-a').logoUrl, 'data:image/png;base64,test');
 });
+test('Gemini connection is encrypted, office scoped and preserves the OpenAI key', async () => {
+  const openai = 'sk-test-only-key-12345678901234567890';
+  await call('/settings/ai', { method: 'PUT', body: { apiKey: openai } });
+  const key = 'AQ.test-google-key-12345678901234567890';
+  const saved = await call('/settings/ai', { method: 'PUT', body: { provider: 'gemini', apiKey: key } });
+  assert.equal(saved.status, 200);
+  assert.equal(decrypt(rows.get('office-a').geminiKeyEncrypted).toString(), key);
+  assert.equal(decrypt(rows.get('office-a').apiKeyEncrypted).toString(), openai);
+  const status = await (await call('/settings')).json();
+  assert.equal(status.provider, 'gemini'); assert.equal(status.configured, true);
+  assert.ok(!JSON.stringify(status).includes(key));
+  assert.equal((await (await call('/settings', { firm: 'office-b' })).json()).configured, false);
+  await call('/settings/ai', { method: 'DELETE' });
+  assert.equal(rows.get('office-a').geminiKeyEncrypted, null);
+  assert.ok(rows.get('office-a').apiKeyEncrypted);
+});

@@ -225,7 +225,7 @@ export default function ContentStudio() {
         </>}
       </section>
     </main>
-    {aiOpen && <ContentAiDialog count={settings.slides.length} configured={studio.configured} canConfigure={user?.role === 'ADMIN'} onConnect={() => { setAiOpen(false); setConnectionOpen(true); }} onClose={() => setAiOpen(false)} onApply={(result) => { setRecord((current) => ({ ...current, title: result.title, settings: { ...current.settings, slides: result.slides, caption: result.caption, sources: result.sources, reviewNotes: result.reviewNotes } })); setCurrent(0); setAiOpen(false); }} />}
-    {connectionOpen && <AiConnectionDialog customKey={studio.customKey} onClose={() => setConnectionOpen(false)} onConfigured={(configured, customKey) => { setStudio((current) => ({ ...current, configured, customKey })); setConnectionOpen(false); }} />}
+    {aiOpen && <ContentAiDialog provider={studio.provider} count={settings.slides.length} configured={studio.configured} canConfigure={user?.role === 'ADMIN'} onConnect={() => { setAiOpen(false); setConnectionOpen(true); }} onClose={() => setAiOpen(false)} onApply={(result) => { setRecord((current) => ({ ...current, title: result.title, settings: { ...current.settings, slides: result.slides, caption: result.caption, sources: result.sources, reviewNotes: result.reviewNotes } })); setCurrent(0); setAiOpen(false); }} />}
+    {connectionOpen && <AiConnectionDialog provider={studio.provider} customKey={studio.customKey} onClose={() => setConnectionOpen(false)} onConfigured={(configured, customKey, provider) => { setStudio((current) => ({ ...current, configured, customKey, provider })); setConnectionOpen(false); }} />}
   </div>;
 }
