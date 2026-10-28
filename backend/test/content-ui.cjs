@@ -116,9 +116,21 @@ async function main() {
     assert.ok((await whiteDownload).suggestedFilename().endsWith('.png'));
     await page.getByLabel(/^Fundo/).selectOption('plain');
     await page.getByLabel(/^Modelo visual/).selectOption('quote');
+    await page.getByLabel(/^Título do slide/).fill('Contabilidade com clareza, estratégia e organização para quem quer crescer com segurança.');
+    await page.getByLabel(/^Texto de apoio/).fill('');
     await page.waitForFunction(() => { const c = document.querySelector('canvas'); return c.getContext('2d').getImageData(0, 0, 1, 1).data[0] === 5; });
     const plainData = await page.locator('canvas').first().evaluate((canvas) => canvas.toDataURL().split(',')[1]);
     fs.writeFileSync(path.join(output, 'plain-blue.png'), Buffer.from(plainData, 'base64'));
+    const center = await page.locator('canvas').first().evaluate((canvas) => {
+      const { data } = canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+      let top = canvas.height, bottom = 0, left = canvas.width, right = 0;
+      for (let y = 300; y < 1100; y++) for (let x = 80; x < 1000; x++) {
+        const i = (y * canvas.width + x) * 4;
+        if (data[i] > 180 && data[i + 1] > 180 && data[i + 2] > 180) { top = Math.min(top, y); bottom = Math.max(bottom, y); left = Math.min(left, x); right = Math.max(right, x); }
+      }
+      return { x: (left + right) / 2, y: (top + bottom) / 2 };
+    });
+    assert.ok(Math.abs(center.x - 540) < 12 && Math.abs(center.y - 675) < 30, 'plain-blue text must be centered on both axes');
     await page.setViewportSize({ width: 390, height: 844 });
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });

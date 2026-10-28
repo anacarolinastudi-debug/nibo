@@ -20,7 +20,7 @@ export function wrapLines(ctx, text, width) {
   return lines;
 }
 
-function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, centered = false, family = 'Montserrat', highlight = '', accent = color, underline = false) {
+function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, centered = false, family = 'Montserrat', highlight = '', accent = color, underline = false, verticallyCentered = false) {
   let lines;
   do {
     ctx.font = `${weight} ${size}px "${family}"`;
@@ -28,6 +28,7 @@ function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, ce
     if (lines.length * size * 1.2 <= height || size <= 16) break;
     size -= 2;
   } while (size > 0);
+  if (verticallyCentered) y += (height - lines.length * size * 1.2) / 2;
   ctx.fillStyle = color;
   ctx.textAlign = 'left';
   const normalize = (word) => word.toLocaleLowerCase('pt-BR').replace(/[^\p{L}\p{N}]/gu, '');
@@ -73,6 +74,13 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
   ctx.clearRect(0, 0, 1080, 1350);
   ctx.textBaseline = 'top';
   const slide = settings.slides[index] || emptySlide();
+  if (settings.background === 'plain') {
+    ctx.fillStyle = '#051d40'; ctx.fillRect(0, 0, 1080, 1350);
+    const message = [slide.headline, slide.body].filter((text) => text?.trim()).join('\n\n');
+    textBlock(ctx, message, 108, 335, 864, 680, Math.min(settings.fontSize, 62), '#ffffff', 400, true, 'Libre Baskerville', '', '#ffffff', false, true);
+    textBlock(ctx, '@youngcontabil', 72, 1250, 936, 50, 28, '#ffffff', 400, true);
+    return;
+  }
   if (settings.background === 'white') {
     ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1080, 1350);
     if (lightLogo?.naturalWidth) {
@@ -93,7 +101,7 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
   const ink = '#ffffff';
   const muted = '#e4effb';
   ctx.fillStyle = '#051d40'; ctx.fillRect(0, 0, 1080, 1350);
-  if (background && settings.background !== 'plain') {
+  if (background) {
     const scale = Math.max(1080 / background.naturalWidth, 1350 / background.naturalHeight);
     const width = background.naturalWidth * scale, height = background.naturalHeight * scale;
     ctx.drawImage(background, (1080 - width) / 2, (1350 - height) / 2, width, height);
@@ -106,13 +114,13 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     veil.addColorStop(1, 'rgba(3, 20, 43, 0.4)');
     ctx.fillStyle = veil; ctx.fillRect(0, 0, 1080, 1350);
   }
-  if (settings.background !== 'plain' && logo?.naturalWidth) {
+  if (logo?.naturalWidth) {
     const bounds = logoBounds(logo);
     const [sx, sy, sw, sh] = bounds;
     const scale = Math.min(500 / sw, 112 / sh);
     if (!bounds.transparent) { ctx.fillStyle = '#ffffff'; ctx.fillRect(60, 70, sw * scale + 24, sh * scale + 24); }
     ctx.drawImage(logo, sx, sy, sw, sh, 72, 82, sw * scale, sh * scale);
-  } else if (settings.background !== 'plain') textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700, false, 'Libre Baskerville');
+  } else textBlock(ctx, firmName || 'Seu escritório', 72, 82, 690, 110, 38, ink, 700, false, 'Libre Baskerville');
   textBlock(ctx, slide.eyebrow.toUpperCase(), 72, 258, 936, 72, 23, settings.accent, 600);
   const headline = (x, y, width, height, centered = false) => textBlock(ctx, settings.template === 'tip' ? slide.headline.toUpperCase() : slide.headline, x, y, width, height, settings.fontSize, ink, settings.template === 'tip' ? 800 : settings.template === 'quote' ? 400 : 700, centered, settings.template === 'tip' ? 'Montserrat' : 'Libre Baskerville', slide.highlight || '', settings.accent);
   if (settings.template === 'quote') {
@@ -127,12 +135,8 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     ctx.fillStyle = settings.accent; ctx.fillRect(72, 405 + titleHeight, 110, 5);
     textBlock(ctx, slide.body, 72, Math.max(790, 455 + titleHeight), 936, 320, 38, ink);
   }
-  if (settings.background === 'plain') {
-    textBlock(ctx, '@youngcontabil', 72, 1250, 936, 50, 28, ink, 400, true);
-  } else {
-    textBlock(ctx, slide.footer, 72, 1220, 805, 75, 21, ink, 600);
-    textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 925, 1220, 100, 40, 21, muted);
-  }
+  textBlock(ctx, slide.footer, 72, 1220, 805, 75, 21, ink, 600);
+  textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 925, 1220, 100, 40, 21, muted);
 }
 
 export function guidedDraft(topic, audience, count) {

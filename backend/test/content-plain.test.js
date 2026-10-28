@@ -6,8 +6,8 @@ test('plain blue omits branding and page counts and centers the Instagram footer
   const source = fs.readFileSync(path.resolve(__dirname, '../../frontend/src/utils/contentCanvas.js'), 'utf8');
   const { drawContent } = await import('data:text/javascript;base64,' + Buffer.from(source).toString('base64'));
   const texts = [], images = [];
-  const ctx = { setTransform() {}, clearRect() {}, fillRect() {}, measureText: (text) => ({ width: text.length * 12 }), fillText: (text, x, y) => texts.push({ text, x, y }), drawImage: (...args) => images.push(args) };
-  const slide = { eyebrow: '', headline: 'Uma frase para sua empresa', body: '', footer: 'RODAPE ANTIGO' };
+  const ctx = { setTransform() {}, clearRect() {}, fillRect() {}, measureText: (text) => ({ width: text.length * 12 }), fillText(text, x, y) { texts.push({ text, x, y, font: this.font, color: this.fillStyle }); }, drawImage: (...args) => images.push(args) };
+  const slide = { eyebrow: 'ETIQUETA ANTIGA', headline: 'Uma frase para sua empresa', highlight: 'empresa', body: '', footer: 'RODAPE ANTIGO' };
   drawContent({ width: 1080, height: 1350, getContext: () => ctx }, { background: 'plain', template: 'quote', accent: '#63b0ff', fontSize: 82, slides: [slide, slide] }, 1, 'Young Contabil', { naturalWidth: 100 }, null);
   assert.equal(images.length, 0);
   assert.ok(!texts.some(({ text }) => text.includes('ANTIGO') || text.includes('/') || text.includes('Young')));
@@ -15,4 +15,9 @@ test('plain blue omits branding and page counts and centers the Instagram footer
   assert.ok(footer);
   assert.equal(footer.x + '@youngcontabil'.length * 12 / 2, 540);
   assert.equal(footer.y, 1250);
+  const message = texts.filter(({ text }) => text !== '@youngcontabil');
+  assert.equal(message.map(({ text }) => text).join(''), slide.headline);
+  assert.equal(message[0].x + slide.headline.length * 12 / 2, 540);
+  assert.ok(Math.abs(message[0].y + 62 * 1.2 / 2 - 675) < 0.01);
+  assert.ok(message.every(({ font, color }) => font === '400 62px "Libre Baskerville"' && color === '#ffffff'));
 });
