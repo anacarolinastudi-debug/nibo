@@ -27,13 +27,17 @@ nao aceita URLs nem opera dados empresariais. Status publico e limitado.
 HTTPS com hosts exatos, redirects restritos, 18 segundos por fonte e tres
 consultas concorrentes. Limite de 2 MiB; excecao explicita para a listagem
 SharePoint de PE (8 MiB). Sem cookies, credenciais ou desativacao de TLS.
+O HTML passa primeiro por um leitor incremental que descarta scripts e dados
+de formularios, limitando a representacao visivel a 600 mil caracteres antes
+de criar a arvore de leitura. A listagem real de PE foi validada com heap
+limitado a 128 MiB (30 itens, aproximadamente 41 MiB utilizados).
 Historico no PostgreSQL, marcas por escritorio/usuario/artigo, contas inativas
 e clientes bloqueados. RLS habilitado nas quatro tabelas; API autenticada.
 Backup existente exporta todas as tabelas publicas, incluindo essas novas.
 
 Testes: accounting-news-parser.test.js, accounting-news-service.test.js,
 accounting-news-integration.cjs (somente banco local) e updates-ui.cjs.
-Auditoria npm: sem alertas nas duas bibliotecas novas; alertas preexistentes
+Auditoria npm: sem alertas nas bibliotecas novas; alertas preexistentes
 em Express/transitivas, Zod, nodemailer e node-forge nao foram misturados com
 uma atualizacao ampla nesta entrega. Nao constitui certificacao de seguranca.
 

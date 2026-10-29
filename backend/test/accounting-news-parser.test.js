@@ -35,3 +35,9 @@ test('article headers are preserved and Portuguese listing dates are recognized'
   assert.equal(items.length, 1);
   assert.equal(items[0].publishedAt.toISOString(), '2026-10-28T16:00:00.000Z');
 });
+test('large hidden form payload is discarded before building the document tree', () => {
+  const html = `<html><head><script>${'x'.repeat(1000000)}</script></head><body><form><input type="hidden" value="${'a'.repeat(4000000)}"><main><article><h2><a href="${source.url}nova-publicacao-oficial">Nova publicacao oficial para contribuintes</a></h2><time datetime="2026-10-29"></time></article></main></form></body></html>`;
+  const items = parsePage(html, { ...source, maxBytes: 8 * 1024 * 1024 }, now);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].publishedAt.toISOString(), '2026-10-29T16:00:00.000Z');
+});

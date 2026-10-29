@@ -1,5 +1,6 @@
 const cheerio = require('cheerio');
 const { XMLParser } = require('fast-xml-parser');
+const { Parser } = require('htmlparser2');
 const MAX_BYTES = 2 * 1024 * 1024;
 const AREAS = ['FISCAL', 'TRIBUTARIO', 'TRABALHISTA', 'PREVIDENCIARIO', 'CONTABIL', 'SPED', 'REFORMA_TRIBUTARIA', 'SIMPLES_NACIONAL', 'GERAL'];
 const text = (value, max = 500) => {
@@ -74,6 +75,25 @@ function makeArticle(item, source, now) {
   return { url, title, summary: text(item.summary || '', 420), publishedAt: parseDate(item.date, now), kind: source.kind || 'NEWS', area: classifyArea(title + ' ' + text(item.summary || ''), source.area), scope: source.scope, ufs: source.uf ? [source.uf] : [] };
 }
 function unique(items) { const map = new Map(); for (const item of items.filter(Boolean)) if (!map.has(item.url)) map.set(item.url, item); return [...map.values()].slice(0, 35); }
+function compactHtml(input) {
+  const output = []; let size = 0, suppressed = 0;
+  const discarded = new Set(['head', 'script', 'style', 'noscript', 'svg', 'iframe']);
+  const retained = new Set(['main', 'article', 'header', 'footer', 'nav', 'aside', 'section', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'a', 'time', 'p', 'span', 'li', 'ul', 'ol', 'table', 'tbody', 'tr', 'td', 'br']);
+  const escape = (value) => value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  function append(value) { size += value.length; if (size > 600000) throw new Error('Conteudo visivel acima do limite permitido.'); output.push(value); }
+  const parser = new Parser({
+    onopentag(name, attrs) {
+      if (discarded.has(name)) suppressed++;
+      if (suppressed || !retained.has(name)) return;
+      const kept = Object.entries(attrs).filter(([key]) => ['id', 'class', 'href', 'title', 'datetime'].includes(key)).map(([key, value]) => ` ${key}="${escape(value.slice(0, key === 'href' ? 2048 : 350))}"`).join('');
+      append(`<${name}${kept}>`);
+    },
+    ontext(value) { if (!suppressed) append(escape(value)); },
+    onclosetag(name) { if (discarded.has(name)) suppressed = Math.max(0, suppressed - 1); else if (!suppressed && retained.has(name)) append(`</${name}>`); },
+  }, { decodeEntities: true });
+  parser.write(input); parser.end();
+  return output.join('');
+}
 function parseFeed(input, source, now = new Date()) {
   bounded(input);
   if (/<!DOCTYPE|<!ENTITY/i.test(input)) throw new Error('Declaracoes de entidades nao sao permitidas.');
@@ -92,7 +112,7 @@ function parseFeed(input, source, now = new Date()) {
 function parsePage(input, source, now = new Date()) {
   bounded(input, source.maxBytes || MAX_BYTES);
   if (/checking your browser|verify you are human|just a moment\.\.\./i.test(input.slice(0, 20000))) throw new Error('A fonte exige verificacao de acesso.');
-  const $ = cheerio.load(input); $('script,style,nav,body > header,#portal-header,footer,aside,noscript').remove();
+  const $ = cheerio.load(compactHtml(input)); $('script,style,nav,body > header,#portal-header,footer,aside,noscript').remove();
   const root = $('#content-core,main,#main-content,.main-content').first();
   const articles = [];
   (root.length ? root : $('body')).find('a[href]').each((index, element) => {
