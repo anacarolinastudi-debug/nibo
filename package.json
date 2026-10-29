@@ -1,0 +1,12 @@
+{
+  "name": "young-contabil-maintenance",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/setup.cjs",
+    "setup:check": "node scripts/setup.cjs --check",
+    "dev:api": "node scripts/dev-api.cjs",
+    "dev:web": "npm --prefix frontend run dev -- --host 127.0.0.1 --port 5176",
+    "test:maintenance": "node --test scripts/test/*.test.cjs"
+  },
+  "engines": { "node": ">=22.19" }
+}

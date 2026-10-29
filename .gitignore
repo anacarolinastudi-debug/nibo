@@ -9,6 +9,10 @@ frontend/dist/
 build/
 uploads/
 backend/uploads/
+.local/
+.env.development.local
+*.youngbackup*
+*.dpapi
 *.zip
 *.log
 .DS_Store

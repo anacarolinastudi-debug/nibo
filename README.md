@@ -41,6 +41,10 @@ desses é prioridade e eu continuo.
 
 ## Passo a passo para rodar na sua máquina
 
+### Setup Windows e backup diario
+
+Use `npm run setup` para preparar um ambiente local isolado, sem alterar producao. O procedimento atualizado e a operacao do backup criptografado estao em [docs/BACKUP-E-SETUP.md](docs/BACKUP-E-SETUP.md). Consulte esse guia antes das instrucoes manuais antigas abaixo.
+
 ### 1. Pré-requisitos
 Instale, se ainda não tiver:
 - [Node.js](https://nodejs.org) versão 18 ou superior

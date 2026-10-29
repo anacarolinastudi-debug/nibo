@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: process.env.APP_ENV_FILE || '.env' });
 require('express-async-errors'); // permite usar async/await nas rotas sem try/catch repetitivo
 
 const express = require('express');
@@ -72,7 +72,7 @@ app.use('/api/content', require('./routes/content.routes'));
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+app.listen(PORT, process.env.HOST, () => {
   console.log(`API rodando em http://localhost:${PORT}`);
   startEcacScheduler();
 });

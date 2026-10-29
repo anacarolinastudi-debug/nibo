@@ -1,0 +1,13 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { assertLocalDatabase } = require('./setup.cjs');
+const root = path.resolve(__dirname, '..');
+const file = path.join(root, 'backend/.env.development.local');
+if (!fs.existsSync(file)) throw new Error('Run npm run setup first.');
+const env = require('../backend/node_modules/dotenv').parse(fs.readFileSync(file));
+assertLocalDatabase(env.DATABASE_URL);
+Object.assign(process.env, env);
+process.env.APP_ENV_FILE = file;
+process.env.HOST = '127.0.0.1';
+process.chdir(path.join(root, 'backend'));
+require('../backend/src/server');
