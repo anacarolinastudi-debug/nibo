@@ -1,0 +1,23 @@
+name: Atualizacao contabil diaria
+on:
+  schedule:
+    - cron: '0 11,12 * * *'
+  workflow_dispatch:
+permissions: {}
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Atualizar fontes oficiais
+        shell: bash
+        run: |
+          curl --fail --silent --show-error --retry 4 --retry-delay 15 --max-time 120 -X POST https://nibo-clone-api.onrender.com/api/updates/daily
+          for attempt in $(seq 1 36); do
+            sleep 15
+            result=$(curl --fail --silent --show-error --retry 2 --max-time 90 https://nibo-clone-api.onrender.com/api/updates/daily)
+            state=$(printf '%s' "$result" | jq -r '.state')
+            if [ "$state" = "COMPLETED" ] || [ "$state" = "PARTIAL" ]; then exit 0; fi
+            if [ "$state" = "FAILED" ]; then echo "A coleta falhou; confira o painel de fontes."; exit 1; fi
+          done
+          echo "A coleta nao terminou no prazo."; exit 1

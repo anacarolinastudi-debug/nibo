@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { BadgeDollarSign, ClipboardCheck, ClipboardList, Files, LayoutDashboard, ReceiptText, Users, WalletCards } from 'lucide-react';
+import { BadgeDollarSign, ClipboardCheck, ClipboardList, Files, LayoutDashboard, Newspaper, ReceiptText, Users, WalletCards } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Images } from 'lucide-react';
 
@@ -10,6 +10,7 @@ const links = [
   { to: '/clientes', label: 'Clientes', icon: Users },
   { to: '/financeiro', label: 'Financeiro', icon: WalletCards },
   { to: '/conteudos', label: 'Conteúdos', icon: Images, staffOnly: true },
+  { to: '/atualizacoes', label: 'Atualizacoes', icon: Newspaper, updatesOnly: true },
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: ReceiptText },
   { to: '/folha-pagamento', label: 'Folha de pagamento', icon: BadgeDollarSign },
   { to: '/documentos', label: 'Documentos', icon: Files },
@@ -25,7 +26,7 @@ export default function Sidebar() {
         <p className="mt-1 text-xs text-white/50">Demandas &amp; finanças em um só lugar</p>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {links.filter((link) => !link.staffOnly || user?.role !== 'CLIENT').map((link) => {
+        {links.filter((link) => (!link.staffOnly || user?.role !== 'CLIENT') && (!link.updatesOnly || ['ADMIN', 'ACCOUNTANT'].includes(user?.role))).map((link) => {
           const Icon = link.icon;
           return <NavLink key={link.to} to={link.to} className={({ isActive }) => `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${isActive ? 'bg-brand-600 text-white' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}><Icon aria-hidden="true" size={18} strokeWidth={1.8} />{link.label}</NavLink>;
         })}

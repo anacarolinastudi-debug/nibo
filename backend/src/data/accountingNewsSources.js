@@ -1,0 +1,117 @@
+'use strict';
+
+// Official listings checked through web retrieval on 2026-10-29.
+// Direct Node fetch validation was interrupted; collection is not yet certified.
+// Only listing HTML is registered here: no unverified RSS URLs are inferred.
+const UF_NAMES = Object.freeze({
+  AC: 'Acre', AL: 'Alagoas', AP: 'Amapa', AM: 'Amazonas',
+  BA: 'Bahia', CE: 'Ceara', DF: 'Distrito Federal', ES: 'Espirito Santo',
+  GO: 'Goias', MA: 'Maranhao', MT: 'Mato Grosso', MS: 'Mato Grosso do Sul',
+  MG: 'Minas Gerais', PA: 'Para', PB: 'Paraiba', PR: 'Parana',
+  PE: 'Pernambuco', PI: 'Piaui', RJ: 'Rio de Janeiro',
+  RN: 'Rio Grande do Norte', RS: 'Rio Grande do Sul', RO: 'Rondonia',
+  RR: 'Roraima', SC: 'Santa Catarina', SP: 'Sao Paulo',
+  SE: 'Sergipe', TO: 'Tocantins',
+});
+
+function source(value) {
+  return Object.freeze({
+    ...value,
+    area: value.area.toUpperCase(),
+    allowedHosts: Object.freeze(value.allowedHosts),
+    articlePrefixes: Object.freeze(value.articlePrefixes),
+  });
+}
+
+const SOURCES = Object.freeze([
+  source({ id: 'cfc', name: 'Conselho Federal de Contabilidade', url: 'https://cfc.org.br/noticias/', feedUrl: 'https://cfc.org.br/feed/', uf: null, scope: 'NACIONAL', kind: 'NEWS', area: 'CONTABIL', allowedHosts: ['cfc.org.br'], articlePrefixes: ['/noticias/'], format: 'rss' }),
+  source({ id: 'sefaz-pe', name: 'Secretaria da Fazenda de Pernambuco', url: 'https://www.sefaz.pe.gov.br/Paginas/Todas-as-Noticias.aspx', uf: 'PE', scope: 'ESTADUAL', kind: 'NEWS', area: 'FISCAL', allowedHosts: ['www.sefaz.pe.gov.br'], articlePrefixes: ['/Noticias/Paginas/', '/Noticias-Destaque/Paginas/'], format: 'html', maxBytes: 8 * 1024 * 1024 }),
+  source({ id: 'esocial', name: 'eSocial', url: 'https://www.gov.br/esocial/pt-br/noticias', uf: null, scope: 'FEDERAL', kind: 'NEWS', area: 'TRABALHISTA', allowedHosts: ['www.gov.br'], articlePrefixes: ['/esocial/pt-br/noticias/'], format: 'html' }),
+  source({ id: 'fazenda', name: 'Ministerio da Fazenda', url: 'https://www.gov.br/fazenda/pt-br/assuntos/noticias', uf: null, scope: 'FEDERAL', kind: 'NEWS', area: 'TRIBUTARIO', allowedHosts: ['www.gov.br'], articlePrefixes: ['/fazenda/pt-br/assuntos/noticias/'], format: 'html' }),
+  source({ id: 'confaz-convenios', name: 'CONFAZ - Convenios ICMS', url: 'https://www.confaz.fazenda.gov.br/legislacao/convenios/' + new Date().getFullYear(), uf: null, scope: 'NACIONAL', kind: 'LEGISLATION', area: 'TRIBUTARIO', allowedHosts: ['www.confaz.fazenda.gov.br'], articlePrefixes: ['/legislacao/convenios/'], format: 'html', reverseListing: true }),
+  source({ id: 'sefaz-mt', name: 'Secretaria de Fazenda de Mato Grosso', url: 'https://www5.sefaz.mt.gov.br/pt/noticias', uf: 'MT', scope: 'ESTADUAL', kind: 'NEWS', area: 'FISCAL', allowedHosts: ['www5.sefaz.mt.gov.br'], articlePrefixes: ['/w/'], format: 'html' }),
+  source({ id: 'agencia-para-fazenda', name: 'Agencia Para - Fazenda', url: 'https://www.agenciapara.com.br/noticias?a=5&pag=1', uf: 'PA', scope: 'ESTADUAL', kind: 'NEWS', area: 'FISCAL', allowedHosts: ['www.agenciapara.com.br'], articlePrefixes: ['/noticia/'], format: 'html' }),
+  source({
+    id: 'receita-federal',
+    name: 'Receita Federal',
+    url: 'https://www.gov.br/receitafederal/pt-br/assuntos/noticias',
+    uf: null,
+    scope: 'FEDERAL',
+    kind: 'NEWS',
+    area: 'fiscal',
+    allowedHosts: ['www.gov.br'],
+    articlePrefixes: ['/receitafederal/pt-br/assuntos/noticias/'],
+    format: 'html',
+    notes: 'Official news collection retrieved via web. Node validation incomplete; collection RSS not yet validated. Root RSS deliberately excluded because it includes images.',
+  }),
+  source({
+    id: 'comsefaz',
+    name: 'Comsefaz - Comite Nacional de Secretarios de Fazenda',
+    url: 'https://comsefaz.org.br/novo/noticias/',
+    uf: null,
+    scope: 'NACIONAL',
+    kind: 'NEWS',
+    area: 'fiscal',
+    allowedHosts: ['comsefaz.org.br'],
+    articlePrefixes: ['/novo/'],
+    linkPattern: '^https://comsefaz\\.org\\.br/novo/(?!noticias(?:/|$)|category/|tag/|author/|page/)[^/?#]+/?$',
+    format: 'html',
+    notes: 'Official council listing retrieved via web with six news headings. Nationwide institutional remit does not establish individual UF collection coverage. Node validation incomplete.',
+  }),
+  source({
+    id: 'sef-mg',
+    name: 'Secretaria de Estado de Fazenda de Minas Gerais',
+    url: 'https://www.fazenda.mg.gov.br/noticias',
+    uf: 'MG',
+    scope: 'ESTADUAL',
+    kind: 'NEWS',
+    area: 'fiscal',
+    allowedHosts: ['www.fazenda.mg.gov.br'],
+    articlePrefixes: ['/noticias/'],
+    format: 'html',
+    notes: 'Official current-year listing visible in web results. Node validation and heading compatibility incomplete.',
+  }),
+  source({
+    id: 'sefaz-ba',
+    name: 'Secretaria da Fazenda da Bahia',
+    url: 'https://www.sefaz.ba.gov.br/noticias/',
+    uf: 'BA',
+    scope: 'ESTADUAL',
+    kind: 'NEWS',
+    area: 'fiscal',
+    allowedHosts: ['www.sefaz.ba.gov.br'],
+    articlePrefixes: ['/'],
+    linkPattern: '^https://www\\.sefaz\\.ba\\.gov\\.br/(?:[0-9]{4}/[0-9]{2}/(?:[0-9]{2}/)?)?[^/?#]+-[^/?#]+/?$',
+    format: 'html',
+    notes: 'Official paginated listing visible in web results with article headings. Root-level WordPress slugs require the link pattern and news-heading restriction. Node validation incomplete.',
+  }),
+  source({
+    id: 'sefaz-pr',
+    name: 'Secretaria da Fazenda do Parana',
+    url: 'https://www.fazenda.pr.gov.br/Noticias',
+    uf: 'PR',
+    scope: 'ESTADUAL',
+    kind: 'NEWS',
+    area: 'fiscal',
+    allowedHosts: ['www.fazenda.pr.gov.br'],
+    articlePrefixes: ['/Noticia/'],
+    format: 'html',
+    notes: 'Official listing visible in web results with h3 article headings. Node validation incomplete.',
+  }),
+  source({
+    id: 'sefaz-rs',
+    name: 'Secretaria da Fazenda do Rio Grande do Sul',
+    url: 'https://www.fazenda.rs.gov.br/noticias?classificacao=52399',
+    uf: 'RS',
+    scope: 'ESTADUAL',
+    kind: 'NEWS',
+    area: 'fiscal',
+    allowedHosts: ['www.fazenda.rs.gov.br'],
+    articlePrefixes: ['/'],
+    linkPattern: '^https://www\\.fazenda\\.rs\\.gov\\.br/(?!noticias(?:[/?#]|$)|upload/)[^/?#]+-[^/?#]+/?$',
+    format: 'html',
+    notes: 'Official service-news filtered listing visible in web results with nine entries and h3 headings. Unfiltered listing returned zero entries in web evidence; do not substitute it. Node validation incomplete.',
+  }),
+]);
+
+module.exports = Object.freeze({ SOURCES, UF_NAMES });

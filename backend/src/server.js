@@ -67,6 +67,7 @@ app.use('/api/ecac', ecacRoutes);
 app.use('/api/firm', firmRoutes);
 app.use('/api/departments', departmentsRoutes);
 app.use('/api/content', require('./routes/content.routes'));
+app.use('/api/updates', require('./routes/updates.routes'));
 
 // Precisa ser o último middleware
 app.use(errorHandler);
@@ -75,6 +76,7 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, process.env.HOST, () => {
   console.log(`API rodando em http://localhost:${PORT}`);
   startEcacScheduler();
+  require('./jobs/accountingNewsScheduler').startAccountingNewsScheduler();
 });
 
 function stripSensitiveClientFields(value) {

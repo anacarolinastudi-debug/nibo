@@ -68,6 +68,7 @@ model AccountingFirm {
   passwordResetRequests PasswordResetRequest[]
   contentProjects       ContentProject[]
   contentStudioSettings ContentStudioSettings?
+  newsArticleStates     NewsArticleState[]
 
   @@map("accounting_firms")
 }
@@ -134,9 +135,74 @@ model User {
   clientDepartmentResponsible ClientDepartmentResponsible[] @relation("ClientDepartmentResponsibleUser")
   firmRoles                   FirmRole[] @relation("FirmRoleUser")
   passwordResetRequests       PasswordResetRequest[]
+  newsArticleStates           NewsArticleState[]
 
   @@index([accountingFirmId])
   @@map("users")
+}
+
+model NewsSource {
+  id            String @id
+  name          String
+  url           String
+  uf            String?
+  scope         String
+  status        String @default("PENDING")
+  errorMessage  String?
+  lastCheckedAt DateTime?
+  lastSuccessAt DateTime?
+  articlesCount Int @default(0)
+  articles      NewsArticle[]
+  updatedAt     DateTime @updatedAt
+  @@map("news_sources")
+}
+
+model NewsArticle {
+  id          String @id @default(uuid())
+  url         String @unique
+  title       String
+  summary     String
+  kind        String
+  area        String
+  scope       String
+  ufs         String[] @default([])
+  publishedAt DateTime?
+  firstSeenAt DateTime @default(now())
+  sortDate    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sourceId    String
+  source      NewsSource @relation(fields: [sourceId], references: [id])
+  states      NewsArticleState[]
+  @@index([sortDate])
+  @@index([sourceId, publishedAt])
+  @@map("news_articles")
+}
+
+model NewsArticleState {
+  userId           String
+  articleId        String
+  accountingFirmId String
+  read             Boolean @default(false)
+  bookmarked       Boolean @default(false)
+  updatedAt        DateTime @updatedAt
+  user             User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  article          NewsArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id], onDelete: Cascade)
+  @@id([accountingFirmId, userId, articleId])
+  @@index([accountingFirmId, userId])
+  @@map("news_article_states")
+}
+
+model NewsSyncState {
+  key             String @id
+  state           String @default("IDLE")
+  leaseOwner      String?
+  leaseUntil      DateTime?
+  nextAllowedAt   DateTime?
+  lastAttemptAt   DateTime?
+  lastCompletedAt DateTime?
+  errorMessage    String?
+  @@map("news_sync_states")
 }
 
 model PasswordResetRequest {
