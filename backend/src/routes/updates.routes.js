@@ -22,6 +22,12 @@ router.post('/refresh', async (req, res) => {
   if (!result.queued && result.state !== 'RUNNING') return res.status(429).set('Retry-After', '1800').json({ error: 'Aguarde ate 30 minutos entre atualizacoes. O historico continua disponivel.' });
   res.json(result);
 });
+router.get('/articles/:id', async (req, res) => {
+  const id = z.string().uuid().parse(req.params.id);
+  const article = await prisma.newsArticle.findUnique({ where: { id }, select: { id: true, title: true, summary: true, url: true, publishedAt: true, source: { select: { name: true, url: true } } } });
+  if (!article) return res.status(404).json({ error: 'Publicacao nao encontrada.' });
+  res.json(article);
+});
 router.get('/articles', async (req, res) => {
   const input = filters.parse(req.query);
   const own = { userId: req.user.id, accountingFirmId: req.user.accountingFirmId };

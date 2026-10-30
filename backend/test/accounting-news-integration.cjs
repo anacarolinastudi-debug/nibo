@@ -26,6 +26,12 @@ async function main() {
     const base = `http://127.0.0.1:${server.address().port}/api/updates`;
     const auth = (index, extra = {}) => ({ Authorization: 'Bearer ' + generateToken({ sub: users[index].id, accountingFirmId: firmIds[index], role: 'ACCOUNTANT', ...extra }), 'Content-Type': 'application/json' });
     assert.equal((await fetch(base + '/articles')).status, 401);
+    assert.equal((await fetch(base + '/articles/' + articles[0].id)).status, 401);
+    const detail = await fetch(base + '/articles/' + articles[0].id, { headers: auth(0) });
+    assert.equal(detail.status, 200);
+    assert.equal((await detail.json()).title, articles[0].title);
+    assert.equal((await fetch(base + '/articles/not-a-uuid', { headers: auth(0) })).status, 400);
+    assert.equal((await fetch(base + '/articles/a5555555-5555-4555-8555-555555555555', { headers: auth(0) })).status, 404);
     assert.equal((await fetch(base + '/articles', { headers: auth(0, { role: 'CLIENT' }) })).status, 403);
     assert.equal((await fetch(base + '/articles', { headers: auth(0, { accountingFirmId: firmIds[1] }) })).status, 403);
     const marked = await fetch(base + '/articles/' + articles[0].id + '/state', { method: 'PATCH', headers: auth(0), body: JSON.stringify({ read: true, bookmarked: true }) }); assert.equal(marked.status, 200);

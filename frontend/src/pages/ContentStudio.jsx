@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Copy, Download, FilePlus2, ImagePlus, KeyRound, Plus, RefreshCw, Save, Search, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -40,6 +40,11 @@ function StudioMenu() {
 
 export default function ContentStudio() {
   const { user } = useAuth();
+  const location = useLocation(), navigate = useNavigate();
+  const articleId = new URLSearchParams(location.search).get('noticia');
+  const [aiBrief, setAiBrief] = useState(null);
+  const [studioLoaded, setStudioLoaded] = useState(false);
+  const [newsLoading, setNewsLoading] = useState(false);
   const [firm, setFirm] = useState(null);
   const [logo, setLogo] = useState(null);
   const [projects, setProjects] = useState([]);
@@ -69,9 +74,23 @@ export default function ContentStudio() {
     Promise.all([api.get('/firm'), api.get('/content')]).then(([office, library]) => {
       if (active) { setFirm(office.data); setProjects(library.data); }
     }).catch(() => { if (active) setError('Não foi possível carregar os conteúdos.'); }).finally(() => { if (active) setLoading(false); });
-    api.get('/content/settings').then(({ data }) => { if (active) setStudio(data); }).catch(() => {});
+    api.get('/content/settings').then(({ data }) => { if (active) setStudio(data); }).catch(() => {}).finally(() => { if (active) setStudioLoaded(true); });
     return () => { active = false; };
   }, [allowed]);
+  useEffect(() => {
+    const controller = new AbortController();
+    if (!allowed || !articleId) { setAiBrief(null); setNewsLoading(false); return () => controller.abort(); }
+    setAiBrief(null); setAiOpen(false);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(articleId)) { setNewsLoading(false); setError('A notícia de referência é inválida.'); return () => controller.abort(); }
+    setNewsLoading(true); setError('');
+    api.get(`/updates/articles/${encodeURIComponent(articleId)}`, { signal: controller.signal }).then(({ data }) => {
+      if (controller.signal.aborted) return;
+      const context = `Notícia de referência (título e resumo, não o texto integral):\n${data.title}\n\n${data.summary || 'Resumo não disponibilizado pela fonte.'}\n\nFonte: ${data.source?.name || ''}\nLink original: ${data.url}\nPublicação: ${data.publishedAt ? new Date(data.publishedAt).toLocaleDateString('pt-BR', { timeZone: 'America/Cuiaba' }) : 'Data não informada'}\n\nCrie uma abordagem original, clara e útil para o público, explicando o impacto prático sem copiar a matéria. Não invente informações, leis ou prazos.`;
+      setAiBrief({ articleId: data.id, topic: data.title.slice(0, 500), context }); setAiOpen(true);
+    }).catch(failure => { if (!controller.signal.aborted) setError(failure.response?.data?.error || 'Não foi possível carregar a notícia de referência. Volte às notícias e tente novamente.'); })
+      .finally(() => { if (!controller.signal.aborted) setNewsLoading(false); });
+    return () => controller.abort();
+  }, [articleId, allowed]);
   useEffect(() => {
     let active = true;
     loadContentAssets().then(() => { if (active) setAssetsReady(true); }).catch(() => { if (active) setError('Não foi possível carregar as fontes ou o fundo das artes. Atualize a página para tentar novamente.'); });
@@ -108,11 +127,13 @@ export default function ContentStudio() {
   function openProject(project) {
     if (busy) return;
     if (dirty && !window.confirm('Descartar as alterações não salvas?')) return;
+    setAiBrief(null); if (articleId) navigate('/conteudos', { replace: true });
     const next = copy(project); setRecord(next); setSaved(JSON.stringify(next)); setCurrent(0); setView('editor'); setError('');
   }
   function newProject() {
     if (busy) return;
     if (dirty && !window.confirm('Descartar as alterações não salvas?')) return;
+    setAiBrief(null); if (articleId) navigate('/conteudos', { replace: true });
     setRecord({ id: null, title: 'Novo conteúdo', status: 'DRAFT', settings: copy(DEFAULT_CONTENT) }); setSaved(''); setCurrent(0); setView('editor'); setError('');
   }
   function resizeSlides(count) {
@@ -187,6 +208,7 @@ export default function ContentStudio() {
       <FirmHeader className="px-6" />
       <div className="flex h-12 gap-10 border-b px-6 text-sm">{[['editor', 'Criar conteúdo'], ['library', 'Biblioteca']].map(([value, label]) => <button key={value} onClick={() => setView(value)} className={`border-b-2 px-1 ${view === value ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{label}</button>)}</div>
       <section className="p-3 md:p-6">
+        {newsLoading && <p role="status" className="mb-4 text-sm text-[#68737a]">Carregando notícia de referência...</p>}
         <header className="mb-5 flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">Conteúdos</h1><div className="flex items-center gap-3"><button onClick={newProject} disabled={busy} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm"><FilePlus2 size={16} /> Novo conteúdo</button>{view === 'editor' && <button onClick={saveProject} disabled={busy || loading} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Save size={16} />{busy ? 'Aguarde...' : 'Salvar'}</button>}</div></header>
         {error && <div role="alert" className="mb-4 flex items-center justify-between gap-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}<button title="Fechar aviso" onClick={() => setError('')}><X size={16} /></button></div>}
         {view === 'editor' ? <>
@@ -226,7 +248,7 @@ export default function ContentStudio() {
         </>}
       </section>
     </main>
-    {aiOpen && <ContentAiDialog provider={studio.provider} count={settings.slides.length} configured={studio.configured} canConfigure={user?.role === 'ADMIN'} onConnect={() => { setAiOpen(false); setConnectionOpen(true); }} onClose={() => setAiOpen(false)} onApply={(result) => { setRecord((current) => ({ ...current, title: result.title, settings: { ...current.settings, slides: result.slides, caption: result.caption, sources: result.sources, reviewNotes: result.reviewNotes } })); setCurrent(0); setAiOpen(false); }} />}
-    {connectionOpen && <AiConnectionDialog provider={studio.provider} customKey={studio.customKey} onClose={() => setConnectionOpen(false)} onConfigured={(configured, customKey, provider) => { setStudio((current) => ({ ...current, configured, customKey, provider })); setConnectionOpen(false); }} />}
+    {aiOpen && studioLoaded && <ContentAiDialog initialBrief={aiBrief} provider={studio.provider} count={settings.slides.length} configured={studio.configured} canConfigure={user?.role === 'ADMIN'} onConnect={(form) => { setAiBrief(form); setAiOpen(false); setConnectionOpen(true); }} onClose={() => setAiOpen(false)} onApply={(result) => { setRecord((current) => ({ ...current, title: result.title, settings: { ...current.settings, slides: result.slides, caption: result.caption, sources: result.sources, reviewNotes: result.reviewNotes } })); setCurrent(0); setAiOpen(false); }} />}
+    {connectionOpen && <AiConnectionDialog provider={studio.provider} customKey={studio.customKey} onClose={() => { setConnectionOpen(false); if (aiBrief) setAiOpen(true); }} onConfigured={(configured, customKey, provider) => { if (provider !== studio.provider) setAiBrief(current => current ? { ...current, research: provider !== 'gemini' } : current); setStudio((current) => ({ ...current, configured, customKey, provider })); setConnectionOpen(false); if (aiBrief) setAiOpen(true); }} />}
   </div>;
 }

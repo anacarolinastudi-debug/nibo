@@ -35,8 +35,8 @@ export function AiConnectionDialog({ customKey, provider: currentProvider = 'ope
   </form></Dialog>;
 }
 
-export function ContentAiDialog({ count, provider = 'openai', configured, canConfigure, onConnect, onClose, onApply }) {
-  const [form, setForm] = useState({ topic: '', context: '', audience: 'Pequenos empresários', goal: 'educar', tone: 'profissional', count, research: provider !== 'gemini' });
+export function ContentAiDialog({ count, initialBrief, provider = 'openai', configured, canConfigure, onConnect, onClose, onApply }) {
+  const [form, setForm] = useState({ topic: '', context: '', audience: 'Pequenos empresários, MEIs e autônomos', goal: 'educar', tone: 'profissional', count, research: provider !== 'gemini', ...initialBrief });
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -50,7 +50,7 @@ export function ContentAiDialog({ count, provider = 'openai', configured, canCon
     finally { setBusy(false); }
   }
   return <Dialog title="Gerar conteúdo com IA" busy={busy} onClose={onClose}>
-    {!configured && <div className="mb-5 border-y bg-[#eef8fc] p-3 text-sm">{canConfigure ? <button type="button" onClick={onConnect} className="inline-flex items-center gap-2 text-[#16829b]"><KeyRound size={16} /> Conectar IA</button> : 'Solicite ao administrador a conexão da IA do escritório.'}</div>}
+    {!configured && <div className="mb-5 border-y bg-[#eef8fc] p-3 text-sm">{canConfigure ? <button type="button" onClick={() => onConnect(form)} className="inline-flex items-center gap-2 text-[#16829b]"><KeyRound size={16} /> Conectar IA</button> : 'Solicite ao administrador a conexão da IA do escritório.'}</div>}
     {result ? <>
       <h3 className="mb-4 font-semibold">{result.title}</h3>
       <ol className="divide-y border-y">{result.slides.map((slide, index) => <li key={index} className="py-4"><small className="text-xs text-[#68737a]">Slide {index + 1} · {slide.eyebrow}</small><p className="mt-1 font-semibold">{slide.headline}</p><p className="mt-2 whitespace-pre-wrap text-sm">{slide.body}</p></li>)}</ol>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Bookmark, Check, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Search } from 'lucide-react';
+import { Bookmark, Check, ChevronLeft, ChevronRight, ExternalLink, RefreshCw, Search, Sparkles } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import FirmHeader from '../components/FirmHeader';
@@ -213,6 +213,7 @@ function UpdatesHub() {
                 <p className="mt-2 text-sm leading-relaxed">{article.summary ? String(article.summary).slice(0, 600) : 'Resumo nao disponibilizado pela fonte.'}</p>
                 <p className="mt-2 text-xs text-[#68737a]">{article.publishedAt ? `Publicacao: ${date(article.publishedAt, true)}` : 'Data de publicacao nao informada'}</p>
                 <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <Link to={`/conteudos?noticia=${encodeURIComponent(article.id)}`} aria-label={`Criar conteudo com IA: ${article.title}`} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm text-[#16829b] hover:bg-[#eef8fc]"><Sparkles size={16} />Criar conteudo com IA</Link>
                   <IconButton label={article.read ? 'Marcar como nao lido' : 'Marcar como lido'} aria-pressed={!!article.read} disabled={pending !== null} onClick={() => toggle(article, 'read')}><Check size={16} strokeWidth={article.read ? 3 : 1.5} /></IconButton>
                   <IconButton label={article.bookmarked ? 'Remover favorito' : 'Salvar favorito'} aria-pressed={!!article.bookmarked} disabled={pending !== null} onClick={() => toggle(article, 'bookmarked')}><Bookmark size={16} fill={article.bookmarked ? 'currentColor' : 'none'} /></IconButton>
                   {safeUrl(article.url) ? <a href={safeUrl(article.url)} target="_blank" rel="noopener noreferrer" aria-label={`Abrir original: ${article.title}`} className="ml-1 inline-flex items-center gap-1 text-sm text-[#16829b]">Abrir original <ExternalLink size={14} /></a> : <span className="text-xs text-[#68737a]">Link original indisponivel</span>}
