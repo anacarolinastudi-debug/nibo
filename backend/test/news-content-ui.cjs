@@ -49,7 +49,7 @@ async function main() {
     await dialog.getByRole('button', { name: 'Gerar conteúdo', exact: true }).click();
     await dialog.getByRole('button', { name: 'Usar no editor' }).waitFor();
     assert.equal(calls[0].articleId, id); assert.equal(calls[0].audience, 'MEIs prestadores de servicos');
-    assert.equal(calls[0].research, false, 'existing Gemini research preference is preserved');
+    assert.equal(calls[0].research, true, 'independent research is enabled for Gemini too');
     await dialog.getByRole('button', { name: 'Usar no editor' }).click();
     assert.equal(await page.getByLabel(/^Nome do conteúdo/).inputValue(), 'Texto adaptado para MEIs');
     await page.getByRole('button', { name: 'Salvar', exact: true }).click();
@@ -69,6 +69,7 @@ async function main() {
     configured = false; provider = 'openai'; await page.goto(base + '/conteudos?noticia=' + id);
     const initial = page.getByRole('dialog', { name: 'Gerar conteúdo com IA' }); await initial.waitFor();
     await initial.getByLabel('Público', { exact: true }).fill('Empresas locais');
+    await initial.getByLabel('Pesquisar fontes oficiais quando necessário').uncheck();
     await initial.getByRole('button', { name: 'Conectar IA', exact: true }).click();
     const connection = page.getByRole('dialog', { name: 'Configurar IA' }); await connection.waitFor();
     await connection.getByLabel('Provedor').selectOption('gemini');
@@ -77,7 +78,7 @@ async function main() {
     await initial.waitFor();
     assert.equal(await initial.getByLabel('Público', { exact: true }).inputValue(), 'Empresas locais');
     assert.ok((await initial.getByLabel('Contexto ou texto de referência').inputValue()).includes(article.url));
-    assert.equal(await initial.getByLabel('Pesquisar fontes oficiais quando necessário').isChecked(), false, 'switching to Gemini uses its own research default');
+    assert.equal(await initial.getByLabel('Pesquisar fontes oficiais quando necessário').isChecked(), false, 'switching providers preserves the user research preference');
     assert.equal(calls.length, 1, 'connecting IA never generates content automatically');
     assert.deepEqual(errors, []); console.log('news-content-ui: passed (handoff, editable audience, explicit generation, source/save, missing article, mobile)');
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }

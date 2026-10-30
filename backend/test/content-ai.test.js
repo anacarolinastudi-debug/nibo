@@ -1,6 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { generateContentWithAI, generationInputSchema } = require('../src/services/contentAi.service');
+const { generateContentWithAI: generate, generationInputSchema } = require('../src/services/contentAi.service');
+const generateContentWithAI = args => generate({ ...args, researcher: async () => ({ status: 'FOUND', references: [{ title: 'Receita Federal', url: 'https://www.gov.br/receitafederal/pt-br', excerpt: 'Orientacoes.' }] }) });
 const brief = { topic: 'Organizacao financeira', context: 'Escritorio contabil para pequenos negocios', audience: 'Empreendedores', goal: 'educar', tone: 'profissional', count: 2, research: true };
 const slides = [1, 2].map((index) => ({ eyebrow: 'Planejamento', headline: `Organize seu negocio ${index}`, highlight: 'negocio', body: 'Separe suas informacoes e converse com um profissional.', footer: 'Young Contabil' }));
 const output = { title: 'Organizacao', caption: 'Fale com a equipe.', slides, reviewNotes: '' };
@@ -18,7 +19,8 @@ test('real AI request uses structured output, official research and no retained 
   assert.equal(request.payload.reasoning.effort, 'low');
   assert.equal(request.payload.text.format.strict, true);
   assert.equal(request.payload.text.format.schema.properties.slides.minItems, 2);
-  assert.ok(request.payload.tools[0].filters.allowed_domains.includes('gov.br'));
+  assert.equal(request.payload.tools, undefined);
+  assert.equal(JSON.parse(request.payload.input).officialResearch.status, 'FOUND');
   assert.equal(result.slides.length, 2);
   assert.equal(result.sources[0].title, 'Receita Federal');
   assert.ok(!JSON.stringify(result).includes('sk-test-only'));

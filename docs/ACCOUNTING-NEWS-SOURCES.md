@@ -1,5 +1,20 @@
 # Fontes de noticias contabeis
 
+## Pesquisa oficial na criacao de conteudos
+
+A opcao de pesquisar fontes oficiais consulta metadados do acervo de fontes
+governamentais e, se necessario, listagens recentes da Receita Federal,
+Fazenda e eSocial. Nao usa Google Search, Gemini grounding ou OpenAI web_search.
+Somente tema e palavras normalizadas sao usados para correspondencia local;
+o contexto privado nao e transmitido aos editores. URLs sao conferidas contra
+os hosts e caminhos registrados. O texto da IA nao pode acrescentar fontes.
+
+A IA recebe trechos parciais, links e datas para redacao. Isso nao confirma
+vigencia legal nem substitui verificacao profissional. Ausencia de resultados
+ou indisponibilidade gera aviso obrigatorio em Pontos para revisar, sem
+interromper a redacao. A pesquisa fica habilitada para ambos os provedores,
+e a geracao continua sujeita aos limites da conta de IA conectada.
+
 ## Busca direta sem IA
 
 A pesquisa consulta o acervo no PostgreSQL por palavras, sem diferenciar

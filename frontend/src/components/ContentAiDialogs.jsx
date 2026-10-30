@@ -36,7 +36,7 @@ export function AiConnectionDialog({ customKey, provider: currentProvider = 'ope
 }
 
 export function ContentAiDialog({ count, initialBrief, provider = 'openai', configured, canConfigure, onConnect, onClose, onApply }) {
-  const [form, setForm] = useState({ topic: '', context: '', audience: 'Pequenos empresários, MEIs e autônomos', goal: 'educar', tone: 'profissional', count, research: provider !== 'gemini', ...initialBrief });
+  const [form, setForm] = useState({ topic: '', context: '', audience: 'Pequenos empresários, MEIs e autônomos', goal: 'educar', tone: 'profissional', count, research: true, ...initialBrief });
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -45,7 +45,7 @@ export function ContentAiDialog({ count, initialBrief, provider = 'openai', conf
     event.preventDefault(); if (busy) return;
     if (!form.topic.trim() && !form.context.trim()) { setError('Informe um tema ou cole um contexto.'); return; }
     setBusy(true); setError('');
-    try { const { data } = await api.post('/content/generate', form); setResult(data); }
+    try { const { data } = await api.post('/content/generate', form, { timeout: 150000 }); setResult(data); }
     catch (failure) { setError(failure.response?.data?.error || 'Não foi possível gerar o conteúdo. Tente novamente.'); }
     finally { setBusy(false); }
   }
@@ -65,7 +65,7 @@ export function ContentAiDialog({ count, initialBrief, provider = 'openai', conf
         <Field label="Público"><input maxLength={200} value={form.audience} onChange={(event) => set('audience', event.target.value)} className={inputClass} /></Field>
         <div className="grid gap-3 sm:grid-cols-3"><Field label="Objetivo"><select value={form.goal} onChange={(event) => set('goal', event.target.value)} className={inputClass}><option value="educar">Educar</option><option value="divulgar">Divulgar serviço</option><option value="interagir">Gerar interação</option></select></Field><Field label="Tom de voz"><select value={form.tone} onChange={(event) => set('tone', event.target.value)} className={inputClass}><option value="profissional">Profissional</option><option value="acolhedor">Próximo e acolhedor</option><option value="direto">Direto</option></select></Field><Field label="Slides"><input type="number" min={1} max={10} required value={form.count} onChange={(event) => set('count', Number(event.target.value))} className={inputClass} /></Field></div>
         <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.research} onChange={(event) => set('research', event.target.checked)} />Pesquisar fontes oficiais quando necessário</label>
-        {provider === 'gemini' && <p className="text-xs text-[#68737a]">A pesquisa depende de uma cota própria do Google. Sem pesquisa, revise informações tributárias antes de publicar.</p>}
+        <p className="text-xs text-[#68737a]">A consulta às publicações oficiais não usa créditos de IA. A geração do texto continua sujeita aos limites da conta conectada. Revise informações tributárias antes de publicar.</p>
       </fieldset>
       {error && <p role="alert" className="mt-4 text-sm text-red-700">{error}</p>}
       <footer className="mt-6 flex justify-end gap-3 border-t pt-4"><button type="button" disabled={busy} onClick={onClose} className="px-3 py-2 text-sm">Cancelar</button><button disabled={busy || !configured} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50">{busy ? <LoaderCircle size={16} className="animate-spin" /> : <Sparkles size={16} />}{busy ? 'Gerando...' : 'Gerar conteúdo'}</button></footer>

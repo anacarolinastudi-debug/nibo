@@ -249,6 +249,6 @@ export default function ContentStudio() {
       </section>
     </main>
     {aiOpen && studioLoaded && <ContentAiDialog initialBrief={aiBrief} provider={studio.provider} count={settings.slides.length} configured={studio.configured} canConfigure={user?.role === 'ADMIN'} onConnect={(form) => { setAiBrief(form); setAiOpen(false); setConnectionOpen(true); }} onClose={() => setAiOpen(false)} onApply={(result) => { setRecord((current) => ({ ...current, title: result.title, settings: { ...current.settings, slides: result.slides, caption: result.caption, sources: result.sources, reviewNotes: result.reviewNotes } })); setCurrent(0); setAiOpen(false); }} />}
-    {connectionOpen && <AiConnectionDialog provider={studio.provider} customKey={studio.customKey} onClose={() => { setConnectionOpen(false); if (aiBrief) setAiOpen(true); }} onConfigured={(configured, customKey, provider) => { if (provider !== studio.provider) setAiBrief(current => current ? { ...current, research: provider !== 'gemini' } : current); setStudio((current) => ({ ...current, configured, customKey, provider })); setConnectionOpen(false); if (aiBrief) setAiOpen(true); }} />}
+    {connectionOpen && <AiConnectionDialog provider={studio.provider} customKey={studio.customKey} onClose={() => { setConnectionOpen(false); if (aiBrief) setAiOpen(true); }} onConfigured={(configured, customKey, provider) => { setStudio((current) => ({ ...current, configured, customKey, provider })); setConnectionOpen(false); if (aiBrief) setAiOpen(true); }} />}
   </div>;
 }

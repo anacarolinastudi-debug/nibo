@@ -17,8 +17,14 @@ test('Gemini uses its own endpoint, protected header and validated structured ou
 test('Gemini quota errors are actionable and never expose the key', async () => {
   await assert.rejects(() => generateContentWithAI({ provider: 'gemini', apiKey: 'test-google-key', brief: { topic: 'Rotina', count: 1, research: false }, fetchImpl: async () => ({ ok: false, status: 429 }) }), /Gemini.*limite/i);
 });
-test('research quota failure asks user to disable research instead of silently changing the request', async () => {
+test('research uses independent references and Gemini receives only one writing request', async () => {
   let calls = 0;
-  await assert.rejects(() => generateContentWithAI({ provider: 'gemini', apiKey: 'test-google-key', brief: { topic: 'Rotina', count: 1, research: true }, fetchImpl: async () => { calls++; return { ok: false, status: 429 }; } }), /Desmarque a pesquisa/);
+  const result = await generateContentWithAI({ provider: 'gemini', apiKey: 'test-google-key', brief: { topic: 'Rotina', count: 1, research: true }, researcher: async () => ({ status: 'EMPTY', references: [] }), fetchImpl: async (url, options) => {
+    calls++;
+    assert.equal(JSON.parse(options.body).tools, undefined);
+    return { ok: true, json: async () => ({ candidates: [{ finishReason: 'STOP', content: { parts: [{ text: JSON.stringify(generated) }] } }] }) };
+  } });
   assert.equal(calls, 1);
+  assert.equal(result.researchStatus, 'EMPTY');
+  assert.match(result.reviewNotes, /Nao foi encontrada confirmacao oficial/);
 });
