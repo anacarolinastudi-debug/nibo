@@ -67,7 +67,7 @@ async function main() {
     const searchInput = { q: 'consulta sem correspondencia ' + suffix, source: 'portal-contabeis', kind: 'NEWS' };
     let discoveryCalls = 0;
     const item = { url: onlineUrl, title: searchInput.q, summary: 'T\u00e9cnico em CONTABILIDADE', kind: 'NEWS', area: 'FISCAL', scope: 'NACIONAL', ufs: [], publishedAt: null };
-    const dependencies = { db, discover: async () => { discoveryCalls++; return { items: [{ source: portal, item }], failed: 0, attribution: null }; } };
+    const dependencies = { db, archive: async () => [], discover: async () => { discoveryCalls++; return { items: [{ source: portal, item }], failed: 0, attribution: null }; } };
     const searched = await searchOnline(firmIds[0], searchInput, dependencies);
     assert.equal(searched.discovered, 1);
     assert.equal((await searchOnline(firmIds[0], searchInput, dependencies)).cached, true);
@@ -85,7 +85,7 @@ async function main() {
     assert.equal((await searchOnline(firmIds[0], { ...searchInput, q: 'another-query-' + suffix }, dependencies)).status, 'COOLDOWN');
     await db.newsArticle.update({ where: { url: onlineUrl }, data: { summary: 'Resumo anterior salvo.', publishedAt: new Date('2026-10-20T16:00:00Z') } });
     await db.newsSyncState.update({ where: { key: 'direct-news-search' }, data: { nextAllowedAt: null } });
-    await searchOnline(firmIds[1], searchInput, { db, discover: async () => ({ items: [{ source: portal, item: { ...item, summary: '', publishedAt: null } }], failed: 0 }) });
+    await searchOnline(firmIds[1], searchInput, { db, archive: async () => [], discover: async () => ({ items: [{ source: portal, item: { ...item, summary: '', publishedAt: null } }], failed: 0 }) });
     const preserved = await db.newsArticle.findUnique({ where: { url: onlineUrl } });
     assert.equal(preserved.summary, 'Resumo anterior salvo.');
     assert.equal(preserved.publishedAt.toISOString(), '2026-10-20T16:00:00.000Z');

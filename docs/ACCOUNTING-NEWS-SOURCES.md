@@ -32,6 +32,17 @@ O campo normalizado e atualizado por trigger no banco, inclusive para novas
 coletas e atualizacoes feitas por outros caminhos. A migracao preenche o
 indice existente sem apagar registros e nao requer extensoes PostgreSQL.
 
+Correcao da busca historica (2026-10-30): na ausencia de correspondencias,
+consulta tambem os dois indices de conteudo mais recentes divulgados pelo
+sitemap do Portal Contabeis. URLs sao selecionadas pelas palavras do caminho;
+titulo, trecho e data vem dos metadados reais da materia, nunca do slug.
+Foruns, artigos de opiniao e enderecos externos continuam excluidos.
+Limites: 4 MiB por indice, seis materias por pesquisa, 30 segundos no arquivo.
+A pesquisa real "CNPJ tecnico" retornou as materias 77801 e 78870.
+O cache foi versionado para nao reutilizar respostas vazias da implementacao
+anterior. Esta ampliacao nao equivale a busca integral de toda a web nem de
+todo o texto de todas as materias historicas.
+
 ## Portal Contabeis e prioridade editorial
 
 Incluido o RSS de noticias fornecido pelo proprio portal:
