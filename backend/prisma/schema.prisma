@@ -178,6 +178,7 @@ model NewsArticle {
   url         String @unique
   title       String
   summary     String
+  searchText  String @default("")
   kind        String
   area        String
   scope       String

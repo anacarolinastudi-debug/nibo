@@ -34,7 +34,16 @@ async function fetchSourceText(source) {
 }
 async function fetchSource(source) {
   const { body } = await fetchSourceText(source);
-  return source.format === 'rss' ? parseFeed(body, source) : parsePage(body, source);
+  const items = source.format === 'rss' ? parseFeed(body, source) : parsePage(body, source);
+  const archiveUrls = source.id === 'cfc' ? ['https://cfc.org.br/noticias/page/2/', 'https://cfc.org.br/noticias/page/3/'] : source.id === 'receita-federal' ? [30, 60].map(offset => source.url + '?b_start:int=' + offset) : [];
+  // Optional archive pages must never discard a successful current feed.
+  for (const url of archiveUrls) {
+    try {
+      const archive = await fetchSourceText({ ...source, feedUrl: url, timeoutMs: 5000 });
+      items.push(...parsePage(archive.body, source));
+    } catch { break; }
+  }
+  return [...new Map(items.map(item => [item.url, item])).values()];
 }
 
 async function acquire(db, now, daily) {

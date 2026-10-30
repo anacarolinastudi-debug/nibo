@@ -5,12 +5,13 @@ const prisma = require('../lib/prisma');
 const { requireAuth, requireRole } = require('../middleware/auth');
 const { AREAS } = require('../services/accountingNewsParser');
 const { requestSync, getStatus } = require('../services/accountingNews.service');
-const { searchOnline, cachedSearch, presentSearch } = require('../services/accountingNewsOnline.service');
+const { searchOnline, cachedSearch, presentSearch, queryTerms } = require('../services/accountingNewsOnline.service');
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => { const parsed = new Date(value + 'T00:00:00Z'); return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value; });
 const filters = z.object({ q: z.string().max(200).optional(), area: z.enum(AREAS).optional(), kind: z.enum(['NEWS', 'LEGISLATION']).optional(), scope: z.enum(['FEDERAL', 'ESTADUAL', 'MUNICIPAL', 'NACIONAL']).optional(), uf: z.string().regex(/^[A-Z]{2}$/).optional(), source: z.string().max(100).optional(), from: date.optional(), to: date.optional(), read: z.enum(['all', 'unread', 'read']).optional(), bookmarked: z.enum(['true', 'false']).optional(), page: z.coerce.number().int().min(1).max(100000).default(1) }).refine((value) => !value.from || !value.to || value.from <= value.to, { message: 'Periodo invalido.' });
 
 function articleWhere(input, own, cached) {
-  return { ...(input.q ? { OR: [{ title: { contains: input.q, mode: 'insensitive' } }, { summary: { contains: input.q, mode: 'insensitive' } }, ...(cached?.articleIds.length ? [{ id: { in: cached.articleIds } }] : [])] } : {}),
+  const terms = queryTerms(input.q);
+  return { ...(input.q ? { OR: [...(terms.length ? [{ AND: terms.map(term => ({ searchText: { contains: term } })) }] : [{ id: { in: [] } }]), ...(cached?.articleIds.length ? [{ id: { in: cached.articleIds } }] : [])] } : {}),
     ...Object.fromEntries(['area', 'kind', 'scope'].filter(key => input[key]).map(key => [key, input[key]])),
     ...(input.uf ? { ufs: { has: input.uf } } : {}), ...(input.source ? { sourceId: input.source } : {}),
     ...(input.from || input.to ? { publishedAt: { ...(input.from ? { gte: new Date(input.from + 'T00:00:00-04:00') } : {}), ...(input.to ? { lt: new Date(new Date(input.to + 'T00:00:00-04:00').getTime() + 86400000) } : {}) } } : {}),
@@ -56,7 +57,7 @@ router.get('/articles', async (req, res) => {
   const where = articleWhere(input, own, cached);
   const pageSize = 25;
   const [items, total] = await prisma.$transaction([prisma.newsArticle.findMany({ where, orderBy: [{ source: { priority: 'desc' } }, { sortDate: 'desc' }, { id: 'desc' }], skip: (input.page - 1) * pageSize, take: pageSize, include: { source: { select: { id: true, name: true, url: true } }, states: { where: own, select: { read: true, bookmarked: true } } } }), prisma.newsArticle.count({ where })]);
-  res.json({ items: items.map(({ states, sourceId, sortDate, updatedAt, ...item }) => ({ ...item, read: states[0]?.read || false, bookmarked: states[0]?.bookmarked || false })), total, page: input.page, pageSize, online: cached ? presentSearch(cached, true) : null });
+  res.json({ items: items.map(({ states, sourceId, searchText, sortDate, updatedAt, ...item }) => ({ ...item, read: states[0]?.read || false, bookmarked: states[0]?.bookmarked || false })), total, page: input.page, pageSize, online: cached ? presentSearch(cached, true) : null });
   requestSync({ daily: true }).catch(() => {});
 });
 router.patch('/articles/:id/state', async (req, res) => {

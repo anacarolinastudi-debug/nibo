@@ -10,7 +10,7 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } }); page.setDefaultTimeout(8000);
     const searches = [], gets = [], found = new Set(), errors = [];
     const article = { id: 'a4444444-4444-4444-8444-444444444444', title: 'Materia verificada na fonte', summary: 'Resumo publicado pelo portal.', url: 'https://www.contabeis.com.br/noticias/12345/materia-fiscal/', source: { id: 'portal-contabeis', name: 'Portal Contabeis' }, kind: 'NEWS', scope: 'NACIONAL', area: 'CONTABIL', ufs: [], publishedAt: null };
-    const online = { status: 'COMPLETED', provider: 'gemini', discovered: 1, attribution: '<div>Pesquisa Google</div><script>parent.window.injectedSearch=true</script>' };
+    const online = { status: 'COMPLETED', provider: 'DIRECT', discovered: 1, attribution: '<div>Pesquisa Google</div><script>parent.window.injectedSearch=true</script>' };
     page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => { if (window !== window.top) return; localStorage.setItem('token', 'test'); localStorage.setItem('user', JSON.stringify({ id: 'u', role: 'ADMIN' })); });
     await page.route('**/api/**', async route => {
@@ -25,7 +25,7 @@ async function main() {
       }
       if (url.pathname.endsWith('/updates/search')) {
         const brief = req.postDataJSON(); searches.push(brief);
-        if (brief.q === 'erro') return route.fulfill({ status: 429, json: { error: 'A cota de pesquisa online foi atingida.' } });
+        if (brief.q === 'erro') return route.fulfill({ status: 503, json: { error: 'As fontes estao indisponiveis no momento.' } });
         await new Promise(resolve => setTimeout(resolve, brief.q === 'lento' ? 800 : 150));
         if (brief.q === 'vazio') data = { status: 'EMPTY', discovered: 0, attribution: null };
         else { found.add(brief.q); data = online; }
@@ -41,21 +41,20 @@ async function main() {
     assert.equal(searches.length, 1); assert.equal(searches[0].source, 'portal-contabeis');
     assert.equal(gets.at(-1).q, 'remota'); assert.equal(gets.at(-1).source, 'portal-contabeis');
     assert.equal(await page.getByRole('link', { name: 'Criar conteudo com IA: ' + article.title }).getAttribute('href'), '/conteudos?noticia=' + article.id);
-    const frame = page.locator('iframe[title="Sugestoes de pesquisa Google"]'); await frame.waitFor();
-    assert.ok(!(await frame.getAttribute('sandbox')).includes('allow-scripts'));
+    assert.equal(await page.locator('iframe').count(), 0);
+    assert.equal(await page.getByRole('link', { name: 'Pesquisar nas fontes pela web' }).count(), 0);
     assert.equal(await page.evaluate(() => window.injectedSearch), undefined);
     await submit('salva'); await page.getByText('Materia salva', { exact: true }).waitFor();
-    await submit('remota'); await page.getByText('Pesquisa online recente:', { exact: false }).waitFor(); assert.equal(searches.length, 1);
-    await submit('vazio'); await page.getByText('0 materia(s) verificada(s).', { exact: false }).waitFor();
-    await submit('erro'); await page.getByRole('alert').filter({ hasText: 'A cota de pesquisa online foi atingida.' }).waitFor();
-    const web = new URL(await page.getByRole('link', { name: 'Pesquisar nas fontes pela web' }).getAttribute('href'));
-    assert.equal(web.hostname, 'www.google.com'); assert.ok(web.searchParams.get('q').includes('site:www.contabeis.com.br/noticias'));
+    await submit('remota'); await page.getByText('Consulta recente ao acervo:', { exact: false }).waitFor(); assert.equal(searches.length, 1);
+    await submit('vazio'); await page.getByText('0 materia(s) correspondente(s).', { exact: false }).waitFor();
+    await submit('erro'); await page.getByRole('alert').filter({ hasText: 'As fontes estao indisponiveis no momento.' }).waitFor();
+    assert.equal(await page.getByRole('link', { name: 'Pesquisar nas fontes pela web' }).count(), 0);
     const count = searches.length;
     await page.getByLabel('Somente favoritos').check(); await submit('favoritos');
     await page.getByText('Nenhuma atualizacao encontrada para estes filtros.').waitFor(); assert.equal(searches.length, count);
     await page.getByLabel('Somente favoritos').uncheck(); await submit('a');
     await page.getByText('Nenhuma atualizacao encontrada para estes filtros.').waitFor(); assert.equal(searches.length, count);
-    await submit('lento'); await page.getByText('Buscando online nas fontes cadastradas...').waitFor();
+    await submit('lento'); await page.getByText('Consultando diretamente as fontes cadastradas...').waitFor();
     await submit('salva'); await page.getByText('Materia salva', { exact: true }).waitFor(); await page.waitForTimeout(900);
     assert.equal(await page.getByText(article.title, { exact: true }).count(), 0, 'stale search cannot replace a newer query');
     await page.setViewportSize({ width: 390, height: 844 }); await submit('remota-mobile');
@@ -63,7 +62,7 @@ async function main() {
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     fs.mkdirSync(path.resolve(__dirname, '../../tmp/online-search'), { recursive: true });
     await page.screenshot({ path: path.resolve(__dirname, '../../tmp/online-search/mobile.png'), fullPage: true });
-    assert.deepEqual(errors, []); console.log('online-news-ui: PASS (fallback, cache, filters, empty/quota, stale requests, sandbox, content link, mobile)');
+    assert.deepEqual(errors, []); console.log('online-news-ui: PASS (fallback, cache, filters, empty/unavailable, stale requests, no external search, content link, mobile)');
   } finally { await browser.close(); await new Promise(resolve => server.close(resolve)); }
 }
 main().catch(e => { console.error(e); process.exitCode = 1; });
