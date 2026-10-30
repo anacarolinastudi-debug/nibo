@@ -5,10 +5,10 @@ const { parseFeed, parsePage, trustedUrl, MAX_BYTES } = require('./accountingNew
 const KEY = 'national';
 const localDay = (date) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Cuiaba', year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 
-async function fetchSource(source) {
+async function fetchSourceText(source) {
   let url = trustedUrl(source.feedUrl || source.url, source);
   if (!url) throw new Error('Endereco da fonte nao permitido.');
-  const signal = AbortSignal.timeout(18000);
+  const signal = AbortSignal.timeout(Math.min(source.timeoutMs || 18000, 18000));
   const limit = Math.min(source.maxBytes || MAX_BYTES, 8 * 1024 * 1024);
   for (let redirects = 0; redirects <= 3; redirects++) {
     const response = await fetch(url, { redirect: 'manual', signal, headers: { 'User-Agent': 'YoungContabil-News/1.0', Accept: 'application/rss+xml, application/atom+xml, text/html;q=0.9' } });
@@ -28,9 +28,13 @@ async function fetchSource(source) {
       chunks.push(chunk);
     }
     const body = Buffer.concat(chunks).toString('utf8');
-    return source.format === 'rss' ? parseFeed(body, source) : parsePage(body, source);
+    return { body, url: url.href, contentType: response.headers.get('content-type') || '' };
   }
   throw new Error('Excesso de redirecionamentos.');
+}
+async function fetchSource(source) {
+  const { body } = await fetchSourceText(source);
+  return source.format === 'rss' ? parseFeed(body, source) : parsePage(body, source);
 }
 
 async function acquire(db, now, daily) {
@@ -111,7 +115,7 @@ async function getStatus(full = true) {
   const stored = await prisma.newsSource.findMany();
   return { ...status, nextSchedule: '07:00', timeZone: 'America/Cuiaba', sources: SOURCES.map((source) => {
     const row = stored.find((item) => item.id === source.id);
-    return { id: source.id, name: source.name, url: source.url, uf: source.uf || null, scope: source.scope, status: row?.status || 'PENDING', lastCheckedAt: row?.lastCheckedAt || null, lastSuccessAt: row?.lastSuccessAt || null, errorMessage: row?.errorMessage || null, articlesCount: row?.articlesCount || 0 };
+    return { id: source.id, name: source.name, url: source.url, uf: source.uf || null, scope: source.scope, kind: source.kind, searchPrefixes: source.articlePrefixes.map(prefix => new URL(prefix, source.url).href), status: row?.status || 'PENDING', lastCheckedAt: row?.lastCheckedAt || null, lastSuccessAt: row?.lastSuccessAt || null, errorMessage: row?.errorMessage || null, articlesCount: row?.articlesCount || 0 };
   }) };
 }
-module.exports = { requestSync, getStatus, fetchSource, acquire, localDay };
+module.exports = { requestSync, getStatus, fetchSource, fetchSourceText, acquire, localDay };

@@ -1,5 +1,35 @@
 # Fontes de noticias contabeis
 
+## Busca online complementar
+
+Quando uma consulta nao encontra noticias salvas, a interface pode solicitar a
+pesquisa web do provedor de IA ja conectado ao escritorio. O backend confirma
+novamente a ausencia de resultados antes de usar a cota. Na verificacao real
+de 2026-10-30, o Gemini retornou 429 (cota de pesquisa atingida). O aplicativo
+exibe essa limitacao, sem afirmar que a internet nao tem resultados, e oferece
+um link de pesquisa Google restrito aos sites selecionados, em nova aba.
+
+Descoberta usa somente citacoes da ferramenta web, nunca URLs extraidas da
+resposta narrativa do modelo. Os candidatos passam pelos hosts/caminhos HTTPS
+do registro; redirects Google sao aceitos apenas pelo endpoint oficial de
+grounding e somente para artigos autorizados. Titulo, trecho e data sao lidos
+dos metadados reais do editor; datas ausentes permanecem ausentes. Ate seis
+artigos podem ser verificados por consulta, com limites de tempo e memoria.
+Esses artigos recebem IDs normais para favoritos e criacao de conteudo.
+
+O cache e privado por escritorio, usa chave hash e validade de 15 minutos.
+Inclui a atribuicao Google recebida, que pode conter os termos pesquisados;
+ela fica em uma tabela com RLS e so retorna ao escritorio dono. A exibicao e
+isolada em iframe sandbox, sem scripts ou acesso a mesma origem. Ha limite
+persistente de uma nova pesquisa a cada 30 segundos e trava contra consultas
+simultaneas. Entradas com mais de 24 horas sao removidas na proxima pesquisa
+do escritorio. Nao sao apagadas noticias nem marcacoes pessoais.
+
+Filtros continuam aplicados apos a descoberta. Buscas de favoritos ou itens
+ja lidos nao disparam consulta externa. Resultados parciais, ausencia de
+itens verificados, falhas e falta de cota sao diferenciados na interface.
+Testes automatizados simulam o provedor, sem usar chaves reais ou gerar custos.
+
 ## Portal Contabeis e prioridade editorial
 
 Incluido o RSS de noticias fornecido pelo proprio portal:

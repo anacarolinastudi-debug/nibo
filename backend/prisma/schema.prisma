@@ -69,6 +69,7 @@ model AccountingFirm {
   contentProjects       ContentProject[]
   contentStudioSettings ContentStudioSettings?
   newsArticleStates     NewsArticleState[]
+  newsOnlineSearches    NewsOnlineSearch[]
 
   @@map("accounting_firms")
 }
@@ -156,6 +157,20 @@ model NewsSource {
   articles      NewsArticle[]
   updatedAt     DateTime @updatedAt
   @@map("news_sources")
+}
+
+model NewsOnlineSearch {
+  key              String @id
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id], onDelete: Cascade)
+  articleIds       String[] @default([])
+  status           String
+  provider         String
+  sources          Json
+  attribution      String?
+  checkedAt        DateTime @default(now())
+  @@index([accountingFirmId, checkedAt])
+  @@map("news_online_searches")
 }
 
 model NewsArticle {

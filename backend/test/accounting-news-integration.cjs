@@ -13,6 +13,8 @@ async function main() {
   let server;
   const sourceId = 'test-' + suffix;
   const preferredId = 'test-preferred-' + suffix;
+  const onlineUrl = 'https://www.contabeis.com.br/noticias/12345/test-online-' + suffix + '/';
+  const portalExisted = Boolean(await db.newsSource.findUnique({ where: { id: 'portal-contabeis' } }));
   try {
     for (let i = 0; i < 2; i++) {
       const firm = await db.accountingFirm.create({ data: { name: 'News test', cnpj: suffix + i, email: 'test@example.invalid' } }); firmIds.push(firm.id);
@@ -26,6 +28,9 @@ async function main() {
     const base = `http://127.0.0.1:${server.address().port}/api/updates`;
     const auth = (index, extra = {}) => ({ Authorization: 'Bearer ' + generateToken({ sub: users[index].id, accountingFirmId: firmIds[index], role: 'ACCOUNTANT', ...extra }), 'Content-Type': 'application/json' });
     assert.equal((await fetch(base + '/articles')).status, 401);
+    assert.equal((await fetch(base + '/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: 'tema teste' }) })).status, 401);
+    assert.equal((await fetch(base + '/search', { method: 'POST', headers: auth(0), body: JSON.stringify({ q: 'a' }) })).status, 400);
+    assert.equal((await (await fetch(base + '/search', { method: 'POST', headers: auth(0), body: JSON.stringify({ q: 'tema teste', bookmarked: true }) })).json()).status, 'SKIPPED');
     assert.equal((await fetch(base + '/articles/' + articles[0].id)).status, 401);
     const detail = await fetch(base + '/articles/' + articles[0].id, { headers: auth(0) });
     assert.equal(detail.status, 200);
@@ -47,6 +52,9 @@ async function main() {
     const ordered = async query => (await fetch(base + '/articles?q=' + prefix + '&' + query, { headers: auth(0) })).json();
     const first = await ordered('page=1');
     assert.equal(first.total, 27);
+    const localOnly = await fetch(base + '/search', { method: 'POST', headers: auth(0), body: JSON.stringify({ q: prefix, kind: 'NEWS' }) });
+    assert.equal(localOnly.status, 200);
+    assert.equal((await localOnly.json()).status, 'LOCAL', 'server skips paid discovery when saved matches exist');
     assert.ok(first.items.every(item => item.source.id === preferredId), 'preferred source comes before newer official articles across pages');
     const second = await ordered('page=2');
     assert.deepEqual(second.items.map(item => item.source.id), [preferredId, sourceId]);
@@ -54,6 +62,29 @@ async function main() {
     assert.ok(new Date(first.items[0].publishedAt) <= new Date(second.items[1].publishedAt));
     assert.equal((await ordered('source=' + sourceId)).items[0].source.id, sourceId, 'explicit source filters still win');
     assert.equal((await ordered('from=2026-10-29&to=2026-10-29')).items[0].source.id, sourceId, 'date filters still win');
+    const { searchOnline, cachedSearch } = require('../src/services/accountingNewsOnline.service');
+    process.env.OPENAI_API_KEY = 'test-only-never-sent';
+    const searchInput = { q: 'consulta sem correspondencia ' + suffix, source: 'portal-contabeis', kind: 'NEWS' };
+    let discoveryCalls = 0;
+    const dependencies = { db, discover: async () => { discoveryCalls++; return { links: [onlineUrl, onlineUrl], attribution: null }; }, resolve: async value => value, fetchText: async () => ({ body: '<meta property="og:title" content="Uma noticia fiscal verificada para empresas"><meta name="description" content="Resumo da fonte, nao da IA.">', url: onlineUrl, contentType: 'text/html' }) };
+    const searched = await searchOnline(firmIds[0], searchInput, dependencies);
+    assert.equal(searched.discovered, 1);
+    assert.equal((await searchOnline(firmIds[0], searchInput, dependencies)).cached, true);
+    assert.equal(discoveryCalls, 1);
+    const query = new URLSearchParams(searchInput);
+    const ownSearch = await (await fetch(base + '/articles?' + query, { headers: auth(0) })).json();
+    assert.equal(ownSearch.total, 1, 'cached discovery remains findable even when the phrase is absent from its title');
+    assert.equal(ownSearch.items[0].url, onlineUrl);
+    assert.equal(ownSearch.items[0].publishedAt, null);
+    assert.equal((await (await fetch(base + '/articles?' + query, { headers: auth(1) })).json()).total, 0, 'another office cannot reuse a private search cache');
+    assert.equal(await cachedSearch(firmIds[1], searchInput), null);
+    assert.equal(await cachedSearch(firmIds[0], searchInput, db, new Date(Date.now() + 16 * 60000)), null);
+    await assert.rejects(searchOnline(firmIds[0], { ...searchInput, q: 'another-query-' + suffix }, dependencies), error => error.status === 429);
+    await db.newsArticle.update({ where: { url: onlineUrl }, data: { summary: 'Resumo anterior salvo.', publishedAt: new Date('2026-10-20T16:00:00Z') } });
+    await searchOnline(firmIds[1], searchInput, { ...dependencies, fetchText: async () => ({ body: '<meta property="og:title" content="Uma noticia fiscal verificada para empresas">', url: onlineUrl, contentType: 'text/html' }) });
+    const preserved = await db.newsArticle.findUnique({ where: { url: onlineUrl } });
+    assert.equal(preserved.summary, 'Resumo anterior salvo.');
+    assert.equal(preserved.publishedAt.toISOString(), '2026-10-20T16:00:00.000Z');
     assert.equal((await fetch(base + '/articles?from=2026-02-31', { headers: auth(0) })).status, 400);
     await db.user.update({ where: { id: users[1].id }, data: { active: false } });
     assert.equal((await fetch(base + '/status', { headers: auth(1) })).status, 403);
@@ -61,6 +92,9 @@ async function main() {
   } finally {
     if (server) await new Promise(resolve => server.close(resolve));
     await db.newsArticle.deleteMany({ where: { sourceId: { in: [sourceId, preferredId] } } });
+    await db.newsArticle.deleteMany({ where: { url: onlineUrl } });
+    if (!portalExisted && !await db.newsArticle.count({ where: { sourceId: 'portal-contabeis' } })) await db.newsSource.deleteMany({ where: { id: 'portal-contabeis' } });
+    await db.newsSyncState.deleteMany({ where: { key: { in: firmIds.map(id => 'online:' + id) } } });
     await db.newsSource.deleteMany({ where: { id: { in: [sourceId, preferredId] } } });
     await db.user.deleteMany({ where: { id: { in: users.map(user => user.id) } } });
     await db.accountingFirm.deleteMany({ where: { id: { in: firmIds } } });

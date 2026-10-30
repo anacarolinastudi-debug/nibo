@@ -41,6 +41,9 @@ function UpdatesHub() {
   const [result, setResult] = useState({ items: [], total: 0, pageSize: 20 });
   const [loading, setLoading] = useState(true);
   const [listError, setListError] = useState('');
+  const [online, setOnline] = useState(null);
+  const [onlineError, setOnlineError] = useState('');
+  const [searchingOnline, setSearchingOnline] = useState(false);
   const [actionError, setActionError] = useState('');
   const [status, setStatus] = useState(null);
   const [statusError, setStatusError] = useState('');
@@ -63,15 +66,31 @@ function UpdatesHub() {
   useEffect(() => {
     const controller = new AbortController();
     const sequence = ++listSequence.current;
-    setLoading(true); setListError('');
+    setLoading(true); setListError(''); setOnline(null); setOnlineError(''); setSearchingOnline(false);
     const params = { ...filters, kind, page };
     Object.keys(params).forEach(key => { if (params[key] === '' || params[key] === false) delete params[key]; });
-    api.get('/updates/articles', { params, signal: controller.signal }).then(({ data }) => {
+    async function load() {
+      let { data } = await api.get('/updates/articles', { params, signal: controller.signal });
+      if (controller.signal.aborted || sequence !== listSequence.current) return;
+      if (data.online) setOnline(data.online);
+      const eligible = !data.total && !data.online && page === 1 && view !== 'SOURCES' && filters.q.trim().length >= 2 && !filters.bookmarked && filters.read !== 'read';
+      if (eligible) {
+        setSearchingOnline(true);
+        try {
+          const response = await api.post('/updates/search', params, { signal: controller.signal, timeout: 95000 });
+          if (controller.signal.aborted || sequence !== listSequence.current) return;
+          setOnline(response.data);
+          if (response.data.discovered || response.data.status === 'LOCAL') data = (await api.get('/updates/articles', { params, signal: controller.signal })).data;
+        } catch (error) {
+          if (!controller.signal.aborted && sequence === listSequence.current) setOnlineError(error.response?.data?.error || 'Nao foi possivel concluir a pesquisa online. Tente novamente mais tarde.');
+        } finally { if (!controller.signal.aborted && sequence === listSequence.current) setSearchingOnline(false); }
+      }
       if (controller.signal.aborted || sequence !== listSequence.current) return;
       const pages = Math.max(1, Math.ceil(data.total / (data.pageSize || 20)));
       if (page > pages) { setPage(pages); return; }
       setResult(data);
-    }).catch(() => {
+    }
+    load().catch(() => {
       if (!controller.signal.aborted && sequence === listSequence.current) setListError('Nao foi possivel carregar as atualizacoes.');
     }).finally(() => { if (!controller.signal.aborted && sequence === listSequence.current) setLoading(false); });
     return () => controller.abort();
@@ -148,6 +167,10 @@ function UpdatesHub() {
     return <Field label={label}><select aria-label={label} className={input} value={draft[key]} onChange={event => setDraft(old => ({ ...old, [key]: event.target.value }))}><option value="">Todas</option>{Object.entries(values).map(([value, name]) => <option key={value} value={value}>{name}</option>)}</select></Field>;
   }
   const sources = status?.sources || [];
+  const webSites = sources.filter(source => (!source.kind || source.kind === kind) && (!filters.source || source.id === filters.source) && (!filters.scope || source.scope === filters.scope) && (!filters.uf || source.uf === filters.uf)).flatMap(source => {
+    try { return (source.searchPrefixes?.length ? source.searchPrefixes : [new URL(source.url).origin]).map(prefix => { const url = new URL(prefix); return url.protocol === 'https:' ? `site:${url.hostname}${url.pathname.replace(/\/$/, '')}` : null; }); } catch { return []; }
+  }).filter(Boolean);
+  const webSearch = filters.q.trim() && webSites.length ? `https://www.google.com/search?${new URLSearchParams({ q: `${filters.q} (${[...new Set(webSites)].join(' OR ')})` })}` : null;
   const totalPages = Math.max(1, Math.ceil(result.total / (result.pageSize || 20)));
   return <div className="min-h-screen bg-white text-[#3f4548]">
     <NiboRail />
@@ -204,9 +227,15 @@ function UpdatesHub() {
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-4 text-sm"><label className="flex items-center gap-2"><input type="checkbox" checked={draft.bookmarked} onChange={event => setDraft(old => ({ ...old, bookmarked: event.target.checked }))} />Somente favoritos</label><button type="submit" className="inline-flex items-center gap-2 rounded bg-[#16829b] px-3 py-2 text-white"><Search size={16} /> Aplicar filtros</button><button type="button" onClick={() => { setDraft(empty); setFilters(empty); setPage(1); }}>Limpar filtros</button></div>
             </form>
-            {loading ? <p role="status" className="py-8 text-sm">Carregando atualizacoes...</p> : listError ? <div role="alert" className="py-6 text-sm text-red-700">{listError} <button onClick={() => setRevision(value => value + 1)} className="underline">Tentar novamente</button></div> : <>
+            {onlineError && <div role="alert" className="mb-4 border-l-2 border-amber-400 bg-amber-50 p-3 text-sm text-amber-900"><p>{onlineError}</p>{webSearch && <a href={webSearch} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-2 text-[#16829b]"><ExternalLink size={16} />Pesquisar nas fontes pela web</a>}</div>}
+            {online && <div className="mb-4 border-y py-3 text-sm text-[#68737a]" role="status">
+              {online.status === 'UNSUPPORTED' ? 'Nenhuma fonte cadastrada atende a selecao para pesquisa online.' : online.status === 'LOCAL' ? 'Foram encontradas materias ja salvas.' : online.status === 'SKIPPED' ? 'A pesquisa manteve apenas suas marcacoes pessoais.' : <>{online.cached ? 'Pesquisa online recente' : 'Pesquisa online concluida'}: {online.discovered} materia(s) verificada(s). {online.status === 'PARTIAL' && 'Alguns links nao puderam ser conferidos.'}</>}
+              {online.attribution && <iframe title="Sugestoes de pesquisa Google" sandbox="allow-popups allow-popups-to-escape-sandbox" referrerPolicy="no-referrer" className="mt-2 h-40 w-full border-0" srcDoc={`<!doctype html><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src https://www.google.com https://www.gstatic.com data:">${online.attribution}`} />}
+            </div>}
+            {loading ? <p role="status" className="py-8 text-sm">{searchingOnline ? 'Buscando online nas fontes cadastradas...' : 'Carregando atualizacoes...'}</p> : listError ? <div role="alert" className="py-6 text-sm text-red-700">{listError} <button onClick={() => setRevision(value => value + 1)} className="underline">Tentar novamente</button></div> : <>
               <p className="mb-3 text-xs text-[#68737a]">{result.total} registros encontrados</p>
               {!result.items.length && <p className="border-y py-10 text-sm text-[#68737a]">Nenhuma atualizacao encontrada para estes filtros.</p>}
+              {!result.items.length && !onlineError && webSearch && <a href={webSearch} target="_blank" rel="noopener noreferrer" className="my-3 inline-flex items-center gap-2 text-sm text-[#16829b]"><ExternalLink size={16} />Pesquisar nas fontes pela web</a>}
               <div className="divide-y border-y">{result.items.map(article => <article key={article.id} className="min-w-0 py-4 [overflow-wrap:anywhere]">
                 <div className="mb-2 flex flex-wrap items-center gap-2 text-xs text-[#68737a]"><span>{article.source?.name}</span><span>· {areas[article.area] || article.area}</span><span>· {scopes[article.scope] || article.scope} {(article.ufs || []).join(', ')}</span></div>
                 <h2 className={`text-base ${article.read ? 'font-medium text-[#68737a]' : 'font-semibold'}`}>{article.title}</h2>
