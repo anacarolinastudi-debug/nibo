@@ -32,7 +32,7 @@ router.get('/articles', async (req, res) => {
     AND: [ ...(input.read === 'read' ? [{ states: { some: { ...own, read: true } } }] : []), ...(input.read === 'unread' ? [{ states: { none: { ...own, read: true } } }] : []), ...(input.bookmarked === 'true' ? [{ states: { some: { ...own, bookmarked: true } } }] : []) ],
   };
   const pageSize = 25;
-  const [items, total] = await prisma.$transaction([prisma.newsArticle.findMany({ where, orderBy: [{ sortDate: 'desc' }, { id: 'desc' }], skip: (input.page - 1) * pageSize, take: pageSize, include: { source: { select: { id: true, name: true, url: true } }, states: { where: own, select: { read: true, bookmarked: true } } } }), prisma.newsArticle.count({ where })]);
+  const [items, total] = await prisma.$transaction([prisma.newsArticle.findMany({ where, orderBy: [{ source: { priority: 'desc' } }, { sortDate: 'desc' }, { id: 'desc' }], skip: (input.page - 1) * pageSize, take: pageSize, include: { source: { select: { id: true, name: true, url: true } }, states: { where: own, select: { read: true, bookmarked: true } } } }), prisma.newsArticle.count({ where })]);
   res.json({ items: items.map(({ states, sourceId, sortDate, updatedAt, ...item }) => ({ ...item, read: states[0]?.read || false, bookmarked: states[0]?.bookmarked || false })), total, page: input.page, pageSize });
   requestSync({ daily: true }).catch(() => {});
 });

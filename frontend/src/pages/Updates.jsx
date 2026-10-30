@@ -163,7 +163,7 @@ function UpdatesHub() {
       <FirmHeader />
       <section className="min-w-0 p-3 md:p-6">
         <header className="mb-5 flex flex-wrap items-start justify-between gap-3">
-          <div><Link to="/" className="mb-2 inline-block text-sm text-[#16829b] xl:hidden">Voltar para obrigacoes</Link><h1 className="text-2xl font-semibold">Atualizacoes contabeis</h1><p className="mt-1 text-sm text-[#68737a]">Noticias e legislacao de fontes oficiais</p></div>
+          <div><Link to="/" className="mb-2 inline-block text-sm text-[#16829b] xl:hidden">Voltar para obrigacoes</Link><h1 className="text-2xl font-semibold">Atualizacoes contabeis</h1><p className="mt-1 text-sm text-[#68737a]">Noticias e legislacao de portais contabeis e orgaos oficiais</p></div>
           <button type="button" onClick={refresh} disabled={refreshing || !!cooldownUntil || status?.state === 'RUNNING'} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm disabled:opacity-50"><RefreshCw size={16} className={refreshing || status?.state === 'RUNNING' ? 'animate-spin' : ''} /> Atualizar fontes</button>
         </header>
         <div className="mb-4 space-y-1 border-y bg-[#f8fafb] px-3 py-3 text-xs text-[#68737a]" aria-live="polite">

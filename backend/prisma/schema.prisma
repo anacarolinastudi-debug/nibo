@@ -147,6 +147,7 @@ model NewsSource {
   url           String
   uf            String?
   scope         String
+  priority      Int @default(0)
   status        String @default("PENDING")
   errorMessage  String?
   lastCheckedAt DateTime?

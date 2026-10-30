@@ -1,0 +1,1 @@
+ALTER TABLE "news_sources" ADD COLUMN "priority" INTEGER NOT NULL DEFAULT 0;

@@ -1,8 +1,6 @@
 'use strict';
 
-// Official listings checked through web retrieval on 2026-10-29.
-// Direct Node fetch validation was interrupted; collection is not yet certified.
-// Only listing HTML is registered here: no unverified RSS URLs are inferred.
+// Verified public listings and publisher-provided feeds; see docs/ACCOUNTING-NEWS-SOURCES.md.
 const UF_NAMES = Object.freeze({
   AC: 'Acre', AL: 'Alagoas', AP: 'Amapa', AM: 'Amazonas',
   BA: 'Bahia', CE: 'Ceara', DF: 'Distrito Federal', ES: 'Espirito Santo',
@@ -24,6 +22,7 @@ function source(value) {
 }
 
 const SOURCES = Object.freeze([
+  source({ id: 'portal-contabeis', name: 'Portal Contabeis', url: 'https://www.contabeis.com.br/noticias/', feedUrl: 'https://www.contabeis.com.br/rss/noticias/', uf: null, scope: 'NACIONAL', kind: 'NEWS', area: 'CONTABIL', priority: 100, allowedHosts: ['www.contabeis.com.br'], articlePrefixes: ['/noticias/'], format: 'rss' }),
   source({ id: 'cfc', name: 'Conselho Federal de Contabilidade', url: 'https://cfc.org.br/noticias/', feedUrl: 'https://cfc.org.br/feed/', uf: null, scope: 'NACIONAL', kind: 'NEWS', area: 'CONTABIL', allowedHosts: ['cfc.org.br'], articlePrefixes: ['/noticias/'], format: 'rss' }),
   source({ id: 'sefaz-pe', name: 'Secretaria da Fazenda de Pernambuco', url: 'https://www.sefaz.pe.gov.br/Paginas/Todas-as-Noticias.aspx', uf: 'PE', scope: 'ESTADUAL', kind: 'NEWS', area: 'FISCAL', allowedHosts: ['www.sefaz.pe.gov.br'], articlePrefixes: ['/Noticias/Paginas/', '/Noticias-Destaque/Paginas/'], format: 'html', maxBytes: 8 * 1024 * 1024 }),
   source({ id: 'esocial', name: 'eSocial', url: 'https://www.gov.br/esocial/pt-br/noticias', uf: null, scope: 'FEDERAL', kind: 'NEWS', area: 'TRABALHISTA', allowedHosts: ['www.gov.br'], articlePrefixes: ['/esocial/pt-br/noticias/'], format: 'html' }),

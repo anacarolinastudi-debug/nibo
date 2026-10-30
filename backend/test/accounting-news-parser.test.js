@@ -3,6 +3,15 @@ const assert = require('node:assert/strict');
 const { parseFeed, parsePage, articleUrl, classifyArea, parseDate } = require('../src/services/accountingNewsParser');
 const source = { id: 'receita', name: 'Receita Federal', url: 'https://www.gov.br/receitafederal/pt-br/assuntos/noticias/', allowedHosts: ['www.gov.br'], articlePrefixes: ['/receitafederal/pt-br/assuntos/noticias/'], scope: 'FEDERAL', uf: null, kind: 'NEWS', area: 'FISCAL' };
 const now = new Date('2026-10-29T16:00:00Z');
+test('Portal Contabeis uses its own news RSS and is configured as preferred', () => {
+  const portal = require('../src/data/accountingNewsSources').SOURCES.find(item => item.id === 'portal-contabeis');
+  assert.equal(portal.priority, 100);
+  const items = parseFeed(`<rss><channel><item><title>Noticias contabeis para empresas e profissionais</title><link>https://www.contabeis.com.br/noticias/80485/materia-contabil/</link><description><![CDATA[<p><img src="x">Resumo disponibilizado pelo portal.</p>]]></description><pubDate>Thu, 29 Oct 2026 17:30:00 -0300</pubDate></item></channel></rss>`, portal, now);
+  assert.equal(items.length, 1);
+  assert.equal(items[0].summary, 'Resumo disponibilizado pelo portal.');
+  assert.equal(items[0].publishedAt.toISOString(), '2026-10-29T20:30:00.000Z');
+  assert.equal(articleUrl('https://www.contabeis.com.br/forum/12345/topico-forum/', portal), null);
+});
 test('RSS metadata is deduplicated, strips executable HTML, and preserves the actual date', () => {
   const xml = `<rss><channel><item><title>Atualizacao do Simples Nacional para empresas</title><link>${source.url}2026/outubro/simples?utm_source=email</link><description><![CDATA[<p>Orientacoes para empresas.</p><script>alert(1)</script>]]></description><pubDate>Thu, 29 Oct 2026 10:00:00 -0400</pubDate></item><item><title>Duplicada</title><link>${source.url}2026/outubro/simples</link></item><item><title>Foto</title><link>${source.url}foto.jpg</link></item></channel></rss>`;
   const articles = parseFeed(xml, source, now);

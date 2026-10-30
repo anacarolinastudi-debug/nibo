@@ -16,7 +16,7 @@ async function fetchSource(source) {
       const destination = new URL(response.headers.get('location') || '', url);
       await response.body?.cancel();
       url = trustedUrl(destination.href, source);
-      if (!url) throw new Error('Redirecionamento fora da fonte oficial.');
+      if (!url) throw new Error('Redirecionamento fora da fonte cadastrada.');
       continue;
     }
     if (!response.ok) { await response.body?.cancel(); throw new Error(`Fonte indisponivel (HTTP ${response.status}).`); }
@@ -66,7 +66,7 @@ async function collect(owner, db = prisma, fetcher = fetchSource) {
         if (Date.now() > deadline) throw new Error('Tempo da coleta excedido. Nova tentativa na proxima atualizacao.');
         const items = await fetcher(source);
         const written = await fenced(async (tx) => {
-          await tx.newsSource.upsert({ where: { id: source.id }, create: { id: source.id, name: source.name, url: source.url, uf: source.uf || null, scope: source.scope }, update: { name: source.name, url: source.url, uf: source.uf || null, scope: source.scope } });
+          await tx.newsSource.upsert({ where: { id: source.id }, create: { id: source.id, name: source.name, url: source.url, uf: source.uf || null, scope: source.scope, priority: source.priority || 0 }, update: { name: source.name, url: source.url, uf: source.uf || null, scope: source.scope, priority: source.priority || 0 } });
           for (const item of items) {
           const { publishedAt, summary, ...metadata } = item;
           await tx.newsArticle.upsert({ where: { url: item.url }, create: { ...item, sourceId: source.id, sortDate: publishedAt || new Date() }, update: { ...metadata, ...(summary ? { summary } : {}), ...(publishedAt ? { publishedAt, sortDate: publishedAt } : {}) } });
@@ -77,7 +77,7 @@ async function collect(owner, db = prisma, fetcher = fetchSource) {
         success++;
       } catch (error) {
         const safeMessage = /^(Fonte indisponivel|Endereco da fonte|Redirecionamento|Excesso de|Resposta acima|Tempo da coleta|A fonte exige|Feed nao reconhecido|Declaracoes)/.test(error.message) ? error.message.slice(0, 200) : 'Nao foi possivel consultar esta fonte. Nova tentativa na proxima atualizacao.';
-        await fenced(async (tx) => tx.newsSource.upsert({ where: { id: source.id }, create: { id: source.id, name: source.name, url: source.url, uf: source.uf || null, scope: source.scope, status: 'ERROR', lastCheckedAt: new Date(), errorMessage: safeMessage }, update: { status: 'ERROR', lastCheckedAt: new Date(), errorMessage: safeMessage } }));
+        await fenced(async (tx) => tx.newsSource.upsert({ where: { id: source.id }, create: { id: source.id, name: source.name, url: source.url, uf: source.uf || null, scope: source.scope, priority: source.priority || 0, status: 'ERROR', lastCheckedAt: new Date(), errorMessage: safeMessage }, update: { status: 'ERROR', priority: source.priority || 0, lastCheckedAt: new Date(), errorMessage: safeMessage } }));
         errors++;
       }
     }

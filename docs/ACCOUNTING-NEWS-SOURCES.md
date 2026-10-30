@@ -1,5 +1,18 @@
 # Fontes de noticias contabeis
 
+## Portal Contabeis e prioridade editorial
+
+Incluido o RSS de noticias fornecido pelo proprio portal:
+https://www.contabeis.com.br/rss/noticias/ (divulgado em /rss/).
+E uma fonte editorial nacional, nao um orgao governamental. Somente titulo,
+data e trecho curto do RSS sao armazenados, com credito e link original.
+Nao sao importados forum, artigos completos, imagens ou conteudo restrito.
+As materias dessa fonte aparecem primeiro; dentro de cada grupo, permanece
+a ordenacao da mais recente para a mais antiga. A prioridade ocorre no banco
+antes da paginacao, sem substituir filtros de fonte, data, UF ou favoritos.
+Novas fontes seguem com prioridade zero; Portal Contabeis usa prioridade 100.
+A coleta diaria e o historico continuam os mesmos.
+
 ## Validacao final da implementacao (substitui o levantamento inicial abaixo)
 
 Coleta local real em 2026-10-29: 278 publicacoes, 13 fontes cadastradas.
