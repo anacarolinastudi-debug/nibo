@@ -5,7 +5,7 @@ const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
 const secretCrypto = require('../utils/certCrypto');
 
 const optionalText = z.string().optional().nullable();
-const clientSchema = z.object({
+const clientFields = z.object({
   name: z.string().min(2, 'Nome é obrigatório.'),
   cnpj: z.string().optional().nullable(),
   personType: z.enum(['JURIDICA', 'FISICA']).default('JURIDICA'),
@@ -29,7 +29,8 @@ const clientSchema = z.object({
   allowPublicDocuments: z.boolean().optional(),
   taxReminderEmail: z.boolean().optional(),
   active: z.boolean().optional(),
-}).superRefine((data, ctx) => {
+});
+const clientSchema = clientFields.superRefine((data, ctx) => {
   const digits = String(data.cnpj || '').replace(/\D/g, '');
   if (data.personType !== 'FISICA' && digits.length < 11) {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['cnpj'], message: 'CNPJ é obrigatório.' });
@@ -125,9 +126,10 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
-  const data = clientSchema.partial().parse(req.body);
+  const data = clientFields.partial().parse(req.body);
   const existing = await prisma.client.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
   if (!existing) return res.status(404).json({ error: 'Cliente não encontrado.' });
+  clientSchema.parse({ ...existing, ...data });
   const client = await prisma.client.update({ where: { id: existing.id }, data: prepareClientData(data, { existing }) });
   res.json(serializeClient(client, { includeGovbrAccess: true }));
 }
