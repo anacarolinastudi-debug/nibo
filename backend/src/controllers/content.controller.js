@@ -10,6 +10,8 @@ const schema = z.object({
     accent: z.string().regex(/^#[a-fA-F0-9]{6}$/),
     fontSize: z.number().int().min(48).max(112),
     background: z.enum(['organic', 'plain', 'white', 'photo']).optional(),
+    photoPanel: z.enum(['white', 'blue']).optional(),
+    photoPages: z.enum(['white', 'blue']).optional(),
     coverPhoto: z.object({
       dataUrl: z.string().max(1300000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/).refine(value => { try { return logoDataUrl(Buffer.from(value.split(',')[1], 'base64')) === value; } catch { return false; } }, 'Imagem da capa invalida.'),
       title: z.string().max(200).default(''), creator: z.string().max(120).default(''),

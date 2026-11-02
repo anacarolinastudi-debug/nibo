@@ -1,6 +1,8 @@
 # Editorial With Image
 
-Select Fundo > Editorial com imagem. The first slide uses a 50/50 photo and pale editorial panel. Remaining slides reuse the white renderer and Montserrat typography. Preview, library thumbnails, PNG and ZIP use the same renderer.
+Select Fundo > Editorial com imagem. The first slide uses a 50/50 photo and editorial panel. Cover and internal headings both use Montserrat 800, with body text in Montserrat 400. Preview, library thumbnails, PNG and ZIP use the same renderer.
+
+Lateral da capa and Demais paginas independently select brand navy (#051d40) or white (#ffffff), defaulting to white when settings are absent. Blue panels use light text and the light-blue brand accent; white panels use dark text and the primary-blue accent. Internal photo-editorial slides omit the logo/name/handle header and move the content upward. Standalone white and legacy blue themes remain unchanged. Color settings persist in the existing project JSON without a migration.
 
 Automatic searches derive public visual keywords from the first headline. Manual searches preserve the typed subject. Selection can be replaced with another result or an uploaded PNG/JPEG/WebP. Crop positions and grayscale remain editable. A manual selection is not overwritten when text changes.
 

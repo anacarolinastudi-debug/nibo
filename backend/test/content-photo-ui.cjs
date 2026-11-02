@@ -43,7 +43,7 @@ async function main() {
     await page.getByRole('button', { name: 'Salvar', exact: true }).waitFor({ state: 'visible' });
     await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent === 'Salvar')?.disabled);
     const canvas = page.locator('canvas').first();
-    await page.waitForFunction(() => document.querySelector('canvas').getContext('2d').getImageData(1000, 300, 1, 1).data[0] === 206);
+    await page.waitForFunction(() => document.querySelector('canvas').getContext('2d').getImageData(1000, 300, 1, 1).data[0] === 255);
     const pixels = await canvas.evaluate(c => {
       const d = c.getContext('2d').getImageData(0, 0, 540, 1150).data, colors = new Set();
       for (let i = 0; i < d.length; i += 127 * 4) colors.add(`${d[i]},${d[i+1]},${d[i+2]}`);
@@ -51,6 +51,9 @@ async function main() {
     });
     assert.ok(pixels.colors > 30, 'real photo must render on cover'); assert.match(pixels.font, /Montserrat/);
     fs.writeFileSync(path.join(output, 'cover.png'), Buffer.from((await canvas.evaluate(c => c.toDataURL())).split(',')[1], 'base64'));
+    await page.getByRole('radio', { name: 'Lateral da capa: Azul', exact: true }).check();
+    await page.waitForFunction(() => document.querySelector('canvas').getContext('2d').getImageData(1000, 300, 1, 1).data[0] === 5);
+    fs.writeFileSync(path.join(output, 'cover-blue.png'), Buffer.from((await canvas.evaluate(c => c.toDataURL())).split(',')[1], 'base64'));
     await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
     assert.equal(automaticFlags[0], 'true');
     await page.getByRole('textbox', { name: 'Buscar imagem', exact: true }).fill('empresa hospital');
@@ -61,6 +64,7 @@ async function main() {
     await page.waitForFunction(() => ![...document.querySelectorAll('button')].find(b => b.textContent === 'Salvar')?.disabled);
     await page.getByRole('button', { name: 'Salvar', exact: true }).click(); await page.getByText('Salvo no sistema', { exact: true }).waitFor();
     assert.equal(saved.settings.coverPhoto.sourceUrl, options[1].sourceUrl);
+    assert.equal(saved.settings.photoPanel, 'blue');
     assert.ok(saved.settings.coverPhoto.dataUrl.startsWith('data:image/jpeg;base64,'));
     selectDelay = 600;
     await page.getByRole('button', { name: 'Outra imagem', exact: true }).click();
@@ -69,13 +73,22 @@ async function main() {
     selectDelay = 0;
     await page.getByRole('button', { name: 'Selecionar slide 2', exact: true }).click();
     await page.waitForFunction(() => document.querySelector('canvas').getContext('2d').getImageData(20, 700, 1, 1).data[0] === 255);
+    assert.deepEqual(await canvas.evaluate(c => Array.from(c.getContext('2d').getImageData(150, 210, 1, 1).data).slice(0, 3)), [255, 255, 255], 'old logo header is absent');
     fs.writeFileSync(path.join(output, 'text-slide.png'), Buffer.from((await canvas.evaluate(c => c.toDataURL())).split(',')[1], 'base64'));
+    await page.getByRole('radio', { name: 'Demais páginas: Azul', exact: true }).check();
+    await page.waitForFunction(() => document.querySelector('canvas').getContext('2d').getImageData(20, 700, 1, 1).data[0] === 5);
+    fs.writeFileSync(path.join(output, 'text-slide-blue.png'), Buffer.from((await canvas.evaluate(c => c.toDataURL())).split(',')[1], 'base64'));
+    await page.getByRole('radio', { name: 'Demais páginas: Branco', exact: true }).check();
+    await page.getByRole('button', { name: 'Salvar', exact: true }).click(); await page.getByText('Salvo no sistema', { exact: true }).waitFor();
+    assert.equal(saved.settings.photoPanel, 'blue'); assert.equal(saved.settings.photoPages, 'white');
     const zipPromise = page.waitForEvent('download'); await page.getByRole('button', { name: 'Baixar carrossel ZIP', exact: true }).click();
     const zip = await JSZip.loadAsync(fs.readFileSync(await (await zipPromise).path()));
     assert.equal(Object.keys(zip.files).filter(name => name.endsWith('.png')).length, 5);
     assert.match(await zip.file('creditos-da-imagem.txt').async('string'), /CC BY 2.0/);
     await page.reload(); await page.getByRole('button', { name: 'Biblioteca', exact: true }).click(); await page.getByRole('button', { name: 'Abrir Novo conteúdo', exact: true }).click();
     assert.equal(await page.getByLabel(/^Fundo/).inputValue(), 'photo');
+    assert.equal(await page.getByRole('radio', { name: 'Lateral da capa: Azul', exact: true }).isChecked(), true);
+    assert.equal(await page.getByRole('radio', { name: 'Demais páginas: Branco', exact: true }).isChecked(), true);
     const count = searches.length;
     const red = await page.evaluate(() => { const c = document.createElement('canvas'); c.width = 600; c.height = 1400; const x = c.getContext('2d'); x.fillStyle = '#d32f2f'; x.fillRect(0, 0, 600, 1400); return c.toDataURL().split(',')[1]; });
     await page.getByLabel('Enviar foto da capa', { exact: true }).setInputFiles({ name: 'minha-foto.png', mimeType: 'image/png', buffer: Buffer.from(red, 'base64') });

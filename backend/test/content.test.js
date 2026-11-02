@@ -69,12 +69,15 @@ test('white editorial layout and company profile persist in saved projects', asy
 });
 test('photo cover persists separately from slides and rejects unsafe images', async () => {
   const coverPhoto = { dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=', title: 'Foto', creator: 'Autora', sourceUrl: '', license: '', licenseUrl: '', query: 'empresa', mode: 'manual' };
-  const settings = { ...project.settings, background: 'photo', coverPhoto, photoX: 40, photoY: 60, photoMono: true, slides: Array(2).fill(project.settings.slides[0]) };
+  const settings = { ...project.settings, background: 'photo', coverPhoto, photoPanel: 'blue', photoPages: 'white', photoX: 40, photoY: 60, photoMono: true, slides: Array(2).fill(project.settings.slides[0]) };
   const response = await call('', { method: 'POST', body: { ...project, settings } });
   assert.equal(response.status, 201);
   const item = await response.json();
   assert.equal(item.settings.coverPhoto.dataUrl, coverPhoto.dataUrl);
   assert.equal(item.settings.photoMono, true);
+  assert.equal(item.settings.photoPanel, 'blue');
+  assert.equal(item.settings.photoPages, 'white');
+  assert.equal((await call('', { method: 'POST', body: { ...project, settings: { ...settings, photoPages: 'red' } } })).status, 400);
   assert.equal(item.settings.slides[1].coverPhoto, undefined);
   const largeImage = 'data:image/png;base64,' + Buffer.concat([Buffer.from(coverPhoto.dataUrl.split(',')[1], 'base64'), Buffer.alloc(150000)]).toString('base64');
   const largeSaved = await call('', { method: 'POST', body: { ...project, settings: { ...settings, coverPhoto: { ...coverPhoto, dataUrl: largeImage } } } });

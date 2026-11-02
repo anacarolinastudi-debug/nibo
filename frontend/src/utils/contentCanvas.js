@@ -47,6 +47,9 @@ function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, ce
 }
 
 const logoBoundsCache = new WeakMap();
+const editorialPalette = mode => mode === 'blue'
+  ? { background: '#051d40', ink: '#ffffff', body: '#e4effb', muted: '#c2d4ea', accent: '#63b0ff' }
+  : { background: '#ffffff', ink: '#17191c', body: '#202327', muted: '#72777c', accent: '#0965ba' };
 function logoBounds(image) {
   if (logoBoundsCache.has(image)) return logoBoundsCache.get(image);
   const scratch = document.createElement('canvas'); scratch.width = image.naturalWidth; scratch.height = image.naturalHeight;
@@ -75,7 +78,8 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
   ctx.textBaseline = 'top';
   const slide = settings.slides[index] || emptySlide();
   if (settings.background === 'photo' && index === 0) {
-    ctx.fillStyle = '#cedfe2'; ctx.fillRect(0, 0, 1080, 1350);
+    const palette = editorialPalette(settings.photoPanel);
+    ctx.fillStyle = palette.background; ctx.fillRect(0, 0, 1080, 1350);
     if (coverPhoto?.naturalWidth) {
       const scale = Math.max(540 / coverPhoto.naturalWidth, 1350 / coverPhoto.naturalHeight);
       const width = coverPhoto.naturalWidth * scale, height = coverPhoto.naturalHeight * scale;
@@ -83,18 +87,18 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
       ctx.filter = (settings.photoMono ?? true) ? 'grayscale(1)' : 'none';
       ctx.drawImage(coverPhoto, (540 - width) * (settings.photoX ?? 50) / 100, (1350 - height) * (settings.photoY ?? 50) / 100, width, height); ctx.restore();
     } else { ctx.fillStyle = '#dce4e6'; ctx.fillRect(0, 0, 540, 1350); }
-    textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 605, 88, 400, 70, 23, '#36464d');
-    textBlock(ctx, slide.eyebrow, 605, 265, 400, 80, 21, '#36464d', 600);
+    textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 605, 88, 400, 70, 23, palette.muted);
+    textBlock(ctx, slide.eyebrow, 605, 265, 400, 80, 21, palette.muted, 600);
     const hasBody = !!slide.body?.trim();
     let titleSize = Math.min(settings.fontSize, 56);
     while (titleSize > 16) {
-      ctx.font = `400 ${titleSize}px "Montserrat"`;
+      ctx.font = `800 ${titleSize}px "Montserrat"`;
       if (String(slide.headline).split(/\s+/).every(word => ctx.measureText(word).width <= 400)) break;
       titleSize -= 2;
     }
-    textBlock(ctx, slide.headline, 605, 385, 400, hasBody ? 530 : 650, titleSize, '#111c22', 400, false, 'Montserrat', '', '#111c22', false, !hasBody);
-    if (hasBody) textBlock(ctx, slide.body, 605, 950, 400, 210, 28, '#26373f');
-    textBlock(ctx, firmName || 'Young Contábil', 605, 1220, 400, 70, 31, '#111c22', 600);
+    textBlock(ctx, slide.headline, 605, 385, 400, hasBody ? 530 : 650, titleSize, palette.ink, 800, false, 'Montserrat', slide.highlight || '', palette.accent, false, !hasBody);
+    if (hasBody) textBlock(ctx, slide.body, 605, 950, 400, 210, 28, palette.body);
+    textBlock(ctx, firmName || 'Young Contábil', 605, 1220, 400, 70, 31, palette.ink, 600);
     const photo = settings.coverPhoto;
     if (photo?.creator) {
       ctx.fillStyle = 'rgba(0,0,0,0.62)'; ctx.fillRect(0, 1190, 540, 160);
@@ -111,20 +115,25 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     return;
   }
   if (settings.background === 'white' || settings.background === 'photo') {
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, 1080, 1350);
-    if (lightLogo?.naturalWidth) {
+    const photoPage = settings.background === 'photo';
+    const palette = editorialPalette(photoPage ? settings.photoPages : 'white');
+    ctx.fillStyle = palette.background; ctx.fillRect(0, 0, 1080, 1350);
+    if (!photoPage && lightLogo?.naturalWidth) {
       const [sx, sy, sw, sh] = logoBounds(lightLogo);
       ctx.drawImage(lightLogo, sx, sy, sw * 0.22, sh, 100, 180, 100, 100);
     }
-    textBlock(ctx, firmName || 'Young Contábil', 225, 190, 735, 50, 34, '#17191c', 800);
-    textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 225, 240, 735, 45, 29, '#72777c', 400);
-    const accent = settings.accent === '#63b0ff' ? '#0965ba' : settings.accent;
-    if (slide.eyebrow) textBlock(ctx, slide.eyebrow.toUpperCase(), 100, 335, 880, 45, 22, '#66717b', 600);
-    const titleHeight = textBlock(ctx, slide.headline, 100, 410, 880, 300, Math.min(settings.fontSize, 68), '#17191c', 800, false, 'Montserrat', slide.highlight || '', accent);
-    const bodyY = Math.max(620, 455 + titleHeight);
-    textBlock(ctx, slide.body, 100, bodyY, 880, 1100 - bodyY, 43, '#202327', 400);
-    textBlock(ctx, slide.footer, 100, 1160, 790, 90, 30, '#17191c', 600, false, 'Montserrat', '', '#17191c', true);
-    if (settings.slides.length > 1) textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 910, 1245, 100, 40, 20, '#72777c');
+    if (!photoPage) {
+      textBlock(ctx, firmName || 'Young Contábil', 225, 190, 735, 50, 34, palette.ink, 800);
+      textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 225, 240, 735, 45, 29, palette.muted, 400);
+    }
+    const accent = photoPage ? palette.accent : settings.accent === '#63b0ff' ? '#0965ba' : settings.accent;
+    const titleY = photoPage ? 245 : 410;
+    if (slide.eyebrow) textBlock(ctx, slide.eyebrow.toUpperCase(), 100, photoPage ? 160 : 335, 880, 45, 22, photoPage ? palette.muted : '#66717b', 600);
+    const titleHeight = textBlock(ctx, slide.headline, 100, titleY, 880, photoPage ? 360 : 300, Math.min(settings.fontSize, 68), palette.ink, 800, false, 'Montserrat', slide.highlight || '', accent);
+    const bodyY = Math.max(photoPage ? 525 : 620, titleY + titleHeight + 45);
+    textBlock(ctx, slide.body, 100, bodyY, 880, 1100 - bodyY, 43, palette.body, 400);
+    textBlock(ctx, slide.footer, 100, 1160, 790, 90, 30, palette.ink, 600, false, 'Montserrat', '', palette.ink, true);
+    if (settings.slides.length > 1) textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 910, 1245, 100, 40, 20, palette.muted);
     return;
   }
   const ink = '#ffffff';

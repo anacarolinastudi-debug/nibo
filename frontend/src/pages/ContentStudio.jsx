@@ -10,6 +10,7 @@ import { DEFAULT_CONTENT, drawContent, emptySlide } from '../utils/contentCanvas
 import { loadContentAssets } from '../utils/contentAssets';
 import { AiConnectionDialog, ContentAiDialog } from '../components/ContentAiDialogs';
 import ContentPhotoControls from '../components/ContentPhotoControls';
+import ContentEditorialColors from '../components/ContentEditorialColors';
 import { loadCoverPhoto, photoCredit } from '../utils/contentPhoto';
 
 const inputClass = 'mt-1 w-full rounded border border-[#d8dfe3] bg-white px-3 py-2 text-sm text-[#3f4548]';
@@ -228,7 +229,7 @@ export default function ContentStudio() {
               <Field label="Modelo visual"><select value={settings.template} onChange={(event) => setSettings({ template: event.target.value })} className={inputClass}>{templates.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
               <Field label="Fundo"><select value={settings.background || 'organic'} onChange={(event) => setSettings({ background: event.target.value })} className={inputClass}><option value="organic">Orgânico azul</option><option value="plain">Azul liso</option><option value="white">Branco editorial</option><option value="photo">Editorial com imagem</option></select></Field>
               {['white', 'photo'].includes(settings.background) && <Field label="Perfil da empresa"><input maxLength={100} value={settings.profileHandle ?? '@youngcontabil'} onChange={(event) => setSettings({ profileHandle: event.target.value })} className={inputClass} /></Field>}
-              {settings.background === 'photo' && <ContentPhotoControls key={projectEpoch} settings={settings} onChange={setSettings} onBusyChange={setPhotoBusy} disabled={busy} />}
+              {settings.background === 'photo' && <><ContentEditorialColors settings={settings} onChange={setSettings} /><ContentPhotoControls key={projectEpoch} settings={settings} onChange={setSettings} onBusyChange={setPhotoBusy} disabled={busy} /></>}
               <button onClick={() => setAiOpen(true)} className="inline-flex w-full items-center justify-center gap-2 rounded bg-[#2693d2] px-3 py-2 text-sm text-white"><Sparkles size={16} /> Gerar com IA</button>
               {user?.role === 'ADMIN' && <div className="flex flex-wrap gap-3 text-xs text-[#16829b]"><button onClick={() => setConnectionOpen(true)} className="inline-flex items-center gap-1"><KeyRound size={14} /> Configurar IA</button><button onClick={() => logoFileRef.current?.click()} className="inline-flex items-center gap-1"><Upload size={14} /> Atualizar logo</button><input ref={logoFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/bmp" className="hidden" onChange={uploadStudioLogo} /></div>}
               <div className="border-t pt-4"><b className="text-sm">Slide {current + 1}</b></div>
@@ -237,7 +238,7 @@ export default function ContentStudio() {
               <Field label="Palavras em destaque"><input value={slide.highlight || ''} maxLength={100} onChange={(event) => setSlide('highlight', event.target.value)} className={inputClass} /></Field>
               <Field label="Texto de apoio"><textarea value={slide.body} maxLength={800} onChange={(event) => setSlide('body', event.target.value)} rows={4} className={inputClass} /></Field>
               <Field label="Rodapé"><input value={slide.footer} maxLength={100} onChange={(event) => setSlide('footer', event.target.value)} className={inputClass} /></Field>
-              <Field label="Cor de destaque"><input type="color" value={settings.accent} onChange={(event) => setSettings({ accent: event.target.value })} className="mt-2 h-9 w-full cursor-pointer rounded border bg-white p-1" /></Field>
+              {settings.background !== 'photo' && <Field label="Cor de destaque"><input type="color" value={settings.accent} onChange={(event) => setSettings({ accent: event.target.value })} className="mt-2 h-9 w-full cursor-pointer rounded border bg-white p-1" /></Field>}
               <Field label={`Tamanho do título · ${settings.fontSize}`}><input type="range" min={48} max={112} step={2} value={settings.fontSize} onChange={(event) => setSettings({ fontSize: Number(event.target.value) })} className="mt-3 w-full accent-[#16829b]" /></Field>
             </fieldset>
             <div className="min-w-0">
