@@ -40,6 +40,7 @@ test('photo cover renders the editable footer instead of a fixed company name', 
     const result = await render(0, { slides: [slide] });
     const rendered = result.texts.filter(item => item.y >= 1220).map(item => item.text).join('');
     assert.equal(rendered, footer);
+    assert.ok(result.texts.filter(item => item.y >= 1220).every(item => item.font === '400 18px "Montserrat"'));
     assert.ok(!result.texts.some(item => item.text === 'MarcaTeste'));
   }
 });
