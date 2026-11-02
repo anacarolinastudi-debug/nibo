@@ -16,7 +16,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 let server, origin;
 before(async () => {
-  const app = express(); app.use(express.json()); app.use('/api/content', require('../src/routes/content.routes'));
+  const app = express(); app.use('/api/content', express.json({ limit: '2mb' })); app.use(express.json()); app.use('/api/content', require('../src/routes/content.routes'));
   app.use((error, req, res, next) => res.status(error.name === 'ZodError' ? 400 : 500).json({ error: error.name }));
   server = await new Promise((resolve) => { const instance = app.listen(0, '127.0.0.1', () => resolve(instance)); });
   origin = `http://127.0.0.1:${server.address().port}/api/content`;
@@ -33,6 +33,9 @@ test('only authenticated office staff can access content', async () => {
   assert.equal((await call('', { role: 'CLIENT' })).status, 403);
   assert.equal((await call('', { firm: '' })).status, 403);
   assert.equal((await call('', { role: 'ACCOUNTANT' })).status, 200);
+  assert.equal((await call('/images/search?q=empresa', { anonymous: true })).status, 401);
+  assert.equal((await call('/images/search?q=empresa', { role: 'CLIENT' })).status, 403);
+  assert.equal((await call('/images/select', { role: 'CLIENT', method: 'POST', body: { token: 'invalid' } })).status, 403);
 });
 test('saved content is scoped to its firm and survives reads and edits', async () => {
   const created = await call('', { method: 'POST', body: { ...project, accountingFirmId: 'firm-b' } });
@@ -63,4 +66,21 @@ test('white editorial layout and company profile persist in saved projects', asy
   const saved = await response.json();
   assert.equal(saved.settings.background, 'white');
   assert.equal(saved.settings.profileHandle, '@youngcontabil');
+});
+test('photo cover persists separately from slides and rejects unsafe images', async () => {
+  const coverPhoto = { dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRz8AAAAASUVORK5CYII=', title: 'Foto', creator: 'Autora', sourceUrl: '', license: '', licenseUrl: '', query: 'empresa', mode: 'manual' };
+  const settings = { ...project.settings, background: 'photo', coverPhoto, photoX: 40, photoY: 60, photoMono: true, slides: Array(2).fill(project.settings.slides[0]) };
+  const response = await call('', { method: 'POST', body: { ...project, settings } });
+  assert.equal(response.status, 201);
+  const item = await response.json();
+  assert.equal(item.settings.coverPhoto.dataUrl, coverPhoto.dataUrl);
+  assert.equal(item.settings.photoMono, true);
+  assert.equal(item.settings.slides[1].coverPhoto, undefined);
+  const largeImage = 'data:image/png;base64,' + Buffer.concat([Buffer.from(coverPhoto.dataUrl.split(',')[1], 'base64'), Buffer.alloc(150000)]).toString('base64');
+  const largeSaved = await call('', { method: 'POST', body: { ...project, settings: { ...settings, coverPhoto: { ...coverPhoto, dataUrl: largeImage } } } });
+  assert.equal(largeSaved.status, 201, 'embedded photos larger than default 100 KB body limit must save');
+  assert.equal((await largeSaved.json()).settings.coverPhoto.dataUrl, largeImage);
+  for (const dataUrl of ['https://evil.test/image.png', 'data:image/svg+xml;base64,PHN2Zy8+', 'data:image/png;base64,PHN2Zy8+']) {
+    assert.equal((await call('', { method: 'POST', body: { ...project, settings: { ...settings, coverPhoto: { ...coverPhoto, dataUrl } } } })).status, 400);
+  }
 });

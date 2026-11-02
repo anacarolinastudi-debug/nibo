@@ -9,6 +9,8 @@ import ContentMenuLink from '../components/ContentMenuLink';
 import { DEFAULT_CONTENT, drawContent, emptySlide } from '../utils/contentCanvas';
 import { loadContentAssets } from '../utils/contentAssets';
 import { AiConnectionDialog, ContentAiDialog } from '../components/ContentAiDialogs';
+import ContentPhotoControls from '../components/ContentPhotoControls';
+import { loadCoverPhoto, photoCredit } from '../utils/contentPhoto';
 
 const inputClass = 'mt-1 w-full rounded border border-[#d8dfe3] bg-white px-3 py-2 text-sm text-[#3f4548]';
 const copy = (value) => JSON.parse(JSON.stringify(value));
@@ -20,7 +22,7 @@ function ArtCanvas({ settings, index = 0, firm, logo, small = false, canvasRef }
   const ref = canvasRef || ownRef;
   useEffect(() => {
     let active = true;
-    loadContentAssets().then(({ background, lightLogo }) => { if (active && ref.current) drawContent(ref.current, settings, index, firm?.name, logo, background, lightLogo); }).catch(() => {});
+    Promise.all([loadContentAssets(), settings.background === 'photo' && index === 0 ? loadCoverPhoto(settings.coverPhoto) : null]).then(([{ background, lightLogo }, coverPhoto]) => { if (active && ref.current) drawContent(ref.current, settings, index, firm?.name, logo, background, lightLogo, coverPhoto); }).catch(() => {});
     return () => { active = false; };
   }, [settings, index, firm?.name, logo]);
   return <canvas ref={ref} width={small ? 216 : 1080} height={small ? 270 : 1350} aria-label={`Arte do slide ${index + 1}`} className="block h-auto w-full aspect-[4/5]" />;
@@ -60,6 +62,8 @@ export default function ContentStudio() {
   const [connectionOpen, setConnectionOpen] = useState(false);
   const [studio, setStudio] = useState({ configured: false, customKey: false, logoUrl: null });
   const [assetsReady, setAssetsReady] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [projectEpoch, setProjectEpoch] = useState(0);
   const canvasRef = useRef(null);
   const logoFileRef = useRef(null);
   const dirty = saved ? JSON.stringify(record) !== saved : JSON.stringify(record) !== JSON.stringify({ id: null, title: 'Novo conteúdo', status: 'DRAFT', settings: DEFAULT_CONTENT });
@@ -128,13 +132,13 @@ export default function ContentStudio() {
     if (busy) return;
     if (dirty && !window.confirm('Descartar as alterações não salvas?')) return;
     setAiBrief(null); if (articleId) navigate('/conteudos', { replace: true });
-    const next = copy(project); setRecord(next); setSaved(JSON.stringify(next)); setCurrent(0); setView('editor'); setError('');
+    const next = copy(project); setProjectEpoch(value => value + 1); setRecord(next); setSaved(JSON.stringify(next)); setCurrent(0); setView('editor'); setError('');
   }
   function newProject() {
     if (busy) return;
     if (dirty && !window.confirm('Descartar as alterações não salvas?')) return;
     setAiBrief(null); if (articleId) navigate('/conteudos', { replace: true });
-    setRecord({ id: null, title: 'Novo conteúdo', status: 'DRAFT', settings: copy(DEFAULT_CONTENT) }); setSaved(''); setCurrent(0); setView('editor'); setError('');
+    setProjectEpoch(value => value + 1); setRecord({ id: null, title: 'Novo conteúdo', status: 'DRAFT', settings: copy(DEFAULT_CONTENT) }); setSaved(''); setCurrent(0); setView('editor'); setError('');
   }
   function resizeSlides(count) {
     if (count < settings.slides.length && !window.confirm('Remover os slides excedentes?')) return;
@@ -148,6 +152,7 @@ export default function ContentStudio() {
     setSettings({ slides }); setCurrent(destination);
   }
   async function saveProject() {
+    if (photoBusy) return;
     if (busy) return;
     if (!record.title.trim()) { setError('Preencha o nome do conteúdo.'); return; }
     setBusy(true); setError('');
@@ -167,11 +172,13 @@ export default function ContentStudio() {
     finally { setBusy(false); }
   }
   async function download(all) {
-    if (busy) return;
+    if (busy || photoBusy) return;
+    if (settings.background === 'photo' && !settings.coverPhoto?.dataUrl) { setError('Escolha uma imagem para a capa antes de exportar.'); return; }
     if ((studio.logoUrl || firm?.logoUrl) && !logo) { setError('Aguarde o carregamento da logo do escritório antes de exportar.'); return; }
     setBusy(true); setError('');
     try {
       const { background, lightLogo } = await loadContentAssets();
+      const coverPhoto = settings.background === 'photo' ? await loadCoverPhoto(settings.coverPhoto) : null;
       const name = record.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() || 'conteudo';
       let blob;
       if (all && settings.slides.length > 1) {
@@ -179,11 +186,12 @@ export default function ContentStudio() {
         const zip = new JSZip();
         for (let index = 0; index < settings.slides.length; index += 1) {
           const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 1350;
-          drawContent(canvas, settings, index, firm?.name, logo, background, lightLogo);
+          drawContent(canvas, settings, index, firm?.name, logo, background, lightLogo, coverPhoto);
           zip.file(`${name}-${String(index + 1).padStart(2, '0')}.png`, await new Promise((resolve) => canvas.toBlob(resolve, 'image/png')));
         }
+        if (settings.background === 'photo' && photoCredit(settings.coverPhoto)) zip.file('creditos-da-imagem.txt', photoCredit(settings.coverPhoto));
         blob = await zip.generateAsync({ type: 'blob' });
-      } else { drawContent(canvasRef.current, settings, current, firm?.name, logo, background, lightLogo); blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png')); }
+      } else { drawContent(canvasRef.current, settings, current, firm?.name, logo, background, lightLogo, coverPhoto); blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png')); }
       if (!blob) throw new Error('Imagem indisponivel');
       const url = URL.createObjectURL(blob); const link = document.createElement('a');
       link.href = url; link.download = all && settings.slides.length > 1 ? `${name}.zip` : `${name}-slide-${current + 1}.png`; link.click();
@@ -209,7 +217,7 @@ export default function ContentStudio() {
       <div className="flex h-12 gap-10 border-b px-6 text-sm">{[['editor', 'Criar conteúdo'], ['library', 'Biblioteca']].map(([value, label]) => <button key={value} onClick={() => setView(value)} className={`border-b-2 px-1 ${view === value ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{label}</button>)}</div>
       <section className="p-3 md:p-6">
         {newsLoading && <p role="status" className="mb-4 text-sm text-[#68737a]">Carregando notícia de referência...</p>}
-        <header className="mb-5 flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">Conteúdos</h1><div className="flex items-center gap-3"><button onClick={newProject} disabled={busy} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm"><FilePlus2 size={16} /> Novo conteúdo</button>{view === 'editor' && <button onClick={saveProject} disabled={busy || loading} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Save size={16} />{busy ? 'Aguarde...' : 'Salvar'}</button>}</div></header>
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-3"><h1 className="text-2xl font-semibold">Conteúdos</h1><div className="flex items-center gap-3"><button onClick={newProject} disabled={busy} className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm"><FilePlus2 size={16} /> Novo conteúdo</button>{view === 'editor' && <button onClick={saveProject} disabled={busy || loading || photoBusy} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Save size={16} />{busy ? 'Aguarde...' : 'Salvar'}</button>}</div></header>
         {error && <div role="alert" className="mb-4 flex items-center justify-between gap-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}<button title="Fechar aviso" onClick={() => setError('')}><X size={16} /></button></div>}
         {view === 'editor' ? <>
           <div className="mb-5 flex flex-wrap items-end gap-4"><Field label="Nome do conteúdo *"><input disabled={busy} maxLength={160} value={record.title} onChange={(event) => setRecord({ ...record, title: event.target.value })} className={`${inputClass} min-w-[220px]`} /></Field><Field label="Status"><select disabled={busy} value={record.status} onChange={(event) => setRecord({ ...record, status: event.target.value })} className={inputClass}><option value="DRAFT">Rascunho</option><option value="READY">Pronto para publicar</option></select></Field><span role="status" className="pb-2 text-xs text-[#68737a]">{!record.id ? 'Ainda não salvo' : dirty ? 'Alterações não salvas' : 'Salvo no sistema'}</span></div>
@@ -218,8 +226,9 @@ export default function ContentStudio() {
               <div className="flex gap-1 rounded border bg-white p-1">{[[1, 'Post único'], [5, 'Carrossel']].map(([count, label]) => <button key={count} onClick={() => resizeSlides(count)} aria-pressed={count === 1 ? settings.slides.length === 1 : settings.slides.length > 1} className={`flex-1 rounded px-2 py-2 text-sm ${(count === 1) === (settings.slides.length === 1) ? 'bg-[#dce5ef] font-semibold' : ''}`}>{label}</button>)}</div>
               {settings.slides.length > 1 && <Field label="Quantidade de slides"><input type="number" min={2} max={10} value={settings.slides.length} onChange={(event) => { const count = Number(event.target.value); if (count >= 2 && count <= 10) resizeSlides(count); }} className={inputClass} /></Field>}
               <Field label="Modelo visual"><select value={settings.template} onChange={(event) => setSettings({ template: event.target.value })} className={inputClass}>{templates.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>
-              <Field label="Fundo"><select value={settings.background || 'organic'} onChange={(event) => setSettings({ background: event.target.value })} className={inputClass}><option value="organic">Orgânico azul</option><option value="plain">Azul liso</option><option value="white">Branco editorial</option></select></Field>
-              {settings.background === 'white' && <Field label="Perfil da empresa"><input maxLength={100} value={settings.profileHandle ?? '@youngcontabil'} onChange={(event) => setSettings({ profileHandle: event.target.value })} className={inputClass} /></Field>}
+              <Field label="Fundo"><select value={settings.background || 'organic'} onChange={(event) => setSettings({ background: event.target.value })} className={inputClass}><option value="organic">Orgânico azul</option><option value="plain">Azul liso</option><option value="white">Branco editorial</option><option value="photo">Editorial com imagem</option></select></Field>
+              {['white', 'photo'].includes(settings.background) && <Field label="Perfil da empresa"><input maxLength={100} value={settings.profileHandle ?? '@youngcontabil'} onChange={(event) => setSettings({ profileHandle: event.target.value })} className={inputClass} /></Field>}
+              {settings.background === 'photo' && <ContentPhotoControls key={projectEpoch} settings={settings} onChange={setSettings} onBusyChange={setPhotoBusy} disabled={busy} />}
               <button onClick={() => setAiOpen(true)} className="inline-flex w-full items-center justify-center gap-2 rounded bg-[#2693d2] px-3 py-2 text-sm text-white"><Sparkles size={16} /> Gerar com IA</button>
               {user?.role === 'ADMIN' && <div className="flex flex-wrap gap-3 text-xs text-[#16829b]"><button onClick={() => setConnectionOpen(true)} className="inline-flex items-center gap-1"><KeyRound size={14} /> Configurar IA</button><button onClick={() => logoFileRef.current?.click()} className="inline-flex items-center gap-1"><Upload size={14} /> Atualizar logo</button><input ref={logoFileRef} type="file" accept="image/png,image/jpeg,image/webp,image/bmp" className="hidden" onChange={uploadStudioLogo} /></div>}
               <div className="border-t pt-4"><b className="text-sm">Slide {current + 1}</b></div>
@@ -235,7 +244,7 @@ export default function ContentStudio() {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3 text-sm"><b>Slide {current + 1} de {settings.slides.length}</b><span className="text-[#68737a]">1080 × 1350 · 4:5</span><div className="flex gap-2"><IconButton title="Mover slide para a esquerda" disabled={current === 0 || busy} onClick={() => moveSlide(-1)}><ArrowLeft size={16} /></IconButton><IconButton title="Mover slide para a direita" disabled={current === settings.slides.length - 1 || busy} onClick={() => moveSlide(1)}><ArrowRight size={16} /></IconButton><IconButton title="Duplicar slide" disabled={settings.slides.length >= 10 || busy} onClick={() => { const slides = [...settings.slides]; slides.splice(current + 1, 0, { ...slide }); setSettings({ slides }); setCurrent(current + 1); }}><Copy size={16} /></IconButton><IconButton title="Excluir slide" disabled={settings.slides.length === 1 || busy} onClick={() => { if (window.confirm('Excluir este slide?')) { setSettings({ slides: settings.slides.filter((_, index) => index !== current) }); setCurrent(Math.max(0, current - 1)); } }}><Trash2 size={16} /></IconButton></div></div>
               <div className="flex justify-center border bg-[#eef2f5] p-3"><div className="w-full max-w-[420px]"><ArtCanvas settings={settings} index={current} firm={firm} logo={logo} canvasRef={canvasRef} /></div></div>
               <div className="mt-3 flex gap-2 overflow-x-auto pb-2">{settings.slides.map((_, index) => <button key={index} aria-label={`Selecionar slide ${index + 1}`} aria-pressed={current === index} onClick={() => setCurrent(index)} className={`w-[68px] shrink-0 border-2 ${current === index ? 'border-[#2693d2]' : 'border-transparent'}`}><ArtCanvas small settings={settings} index={index} firm={firm} logo={logo} /><span className="block py-1 text-xs">{index + 1}</span></button>)}</div>
-              <div className="mt-3 flex flex-wrap gap-3"><button onClick={() => download(false)} disabled={busy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded border px-4 py-2 text-sm text-[#16829b] disabled:opacity-50"><Download size={16} /> Baixar PNG</button>{settings.slides.length > 1 && <button onClick={() => download(true)} disabled={busy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Download size={16} /> Baixar carrossel ZIP</button>}</div>
+              <div className="mt-3 flex flex-wrap gap-3"><button onClick={() => download(false)} disabled={busy || photoBusy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded border px-4 py-2 text-sm text-[#16829b] disabled:opacity-50"><Download size={16} /> Baixar PNG</button>{settings.slides.length > 1 && <button onClick={() => download(true)} disabled={busy || photoBusy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Download size={16} /> Baixar carrossel ZIP</button>}</div>
               <div className="mt-6"><Field label="Legenda da publicação"><textarea disabled={busy} maxLength={5000} rows={4} value={settings.caption} onChange={(event) => setSettings({ caption: event.target.value })} className={inputClass} /></Field></div>
               {settings.reviewNotes && <div className="mt-4 border-l-2 border-amber-400 bg-amber-50 p-3 text-sm"><b>Pontos para revisar</b><p className="mt-1 whitespace-pre-wrap">{settings.reviewNotes}</p></div>}
               {settings.sources?.length > 0 && <div className="mt-4 text-sm"><b>Fontes consultadas</b>{settings.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="mt-2 block break-words text-[#16829b] underline">{source.title}</a>)}</div>}

@@ -25,6 +25,7 @@ const prisma = require('./lib/prisma');
 const app = express();
 
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+app.use('/api/content', express.json({ limit: '2mb' }));
 app.use(express.json());
 app.use((req, res, next) => {
   const originalJson = res.json.bind(res);

@@ -1,5 +1,6 @@
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const { logoDataUrl } = require('../utils/firmLogo');
 
 const schema = z.object({
   title: z.string().trim().min(1, 'Informe o nome do conteudo.').max(160),
@@ -8,7 +9,15 @@ const schema = z.object({
     template: z.enum(['cover', 'tip', 'quote']),
     accent: z.string().regex(/^#[a-fA-F0-9]{6}$/),
     fontSize: z.number().int().min(48).max(112),
-    background: z.enum(['organic', 'plain', 'white']).optional(),
+    background: z.enum(['organic', 'plain', 'white', 'photo']).optional(),
+    coverPhoto: z.object({
+      dataUrl: z.string().max(1300000).regex(/^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/).refine(value => { try { return logoDataUrl(Buffer.from(value.split(',')[1], 'base64')) === value; } catch { return false; } }, 'Imagem da capa invalida.'),
+      title: z.string().max(200).default(''), creator: z.string().max(120).default(''),
+      sourceUrl: z.union([z.string().url().startsWith('https://').max(2048), z.literal('')]).default(''),
+      license: z.string().max(50).default(''), licenseUrl: z.union([z.string().url().startsWith('https://').max(2048), z.literal('')]).default(''),
+      mode: z.enum(['auto', 'manual']).default('manual'), query: z.string().max(200).default(''),
+    }).nullable().optional(),
+    photoX: z.number().min(0).max(100).optional(), photoY: z.number().min(0).max(100).optional(), photoMono: z.boolean().optional(),
     profileHandle: z.string().max(100).optional(),
     caption: z.string().max(5000).default(''),
     reviewNotes: z.string().max(1500).optional(),

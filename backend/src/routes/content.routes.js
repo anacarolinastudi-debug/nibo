@@ -2,6 +2,7 @@ const router = require('express').Router();
 const { requireAuth, requireRole } = require('../middleware/auth');
 const ctrl = require('../controllers/content.controller');
 const ai = require('../controllers/contentAi.controller');
+const images = require('../controllers/contentImages.controller');
 const uploadLogo = require('multer')({ storage: require('multer').memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
 router.use(requireAuth, requireRole('ADMIN', 'ACCOUNTANT'));
 router.use((req, res, next) => {
@@ -14,6 +15,8 @@ router.put('/settings/ai', requireRole('ADMIN'), ai.saveKey);
 router.delete('/settings/ai', requireRole('ADMIN'), ai.removeKey);
 router.post('/settings/logo', requireRole('ADMIN'), uploadLogo.single('file'), ai.uploadLogo);
 router.post('/generate', ai.generate);
+router.get('/images/search', images.search);
+router.post('/images/select', images.select);
 router.post('/', ctrl.create);
 router.put('/:id', ctrl.update);
 router.delete('/:id', ctrl.remove);
