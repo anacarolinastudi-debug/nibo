@@ -33,3 +33,13 @@ test('the existing standalone white theme keeps its branding header', async () =
   assert.ok(result.texts.some(item => item.text === 'MarcaTeste'));
   assert.ok(result.texts.some(item => item.text === '@perfilteste'));
 });
+
+test('photo cover renders the editable footer instead of a fixed company name', async () => {
+  for (const footer of ['Contato personalizado', '']) {
+    const slide = { eyebrow: '', headline: 'Titulo', body: '', footer, highlight: '' };
+    const result = await render(0, { slides: [slide] });
+    const rendered = result.texts.filter(item => item.y >= 1220).map(item => item.text).join('');
+    assert.equal(rendered, footer);
+    assert.ok(!result.texts.some(item => item.text === 'MarcaTeste'));
+  }
+});

@@ -125,7 +125,7 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 605, 88, 400, 70, 23, palette.muted);
     textBlock(ctx, slide.eyebrow, 605, 265, 400, 80, 21, palette.muted, 600);
     editorialCopy(ctx, settings, slide, palette, { x: 605, y: 385, width: 400, titleHeight: settings.template === 'tip' ? 460 : 530, bodyTop: 950, bodyEnd: 1160, titleMax: 56, bodySize: 28, quoteHeight: 740, narrow: true });
-    textBlock(ctx, firmName || 'Young Contábil', 605, 1220, 400, 70, 31, palette.ink, 600);
+    textBlock(ctx, slide.footer || '', 605, 1220, 400, 70, 31, palette.ink, 600);
     const photo = settings.coverPhoto;
     if (photo?.creator) {
       ctx.fillStyle = 'rgba(0,0,0,0.62)'; ctx.fillRect(0, 1190, 540, 160);
