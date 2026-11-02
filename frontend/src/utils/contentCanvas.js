@@ -28,7 +28,17 @@ function textBlock(ctx, text, x, y, width, height, size, color, weight = 400, ce
     if (lines.length * size * 1.2 <= height || size <= 16) break;
     size -= 2;
   } while (size > 0);
-  if (verticallyCentered) y += (height - lines.length * size * 1.2) / 2;
+  // Reflow excessive manual line breaks before shrinking beyond the normal minimum.
+  if (lines.length * size * 1.2 > height) {
+    const compact = String(text || '').replace(/\s+/g, ' ').trim();
+    do {
+      ctx.font = `${weight} ${size}px "${family}"`;
+      lines = wrapLines(ctx, compact, width);
+      if (lines.length * size * 1.2 <= height) break;
+      size = Math.max(1, size - 1);
+    } while (size > 1);
+  }
+  if (verticallyCentered) y += Math.max(0, (height - lines.length * size * 1.2) / 2);
   ctx.fillStyle = color;
   ctx.textAlign = 'left';
   const normalize = (word) => word.toLocaleLowerCase('pt-BR').replace(/[^\p{L}\p{N}]/gu, '');
@@ -50,6 +60,31 @@ const logoBoundsCache = new WeakMap();
 const editorialPalette = mode => mode === 'blue'
   ? { background: '#051d40', ink: '#ffffff', body: '#e4effb', muted: '#c2d4ea', accent: '#63b0ff' }
   : { background: '#ffffff', ink: '#17191c', body: '#202327', muted: '#72777c', accent: '#0965ba' };
+
+function editorialCopy(ctx, settings, slide, palette, { x, y, width, titleHeight, bodyTop, bodyEnd, titleMax, bodySize, quoteHeight, narrow = false }) {
+  if (settings.template === 'quote') {
+    const message = [slide.headline, slide.body].filter(value => value?.trim()).join('\n\n');
+    textBlock(ctx, message, x, y, width, quoteHeight, Math.min(settings.fontSize, narrow ? 52 : 62), palette.ink, 400, true, 'Montserrat', slide.highlight || '', palette.accent, false, true);
+    return;
+  }
+  const informative = settings.template === 'tip';
+  const title = informative ? slide.headline.toUpperCase() : slide.headline;
+  let size = Math.min(settings.fontSize, titleMax);
+  while (size > 16) {
+    ctx.font = `800 ${size}px "Montserrat"`;
+    if (title.split(/\s+/).every(word => ctx.measureText(word).width <= width)) break;
+    size -= 2;
+  }
+  const hasBody = !!slide.body?.trim();
+  const height = textBlock(ctx, title, x, y, width, narrow && !hasBody && !informative ? 650 : titleHeight, size, palette.ink, 800, false, 'Montserrat', slide.highlight || '', palette.accent, false, narrow && !hasBody && !informative);
+  let bodyY = Math.max(bodyTop, y + height + 45);
+  if (informative) {
+    const ruleY = y + height + 32;
+    ctx.fillStyle = palette.accent; ctx.fillRect(x, ruleY, width, 5);
+    bodyY = Math.max(bodyTop, ruleY + 45);
+  }
+  if (hasBody) textBlock(ctx, slide.body, x, bodyY, width, Math.max(80, bodyEnd - bodyY), bodySize, palette.body);
+}
 function logoBounds(image) {
   if (logoBoundsCache.has(image)) return logoBoundsCache.get(image);
   const scratch = document.createElement('canvas'); scratch.width = image.naturalWidth; scratch.height = image.naturalHeight;
@@ -89,15 +124,7 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     } else { ctx.fillStyle = '#dce4e6'; ctx.fillRect(0, 0, 540, 1350); }
     textBlock(ctx, settings.profileHandle ?? '@youngcontabil', 605, 88, 400, 70, 23, palette.muted);
     textBlock(ctx, slide.eyebrow, 605, 265, 400, 80, 21, palette.muted, 600);
-    const hasBody = !!slide.body?.trim();
-    let titleSize = Math.min(settings.fontSize, 56);
-    while (titleSize > 16) {
-      ctx.font = `800 ${titleSize}px "Montserrat"`;
-      if (String(slide.headline).split(/\s+/).every(word => ctx.measureText(word).width <= 400)) break;
-      titleSize -= 2;
-    }
-    textBlock(ctx, slide.headline, 605, 385, 400, hasBody ? 530 : 650, titleSize, palette.ink, 800, false, 'Montserrat', slide.highlight || '', palette.accent, false, !hasBody);
-    if (hasBody) textBlock(ctx, slide.body, 605, 950, 400, 210, 28, palette.body);
+    editorialCopy(ctx, settings, slide, palette, { x: 605, y: 385, width: 400, titleHeight: settings.template === 'tip' ? 460 : 530, bodyTop: 950, bodyEnd: 1160, titleMax: 56, bodySize: 28, quoteHeight: 740, narrow: true });
     textBlock(ctx, firmName || 'Young Contábil', 605, 1220, 400, 70, 31, palette.ink, 600);
     const photo = settings.coverPhoto;
     if (photo?.creator) {
@@ -109,8 +136,18 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
   }
   if (settings.background === 'plain') {
     ctx.fillStyle = '#051d40'; ctx.fillRect(0, 0, 1080, 1350);
-    const message = [slide.headline, slide.body].filter((text) => text?.trim()).join('\n\n');
-    textBlock(ctx, message, 108, 335, 864, 680, Math.min(settings.fontSize, 62), '#ffffff', 400, true, 'Libre Baskerville', '', '#ffffff', false, true);
+    if (settings.template === 'quote') {
+      const message = [slide.headline, slide.body].filter((text) => text?.trim()).join('\n\n');
+      textBlock(ctx, message, 108, 335, 864, 680, Math.min(settings.fontSize, 62), '#ffffff', 400, true, 'Libre Baskerville', '', '#ffffff', false, true);
+    } else {
+      const informative = settings.template === 'tip';
+      textBlock(ctx, slide.eyebrow.toUpperCase(), 72, 258, 936, 72, 23, settings.accent, 600);
+      const height = textBlock(ctx, informative ? slide.headline.toUpperCase() : slide.headline, 72, 355, 936, informative ? 320 : 430, settings.fontSize, '#ffffff', informative ? 800 : 700, false, informative ? 'Montserrat' : 'Libre Baskerville', slide.highlight || '', settings.accent);
+      const ruleY = informative ? 720 : 405 + height;
+      ctx.fillStyle = settings.accent; ctx.fillRect(72, ruleY, informative ? 936 : 110, informative ? 8 : 5);
+      const bodyY = Math.max(790, 455 + height);
+      textBlock(ctx, slide.body, 72, bodyY, 936, 1140 - bodyY, 38, '#ffffff');
+    }
     textBlock(ctx, '@youngcontabil', 72, 1250, 936, 50, 28, '#ffffff', 400, true);
     return;
   }
@@ -129,9 +166,7 @@ export function drawContent(canvas, settings, index, firmName, logo, background,
     const accent = photoPage ? palette.accent : settings.accent === '#63b0ff' ? '#0965ba' : settings.accent;
     const titleY = photoPage ? 245 : 410;
     if (slide.eyebrow) textBlock(ctx, slide.eyebrow.toUpperCase(), 100, photoPage ? 160 : 335, 880, 45, 22, photoPage ? palette.muted : '#66717b', 600);
-    const titleHeight = textBlock(ctx, slide.headline, 100, titleY, 880, photoPage ? 360 : 300, Math.min(settings.fontSize, 68), palette.ink, 800, false, 'Montserrat', slide.highlight || '', accent);
-    const bodyY = Math.max(photoPage ? 525 : 620, titleY + titleHeight + 45);
-    textBlock(ctx, slide.body, 100, bodyY, 880, 1100 - bodyY, 43, palette.body, 400);
+    editorialCopy(ctx, settings, slide, { ...palette, accent }, { x: 100, y: titleY, width: 880, titleHeight: photoPage ? 360 : 300, bodyTop: photoPage ? 525 : 620, bodyEnd: 1100, titleMax: 68, bodySize: 43, quoteHeight: photoPage ? 850 : 690 });
     textBlock(ctx, slide.footer, 100, 1160, 790, 90, 30, palette.ink, 600, false, 'Montserrat', '', palette.ink, true);
     if (settings.slides.length > 1) textBlock(ctx, `${index + 1} / ${settings.slides.length}`, 910, 1245, 100, 40, 20, palette.muted);
     return;
