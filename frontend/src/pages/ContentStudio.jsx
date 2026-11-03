@@ -172,7 +172,7 @@ export default function ContentStudio() {
     catch { setError('Não foi possível excluir o conteúdo.'); }
     finally { setBusy(false); }
   }
-  async function download(all) {
+  async function download(all, pdf = false) {
     if (busy || photoBusy) return;
     if (settings.background === 'photo' && !settings.coverPhoto?.dataUrl) { setError('Escolha uma imagem para a capa antes de exportar.'); return; }
     if ((studio.logoUrl || firm?.logoUrl) && !logo) { setError('Aguarde o carregamento da logo do escritório antes de exportar.'); return; }
@@ -182,7 +182,19 @@ export default function ContentStudio() {
       const coverPhoto = settings.background === 'photo' ? await loadCoverPhoto(settings.coverPhoto) : null;
       const name = record.title.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').toLowerCase() || 'conteudo';
       let blob;
-      if (all && settings.slides.length > 1) {
+      if (pdf) {
+        const { PDFDocument } = await import('pdf-lib');
+        const documentPdf = await PDFDocument.create();
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080; canvas.height = 1350;
+        for (let index = 0; index < settings.slides.length; index += 1) {
+          drawContent(canvas, settings, index, firm?.name, logo, background, lightLogo, coverPhoto);
+          const image = await documentPdf.embedPng(canvas.toDataURL('image/png'));
+          const page = documentPdf.addPage([540, 675]);
+          page.drawImage(image, { x: 0, y: 0, width: 540, height: 675 });
+        }
+        blob = new Blob([await documentPdf.save()], { type: 'application/pdf' });
+      } else if (all && settings.slides.length > 1) {
         const JSZip = (await import('jszip')).default;
         const zip = new JSZip();
         for (let index = 0; index < settings.slides.length; index += 1) {
@@ -195,7 +207,7 @@ export default function ContentStudio() {
       } else { drawContent(canvasRef.current, settings, current, firm?.name, logo, background, lightLogo, coverPhoto); blob = await new Promise((resolve) => canvasRef.current.toBlob(resolve, 'image/png')); }
       if (!blob) throw new Error('Imagem indisponivel');
       const url = URL.createObjectURL(blob); const link = document.createElement('a');
-      link.href = url; link.download = all && settings.slides.length > 1 ? `${name}.zip` : `${name}-slide-${current + 1}.png`; link.click();
+      link.href = url; link.download = pdf ? `${name}.pdf` : all && settings.slides.length > 1 ? `${name}.zip` : `${name}-slide-${current + 1}.png`; link.click();
       window.setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch { setError('Não foi possível exportar. Confira a logo e tente novamente.'); }
     finally { setBusy(false); }
@@ -246,6 +258,7 @@ export default function ContentStudio() {
               <div className="flex justify-center border bg-[#eef2f5] p-3"><div className="w-full max-w-[420px]"><ArtCanvas settings={settings} index={current} firm={firm} logo={logo} canvasRef={canvasRef} /></div></div>
               <div className="mt-3 flex gap-2 overflow-x-auto pb-2">{settings.slides.map((_, index) => <button key={index} aria-label={`Selecionar slide ${index + 1}`} aria-pressed={current === index} onClick={() => setCurrent(index)} className={`w-[68px] shrink-0 border-2 ${current === index ? 'border-[#2693d2]' : 'border-transparent'}`}><ArtCanvas small settings={settings} index={index} firm={firm} logo={logo} /><span className="block py-1 text-xs">{index + 1}</span></button>)}</div>
               <div className="mt-3 flex flex-wrap gap-3"><button onClick={() => download(false)} disabled={busy || photoBusy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded border px-4 py-2 text-sm text-[#16829b] disabled:opacity-50"><Download size={16} /> Baixar PNG</button>{settings.slides.length > 1 && <button onClick={() => download(true)} disabled={busy || photoBusy || loading || !assetsReady} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-sm text-white disabled:opacity-50"><Download size={16} /> Baixar carrossel ZIP</button>}</div>
+              <button onClick={() => download(true, true)} disabled={busy || photoBusy || loading || !assetsReady} className="mt-3 inline-flex items-center gap-2 rounded border px-4 py-2 text-sm text-[#16829b] disabled:opacity-50"><Download size={16} /> Baixar PDF</button>
               <div className="mt-6"><Field label="Legenda da publicação"><textarea disabled={busy} maxLength={5000} rows={4} value={settings.caption} onChange={(event) => setSettings({ caption: event.target.value })} className={inputClass} /></Field></div>
               {settings.reviewNotes && <div className="mt-4 border-l-2 border-amber-400 bg-amber-50 p-3 text-sm"><b>Pontos para revisar</b><p className="mt-1 whitespace-pre-wrap">{settings.reviewNotes}</p></div>}
               {settings.sources?.length > 0 && <div className="mt-4 text-sm"><b>Fontes consultadas</b>{settings.sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="mt-2 block break-words text-[#16829b] underline">{source.title}</a>)}</div>}

@@ -88,6 +88,14 @@ async function main() {
     const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Baixar carrossel ZIP', exact: true }).click();
     const zip = await JSZip.loadAsync(fs.readFileSync(await (await download).path()));
     assert.equal(Object.keys(zip.files).filter(name => name.endsWith('.png')).length, 5);
+    const pdfDownload = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Baixar PDF', exact: true }).click();
+    const pdfFile = await pdfDownload;
+    assert.equal(pdfFile.suggestedFilename(), 'matriz-de-modelos.pdf');
+    const { PDFDocument } = require('../../frontend/node_modules/pdf-lib');
+    const pdf = await PDFDocument.load(fs.readFileSync(await pdfFile.path()));
+    assert.equal(pdf.getPageCount(), 5);
+    assert.deepEqual(pdf.getPage(0).getSize(), { width: 540, height: 675 });
     await page.reload(); await page.getByRole('button', { name: 'Biblioteca', exact: true }).click(); await page.getByRole('button', { name: 'Abrir Matriz de modelos', exact: true }).click();
     assert.equal(await page.getByLabel(/^Modelo visual/).inputValue(), 'quote');
     await page.setViewportSize({ width: 390, height: 844 }); assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
