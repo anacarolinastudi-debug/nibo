@@ -46,6 +46,8 @@ async function main() {
     await page.getByRole('button', { name: 'Calcular simulação' }).click();
     await page.getByTestId('revenue').waitFor();
     assert.match(await page.getByTestId('revenue').textContent(), /3\.191,49/);
+    assert.equal(await page.getByTestId('company-revenue').textContent(), await page.getByTestId('revenue').textContent());
+    assert.ok(await page.getByTestId('company-revenue').evaluate(element => element.closest('.pl-breakdown').textContent.includes('Empresa')));
     assert.match(await page.getByTestId('net').textContent(), /2\.670,00/);
     assert.match(await page.getByTestId('total-taxes').textContent(), /521,49/);
     await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
