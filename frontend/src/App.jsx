@@ -17,11 +17,13 @@ import RadarEcac from './pages/RadarEcac';
 import Settings from './pages/Settings';
 import ContentStudio from './pages/ContentStudio';
 import Updates from './pages/Updates';
+import ProLaboreCalculator from './pages/ProLaboreCalculator';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/calculadora-pro-labore" element={<ProLaboreCalculator />} />
       <Route path="/login" element={<Login />} />
       <Route path="/registrar" element={<Register />} />
       <Route path="/" element={<ProtectedRoute><Obligations /></ProtectedRoute>} />
