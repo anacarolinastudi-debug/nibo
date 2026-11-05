@@ -67,6 +67,8 @@
 .pl-row-total { border-top:1px solid #e5eaee; padding-top:11px; margin-top:6px; }
 .pl-row-total>span { font-weight:600; color:#253e4c; }
 .pl-row-total>strong { color:#157453; font-size:16px; }
+.pl-row-tax { background:#fff4f0; margin:10px -10px 0; padding:12px 10px; border-top:0; border-radius:4px; }
+.pl-row-tax>strong { color:#ad4c36; }
 .pl-tax-total { padding:18px 0; border-top:2px solid #d7e4ed; }
 .pl-tax-total>div:first-child { display:flex; align-items:baseline; gap:16px; justify-content:space-between; }
 .pl-tax-total>div:first-child>span { font-size:14px; font-weight:650; }

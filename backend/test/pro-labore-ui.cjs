@@ -49,6 +49,8 @@ async function main() {
     assert.equal(await page.getByTestId('company-revenue').textContent(), await page.getByTestId('revenue').textContent());
     assert.ok(await page.getByTestId('company-revenue').evaluate(element => element.closest('.pl-breakdown').textContent.includes('Empresa')));
     assert.match(await page.getByTestId('net').textContent(), /2\.670,00/);
+    assert.match(await page.getByTestId('individual-taxes').textContent(), /330,00/);
+    assert.ok(await page.getByTestId('individual-taxes').evaluate(element => element.closest('.pl-breakdown').textContent.includes('Sócio')));
     assert.match(await page.getByTestId('total-taxes').textContent(), /521,49/);
     await page.screenshot({ path: path.join(output, 'desktop.png'), fullPage: true });
     const download = page.waitForEvent('download');
@@ -58,6 +60,7 @@ async function main() {
     const bytes = fs.readFileSync(await downloaded.path()); fs.writeFileSync(path.join(output, 'simulacao.pdf'), bytes);
     const parsed = await parsePdf(bytes);
     assert.ok(parsed.numpages >= 2); assert.match(parsed.text, /3\.191,49/); assert.match(parsed.text, /521,49/); assert.match(parsed.text, /Premissas/); assert.match(parsed.text, /Fontes oficiais/);
+    assert.match(parsed.text, /TOTAL DE IMPOSTOS DO SÓCIO \(INSS \+ IRRF\): R\$ 330,00/);
     await page.getByRole('spinbutton', { name: /^Pró-labore bruto mensal/ }).fill('6000');
     assert.equal(await page.getByTestId('revenue').count(), 0);
     await page.getByRole('tab', { name: 'Atividade da empresa' }).click();
@@ -76,6 +79,7 @@ async function main() {
     await page.getByRole('button', { name: 'Continuar' }).click();
     await page.getByRole('button', { name: 'Calcular simulação' }).click();
     await page.getByText('Anexo III · 6%', { exact: true }).waitFor();
+    assert.match(await page.getByTestId('individual-taxes').textContent(), /1\.040,02/);
     await page.setViewportSize({ width: 390, height: 844 });
     assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await page.screenshot({ path: path.join(output, 'mobile.png'), fullPage: true });

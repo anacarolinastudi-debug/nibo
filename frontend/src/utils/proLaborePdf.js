@@ -33,8 +33,8 @@ export async function createProLaborePdf(result) {
   line(`Anexo ${result.annex} | DAS ${(result.rate * 100).toLocaleString('pt-BR')}% | RBT12 ${money(result.revenue12)}`);
   if (result.factorR !== null) line(`Folha histórica: ${money(result.payroll12)} | Fator R: ${(result.factorR * 100).toLocaleString('pt-BR', { maximumFractionDigits: 8 })}%`);
   const rows = [
-    ['Pró-labore bruto', result.gross], ['INSS do sócio (11%, limitado ao teto)', result.inss], ['IRRF', result.irrf], ['Pensão judicial', result.pension], ['Líquido recebido pelo sócio', result.net],
-    ['DAS sobre o faturamento estimado', result.das], ['CPP fora do DAS (Anexo IV)', result.cpp], ['Tributos da empresa', result.companyTaxes], ['Tributos do sócio', result.individualTaxes],
+    ['Pró-labore bruto', result.gross], ['INSS do sócio (11%, limitado ao teto)', result.inss], ['IRRF', result.irrf], ['TOTAL DE IMPOSTOS DO SÓCIO (INSS + IRRF)', result.individualTaxes], ['Pensão judicial', result.pension], ['Líquido recebido pelo sócio', result.net],
+    ['DAS sobre o faturamento estimado', result.das], ['CPP fora do DAS (Anexo IV)', result.cpp], ['Tributos da empresa', result.companyTaxes],
     ['TOTAL DE TRIBUTOS (sócio + empresa)', result.totalTaxes], ['FATURAMENTO MÍNIMO ESTIMADO', result.revenue],
   ];
   for (const [label, value] of rows) line(`${label}: ${money(value)}`, 11, /TOTAL|FATURAMENTO|Líquido/.test(label));
