@@ -24,6 +24,19 @@ async function main() {
     await page.goto(origin + '/calculadora-pro-labore');
     await page.getByRole('heading', { name: 'Calculadora de pró-labore', exact: true }).waitFor();
     assert.equal(await page.evaluate(() => localStorage.length), 0);
+    const search = page.getByRole('searchbox', { name: 'Buscar atividade ou CNAE' });
+    for (const code of ['9602501', '9602-5/01']) {
+      await search.fill(code);
+      assert.equal(await page.getByLabel('Atividade exercida').inputValue(), 'hairdressing');
+      await page.getByText('Anexo III', { exact: true }).waitFor();
+      assert.equal(await page.getByRole('spinbutton', { name: /^Folha com encargos/ }).count(), 0);
+    }
+    await search.fill('0111301');
+    assert.equal(await page.getByLabel('Atividade exercida').inputValue(), 'cnae:0111301');
+    await page.getByText('Atividade identificada · enquadramento a confirmar', { exact: true }).waitFor();
+    await search.fill('9999999');
+    assert.equal(await page.getByLabel('Atividade exercida').inputValue(), '');
+    await search.fill('');
     await page.getByLabel('Atividade exercida').selectOption('training');
     await page.getByRole('spinbutton', { name: /^Receita bruta/ }).fill('120000');
     await page.getByRole('checkbox', { name: /13 meses/ }).check();

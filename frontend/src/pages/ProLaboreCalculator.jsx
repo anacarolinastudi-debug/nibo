@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { ArrowRight, Calculator, Building2, Wallet, Download, RotateCcw, ShieldCheck, ExternalLink, AlertTriangle, Check, Copy } from 'lucide-react';
 import { ACTIVITIES, ASSUMPTIONS, TAX_SOURCES, calculateProLabore } from '../utils/proLabore';
+import { searchActivities, findActivityChoice } from '../utils/cnaeSearch';
 import './ProLaboreCalculator.css';
 
 const initial = { activityId: '', gross: '', dependents: '0', pension: '', revenue12: '', payroll12: '', established: false, ordinary: false };
 const brl = value => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const percent = value => `${(value * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%`;
-const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 function Amount({ label, name, value, onChange, required = false, hint, integer = false }) {
   return <label className="pl-field"><span>{label}{required && <b aria-label="obrigatório"> *</b>}</span><div className="pl-input-wrap">{!integer && <span aria-hidden="true">R$</span>}<input name={name} value={value} onChange={event => onChange(name, event.target.value)} type="number" inputMode={integer ? 'numeric' : 'decimal'} step={integer ? '1' : '.01'} min="0" max={integer ? '99' : '10000000'} placeholder={integer ? '0' : '0,00'} required={required} /></div>{hint && <small>{hint}</small>}</label>;
 }
@@ -17,15 +17,26 @@ export default function ProLaboreCalculator() {
   const [form, setForm] = useState(initial);
   const [tab, setTab] = useState('activity');
   const [query, setQuery] = useState('');
+  const [selection, setSelection] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [exporting, setExporting] = useState(false);
   const [copied, setCopied] = useState(false);
-  const activity = ACTIVITIES.find(item => item.id === form.activityId);
-  const filter = normalize(query).replace(/[^a-z0-9]/g, '');
-  const activities = ACTIVITIES.filter(item => normalize(`${item.label} ${item.cnae || ''} ${item.keywords}`).replace(/[^a-z0-9]/g, '').includes(filter));
+  const choice = findActivityChoice(selection || form.activityId);
+  const baseActivity = ACTIVITIES.find(item => item.id === form.activityId);
+  const activity = baseActivity && choice ? { ...baseActivity, label: choice.label, cnae: choice.cnae } : baseActivity;
+  const activities = searchActivities(query);
   useEffect(() => { const old = document.title; document.title = 'Calculadora de pró-labore | Young Contábil'; return () => { document.title = old; }; }, []);
   function change(name, value) { setForm(current => ({ ...current, [name]: value })); setResult(null); setError(''); }
+  function choose(key) { const item = findActivityChoice(key); setSelection(key); change('activityId', item?.activityId || ''); }
+  function search(value) {
+    setQuery(value); choose('');
+    const digits = value.replace(/\D/g, '');
+    if (digits.length === 7 && !/[a-zA-Z]/.test(value)) {
+      const exact = searchActivities(value).find(item => item.cnae?.replace(/\D/g, '') === digits);
+      if (exact) choose(exact.key);
+    }
+  }
   function simulate(event) {
     event.preventDefault();
     try {
@@ -60,10 +71,10 @@ export default function ProLaboreCalculator() {
           <div className="pl-tabs" role="tablist" aria-label="Etapas da simulação">{[['activity', Building2, 'Atividade da empresa'], ['income', Wallet, 'Pró-labore']].map(([key, Icon, label]) => <button key={key} type="button" role="tab" id={`pl-tab-${key}`} aria-selected={tab === key} aria-controls={`pl-panel-${key}`} tabIndex={tab === key ? 0 : -1} onClick={() => setTab(key)} onKeyDown={event => { if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) { event.preventDefault(); const next = event.key === 'Home' ? 'activity' : event.key === 'End' ? 'income' : tab === 'activity' ? 'income' : 'activity'; setTab(next); document.getElementById(`pl-tab-${next}`)?.focus(); } }}><Icon size={17} />{label}</button>)}</div>
           <div role="tabpanel" id="pl-panel-activity" aria-labelledby="pl-tab-activity" hidden={tab !== 'activity'}>
             <div className="pl-section-heading"><span>01</span><h2>Atividade da empresa</h2></div>
-            <label className="pl-field"><span>Buscar atividade ou CNAE</span><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Ex.: consultoria, comércio, 6201-5/01" /></label>
-            <label className="pl-field"><span>Atividade exercida <b aria-label="obrigatório">*</b></span><select value={form.activityId} onChange={event => { change('activityId', event.target.value); setQuery(''); }}><option value="">Selecione sua atividade</option>{activities.map(item => <option key={item.id} value={item.id}>{item.label}{item.cnae ? ` · ${item.cnae}` : ''}</option>)}{activity && !activities.includes(activity) && <option value={activity.id}>{activity.label}</option>}</select></label>
-            {!activities.length && <p className="pl-note">Nenhuma atividade encontrada. <button type="button" className="pl-inline" onClick={() => { change('activityId', 'other'); setQuery(''); }}>Confirmar outro enquadramento</button></p>}
-            {activity && <div className={`pl-classification ${activity.id === 'other' ? 'pl-warning' : ''}`}><strong>{activity.annex ? `Anexo ${activity.annex}` : activity.factorR ? 'Anexo III ou V · fator R' : 'Enquadramento não definido'}</strong><p>{activity.detail}</p></div>}
+            <label className="pl-field"><span>Buscar atividade ou CNAE</span><input type="search" value={query} onChange={event => search(event.target.value)} placeholder="Ex.: cabeleireiros, comércio, 9602-5/01" /></label>
+            <label className="pl-field"><span>Atividade exercida <b aria-label="obrigatório">*</b></span><select value={choice?.key || ''} onChange={event => { choose(event.target.value); setQuery(''); }}><option value="">Selecione sua atividade</option>{activities.map(item => <option key={item.key} value={item.key}>{item.label}{item.cnae ? ` · ${item.cnae}` : ''}</option>)}{choice && !activities.some(item => item.key === choice.key) && <option value={choice.key}>{choice.label}{choice.cnae ? ` · ${choice.cnae}` : ''}</option>}</select></label>
+            {!activities.length && <p className="pl-note">Nenhuma atividade encontrada no catálogo. <button type="button" className="pl-inline" onClick={() => { choose('other'); setQuery(''); }}>Confirmar outro enquadramento</button></p>}
+            {activity && <div className={`pl-classification ${activity.id === 'other' ? 'pl-warning' : ''}`}><strong>{activity.cnae ? `${activity.cnae} · ${activity.label}` : activity.label}</strong><strong>{activity.annex ? `Anexo ${activity.annex}` : activity.factorR ? 'Anexo III ou V · fator R' : 'Atividade identificada · enquadramento a confirmar'}</strong><p>{activity.detail}</p></div>}
             <Amount label="Receita bruta dos últimos 12 meses" name="revenue12" value={form.revenue12} onChange={change} required hint="RBT12 anterior ao mês simulado. Limite desta versão: R$ 180.000,00." />
             {activity?.factorR && <Amount label="Folha com encargos dos últimos 12 meses" name="payroll12" value={form.payroll12} onChange={change} required hint="Inclua salários, pró-labore e encargos admitidos no fator R efetivamente pagos. Use o mesmo período da receita. Se não houve folha, informe 0." />}
             <div className="pl-confirmations"><label><input type="checkbox" checked={form.established} onChange={event => change('established', event.target.checked)} />Minha empresa tem 13 meses ou mais de atividade.</label><label><input type="checkbox" checked={form.ordinary} onChange={event => change('ordinary', event.target.checked)} />A receita é integralmente desta atividade, sem regimes especiais, ISS fixo ou CPRB.</label></div>
@@ -78,7 +89,7 @@ export default function ProLaboreCalculator() {
               <Amount label="Pensão alimentícia judicial" name="pension" value={form.pension} onChange={change} hint="Opcional. Valor mensal dedutível e descontado do pró-labore." />
               <div className="pl-classification"><strong>{activity?.label || 'Atividade não selecionada'}</strong><p>RBT12: {form.revenue12 !== '' ? brl(Number(form.revenue12)) : 'não informado'}</p><button type="button" onClick={() => setTab('activity')} className="pl-inline">Alterar atividade e histórico</button></div>
               <button type="submit" className="pl-button pl-primary pl-full" disabled={exporting}><Calculator size={18} /> Calcular simulação</button>
-              <button type="button" className="pl-reset" onClick={() => { setForm(initial); setQuery(''); setResult(null); setError(''); setTab('activity'); }}><RotateCcw size={15} /> Limpar dados</button>
+              <button type="button" className="pl-reset" onClick={() => { setForm(initial); setQuery(''); setSelection(''); setResult(null); setError(''); setTab('activity'); }}><RotateCcw size={15} /> Limpar dados</button>
             </form>
           </div>
           {error && <div className="pl-error" role="alert"><AlertTriangle size={18} /><span>{error}</span></div>}

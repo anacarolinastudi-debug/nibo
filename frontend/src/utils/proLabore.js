@@ -3,6 +3,8 @@ export const FIRST_BAND_LIMIT = 180000;
 export const INSS_CEILING = 8475.55;
 export const MINIMUM_CONTRIBUTION = 1621;
 export const ACTIVITIES = [
+  { id: 'hairdressing', label: 'Cabeleireiros, manicure e pedicure', annex: 'III', cnae: '9602-5/01', detail: 'Serviços de cabeleireiro, barbearia, manicure e pedicure. Anexo III, sem fator R. Não inclui revenda de produtos nem regime salão-parceiro.', keywords: 'cabelo salão salao barbeiro barbearia beleza unhas' },
+  { id: 'beauty', label: 'Atividades de estética e outros serviços de cuidados com a beleza', annex: 'III', cnae: '9602-5/02', detail: 'Cuidados de beleza, sem procedimentos médicos, revenda de produtos ou regime salão-parceiro. Anexo III, sem fator R.', keywords: 'esteticista depilação maquiagem beleza' },
   { id: 'commerce', label: 'Comércio e revenda de mercadorias', annex: 'I', detail: 'Revenda comum, sem substituição tributária ou tributação monofásica.', keywords: 'loja varejo atacado vendas' },
   { id: 'industry', label: 'Indústria e fabricação', annex: 'II', detail: 'Produção própria com tributação integral pelo Anexo II.', keywords: 'fabrica fabricação manufatura' },
   { id: 'training', label: 'Treinamento profissional e gerencial', annex: 'III', cnae: '8599-6/04', detail: 'Cursos e treinamento; não inclui consultoria.', keywords: 'ensino cursos educação' },
@@ -19,6 +21,8 @@ export const ACTIVITIES = [
   { id: 'other', label: 'Outra atividade / enquadramento a confirmar', detail: 'O CNAE isolado não determina todas as regras. Confirme o enquadramento com a contabilidade.', keywords: 'outra não encontrada ISS fixo' },
 ];
 export const TAX_SOURCES = [
+  { label: 'CNAEs · catálogo oficial IBGE/CONCLA', url: 'https://servicodados.ibge.gov.br/api/v2/cnae/subclasses' },
+  { label: 'Salões e cuidados de beleza · SC Cosit 127/2019', url: 'https://normas.receita.fazenda.gov.br/sijut2consulta/anexoOutros.action?idArquivoBinario=51835' },
   { label: 'IRPF mensal 2026 · Receita Federal', url: 'https://www.gov.br/receitafederal/pt-br/assuntos/meu-imposto-de-renda/tabelas/2026' },
   { label: 'Teto e salário mínimo · INSS', url: 'https://www.gov.br/inss/pt-br/direitos-e-deveres/inscricao-e-contribuicao/tabela-de-contribuicao-mensal' },
   { label: 'Retenção de 11% · Receita Federal', url: 'https://www.gov.br/receitafederal/pt-br/assuntos/orientacao-tributaria/tributos/contribuicoes-previdenciarias-pf' },

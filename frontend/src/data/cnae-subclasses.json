@@ -1,0 +1,5334 @@
+{
+  "source": "https://servicodados.ibge.gov.br/api/v2/cnae/subclasses",
+  "retrievedAt": "2026-11-05",
+  "entries": [
+    {
+      "id": "4929902",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, SOB REGIME DE FRETAMENTO, INTERMUNICIPAL, INTERESTADUAL E INTERNACIONAL"
+    },
+    {
+      "id": "1610204",
+      "label": "SERRARIAS SEM DESDOBRAMENTO DE MADEIRA EM BRUTO - RESSERRAGEM"
+    },
+    {
+      "id": "1610203",
+      "label": "SERRARIAS COM DESDOBRAMENTO DE MADEIRA EM BRUTO"
+    },
+    {
+      "id": "4623105",
+      "label": "COMÉRCIO ATACADISTA DE CACAU"
+    },
+    {
+      "id": "3314705",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE EQUIPAMENTOS DE TRANSMISSÃO PARA FINS INDUSTRIAIS"
+    },
+    {
+      "id": "4623106",
+      "label": "COMÉRCIO ATACADISTA DE SEMENTES, FLORES, PLANTAS E GRAMAS"
+    },
+    {
+      "id": "4623107",
+      "label": "COMÉRCIO ATACADISTA DE SISAL"
+    },
+    {
+      "id": "5620102",
+      "label": "SERVIÇOS DE ALIMENTAÇÃO PARA EVENTOS E RECEPÇÕES - BUFÊ"
+    },
+    {
+      "id": "6611802",
+      "label": "BOLSA DE MERCADORIAS"
+    },
+    {
+      "id": "6611803",
+      "label": "BOLSA DE MERCADORIAS E FUTUROS"
+    },
+    {
+      "id": "6611804",
+      "label": "ADMINISTRAÇÃO DE MERCADOS DE BALCÃO ORGANIZADOS"
+    },
+    {
+      "id": "0111301",
+      "label": "CULTIVO DE ARROZ"
+    },
+    {
+      "id": "0111302",
+      "label": "CULTIVO DE MILHO"
+    },
+    {
+      "id": "0111303",
+      "label": "CULTIVO DE TRIGO"
+    },
+    {
+      "id": "7729201",
+      "label": "ALUGUEL DE APARELHOS DE JOGOS ELETRÔNICOS"
+    },
+    {
+      "id": "0111399",
+      "label": "CULTIVO DE OUTROS CEREAIS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "0112101",
+      "label": "CULTIVO DE ALGODÃO HERBÁCEO"
+    },
+    {
+      "id": "0112102",
+      "label": "CULTIVO DE JUTA"
+    },
+    {
+      "id": "0112199",
+      "label": "CULTIVO DE OUTRAS FIBRAS DE LAVOURA TEMPORÁRIA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0113000",
+      "label": "CULTIVO DE CANA DE AÇÚCAR"
+    },
+    {
+      "id": "0114800",
+      "label": "CULTIVO DE FUMO"
+    },
+    {
+      "id": "0115600",
+      "label": "CULTIVO DE SOJA"
+    },
+    {
+      "id": "0116401",
+      "label": "CULTIVO DE AMENDOIM"
+    },
+    {
+      "id": "0116402",
+      "label": "CULTIVO DE GIRASSOL"
+    },
+    {
+      "id": "0116403",
+      "label": "CULTIVO DE MAMONA"
+    },
+    {
+      "id": "0133406",
+      "label": "CULTIVO DE GUARANÁ"
+    },
+    {
+      "id": "0721901",
+      "label": "EXTRAÇÃO DE MINÉRIO DE ALUMÍNIO"
+    },
+    {
+      "id": "0116499",
+      "label": "CULTIVO DE OUTRAS OLEAGINOSAS DE LAVOURA TEMPORÁRIA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0119901",
+      "label": "CULTIVO DE ABACAXI"
+    },
+    {
+      "id": "0119902",
+      "label": "CULTIVO DE ALHO"
+    },
+    {
+      "id": "0119903",
+      "label": "CULTIVO DE BATATA INGLESA"
+    },
+    {
+      "id": "0119904",
+      "label": "CULTIVO DE CEBOLA"
+    },
+    {
+      "id": "0119905",
+      "label": "CULTIVO DE FEIJÃO"
+    },
+    {
+      "id": "0119906",
+      "label": "CULTIVO DE MANDIOCA"
+    },
+    {
+      "id": "0119907",
+      "label": "CULTIVO DE MELÃO"
+    },
+    {
+      "id": "0119908",
+      "label": "CULTIVO DE MELANCIA"
+    },
+    {
+      "id": "0119909",
+      "label": "CULTIVO DE TOMATE RASTEIRO"
+    },
+    {
+      "id": "0133403",
+      "label": "CULTIVO DE CAJU"
+    },
+    {
+      "id": "0151203",
+      "label": "CRIAÇÃO DE BOVINOS, EXCETO PARA CORTE E LEITE"
+    },
+    {
+      "id": "0133404",
+      "label": "CULTIVO DE CÍTRICOS, EXCETO LARANJA"
+    },
+    {
+      "id": "0133405",
+      "label": "CULTIVO DE COCO DA BAÍA"
+    },
+    {
+      "id": "0119999",
+      "label": "CULTIVO DE OUTRAS PLANTAS DE LAVOURA TEMPORÁRIA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0121101",
+      "label": "HORTICULTURA, EXCETO MORANGO"
+    },
+    {
+      "id": "0121102",
+      "label": "CULTIVO DE MORANGO"
+    },
+    {
+      "id": "0122900",
+      "label": "CULTIVO DE FLORES E PLANTAS ORNAMENTAIS"
+    },
+    {
+      "id": "0131800",
+      "label": "CULTIVO DE LARANJA"
+    },
+    {
+      "id": "0132600",
+      "label": "CULTIVO DE UVA"
+    },
+    {
+      "id": "0133401",
+      "label": "CULTIVO DE AÇAÍ"
+    },
+    {
+      "id": "0133402",
+      "label": "CULTIVO DE BANANA"
+    },
+    {
+      "id": "0139301",
+      "label": "CULTIVO DE CHÁ DA ÍNDIA"
+    },
+    {
+      "id": "0133407",
+      "label": "CULTIVO DE MAÇÃ"
+    },
+    {
+      "id": "0133408",
+      "label": "CULTIVO DE MAMÃO"
+    },
+    {
+      "id": "0133409",
+      "label": "CULTIVO DE MARACUJÁ"
+    },
+    {
+      "id": "0133410",
+      "label": "CULTIVO DE MANGA"
+    },
+    {
+      "id": "0133411",
+      "label": "CULTIVO DE PÊSSEGO"
+    },
+    {
+      "id": "0133499",
+      "label": "CULTIVO DE FRUTAS DE LAVOURA PERMANENTE NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0134200",
+      "label": "CULTIVO DE CAFÉ"
+    },
+    {
+      "id": "0135100",
+      "label": "CULTIVO DE CACAU"
+    },
+    {
+      "id": "0139302",
+      "label": "CULTIVO DE ERVA MATE"
+    },
+    {
+      "id": "0139303",
+      "label": "CULTIVO DE PIMENTA DO REINO"
+    },
+    {
+      "id": "0152103",
+      "label": "CRIAÇÃO DE ASININOS E MUARES"
+    },
+    {
+      "id": "0721902",
+      "label": "BENEFICIAMENTO DE MINÉRIO DE ALUMÍNIO"
+    },
+    {
+      "id": "0139304",
+      "label": "CULTIVO DE PLANTAS PARA CONDIMENTO, EXCETO PIMENTA DO REINO"
+    },
+    {
+      "id": "0139305",
+      "label": "CULTIVO DE DENDÊ"
+    },
+    {
+      "id": "0139306",
+      "label": "CULTIVO DE SERINGUEIRA"
+    },
+    {
+      "id": "0139399",
+      "label": "CULTIVO DE OUTRAS PLANTAS DE LAVOURA PERMANENTE NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0141501",
+      "label": "PRODUÇÃO DE SEMENTES CERTIFICADAS, EXCETO DE FORRAGEIRAS PARA PASTO"
+    },
+    {
+      "id": "0141502",
+      "label": "PRODUÇÃO DE SEMENTES CERTIFICADAS DE FORRAGEIRAS PARA FORMAÇÃO DE PASTO"
+    },
+    {
+      "id": "0142300",
+      "label": "PRODUÇÃO DE MUDAS E OUTRAS FORMAS DE PROPAGAÇÃO VEGETAL, CERTIFICADAS"
+    },
+    {
+      "id": "0151201",
+      "label": "CRIAÇÃO DE BOVINOS PARA CORTE"
+    },
+    {
+      "id": "0151202",
+      "label": "CRIAÇÃO DE BOVINOS PARA LEITE"
+    },
+    {
+      "id": "0161002",
+      "label": "SERVIÇO DE PODA DE ÁRVORES PARA LAVOURAS"
+    },
+    {
+      "id": "0152101",
+      "label": "CRIAÇÃO DE BUFALINOS"
+    },
+    {
+      "id": "0152102",
+      "label": "CRIAÇÃO DE EQÜINOS"
+    },
+    {
+      "id": "0153901",
+      "label": "CRIAÇÃO DE CAPRINOS"
+    },
+    {
+      "id": "0153902",
+      "label": "CRIAÇÃO DE OVINOS, INCLUSIVE PARA PRODUÇÃO DE LÃ"
+    },
+    {
+      "id": "0154700",
+      "label": "CRIAÇÃO DE SUÍNOS"
+    },
+    {
+      "id": "0155501",
+      "label": "CRIAÇÃO DE FRANGOS PARA CORTE"
+    },
+    {
+      "id": "0155502",
+      "label": "PRODUÇÃO DE PINTOS DE UM DIA"
+    },
+    {
+      "id": "0155503",
+      "label": "CRIAÇÃO DE OUTROS GALINÁCEOS, EXCETO PARA CORTE"
+    },
+    {
+      "id": "0155504",
+      "label": "CRIAÇÃO DE AVES, EXCETO GALINÁCEOS"
+    },
+    {
+      "id": "0155505",
+      "label": "PRODUÇÃO DE OVOS"
+    },
+    {
+      "id": "0159801",
+      "label": "APICULTURA"
+    },
+    {
+      "id": "0159802",
+      "label": "CRIAÇÃO DE ANIMAIS DE ESTIMAÇÃO"
+    },
+    {
+      "id": "0159803",
+      "label": "CRIAÇÃO DE ESCARGÔ"
+    },
+    {
+      "id": "0159804",
+      "label": "CRIAÇÃO DE BICHO DA SEDA"
+    },
+    {
+      "id": "0159899",
+      "label": "CRIAÇÃO DE OUTROS ANIMAIS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "0161001",
+      "label": "SERVIÇO DE PULVERIZAÇÃO E CONTROLE DE PRAGAS AGRÍCOLAS"
+    },
+    {
+      "id": "0210106",
+      "label": "CULTIVO DE MUDAS EM VIVEIROS FLORESTAIS"
+    },
+    {
+      "id": "0161003",
+      "label": "SERVIÇO DE PREPARAÇÃO DE TERRENO, CULTIVO E COLHEITA"
+    },
+    {
+      "id": "0210107",
+      "label": "EXTRAÇÃO DE MADEIRA EM FLORESTAS PLANTADAS"
+    },
+    {
+      "id": "0210109",
+      "label": "PRODUÇÃO DE CASCA DE ACÁCIA NEGRA - FLORESTAS PLANTADAS"
+    },
+    {
+      "id": "0161099",
+      "label": "ATIVIDADES DE APOIO À AGRICULTURA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0162801",
+      "label": "SERVIÇO DE INSEMINAÇÃO ARTIFICIAL DE ANIMAIS"
+    },
+    {
+      "id": "0162802",
+      "label": "SERVIÇO DE TOSQUIAMENTO DE OVINOS"
+    },
+    {
+      "id": "0162803",
+      "label": "SERVIÇO DE MANEJO DE ANIMAIS"
+    },
+    {
+      "id": "0162899",
+      "label": "ATIVIDADES DE APOIO À PECUÁRIA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "0163600",
+      "label": "ATIVIDADES DE PÓS COLHEITA"
+    },
+    {
+      "id": "0170900",
+      "label": "CAÇA E SERVIÇOS RELACIONADOS"
+    },
+    {
+      "id": "0210101",
+      "label": "CULTIVO DE EUCALIPTO"
+    },
+    {
+      "id": "0210102",
+      "label": "CULTIVO DE ACÁCIA NEGRA"
+    },
+    {
+      "id": "0210103",
+      "label": "CULTIVO DE PINUS"
+    },
+    {
+      "id": "0210104",
+      "label": "CULTIVO DE TECA"
+    },
+    {
+      "id": "0210105",
+      "label": "CULTIVO DE ESPÉCIES MADEIREIRAS, EXCETO EUCALIPTO, ACÁCIA NEGRA, PINUS E TECA"
+    },
+    {
+      "id": "0210108",
+      "label": "PRODUÇÃO DE CARVÃO VEGETAL - FLORESTAS PLANTADAS"
+    },
+    {
+      "id": "0210199",
+      "label": "PRODUÇÃO DE PRODUTOS NÃO MADEIREIROS NÃO ESPECIFICADOS ANTERIORMENTE EM FLORESTAS PLANTADAS"
+    },
+    {
+      "id": "0220901",
+      "label": "EXTRAÇÃO DE MADEIRA EM FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0220902",
+      "label": "PRODUÇÃO DE CARVÃO VEGETAL - FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0220903",
+      "label": "COLETA DE CASTANHA DO PARÁ EM FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0220904",
+      "label": "COLETA DE LÁTEX EM FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0220905",
+      "label": "COLETA DE PALMITO EM FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0220906",
+      "label": "CONSERVAÇÃO DE FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0220999",
+      "label": "COLETA DE PRODUTOS NÃO MADEIREIROS NÃO ESPECIFICADOS ANTERIORMENTE EM FLORESTAS NATIVAS"
+    },
+    {
+      "id": "0230600",
+      "label": "ATIVIDADES DE APOIO À PRODUÇÃO FLORESTAL"
+    },
+    {
+      "id": "0311601",
+      "label": "PESCA DE PEIXES EM ÁGUA SALGADA"
+    },
+    {
+      "id": "0311602",
+      "label": "PESCA DE CRUSTÁCEOS E MOLUSCOS EM ÁGUA SALGADA"
+    },
+    {
+      "id": "0311603",
+      "label": "COLETA DE OUTROS PRODUTOS MARINHOS"
+    },
+    {
+      "id": "0311604",
+      "label": "ATIVIDADES DE APOIO À PESCA EM ÁGUA SALGADA"
+    },
+    {
+      "id": "0312401",
+      "label": "PESCA DE PEIXES EM ÁGUA DOCE"
+    },
+    {
+      "id": "0312402",
+      "label": "PESCA DE CRUSTÁCEOS E MOLUSCOS EM ÁGUA DOCE"
+    },
+    {
+      "id": "4633803",
+      "label": "COMÉRCIO ATACADISTA DE COELHOS E OUTROS PEQUENOS ANIMAIS VIVOS PARA ALIMENTAÇÃO"
+    },
+    {
+      "id": "0312403",
+      "label": "COLETA DE OUTROS PRODUTOS AQUÁTICOS DE ÁGUA DOCE"
+    },
+    {
+      "id": "0312404",
+      "label": "ATIVIDADES DE APOIO À PESCA EM ÁGUA DOCE"
+    },
+    {
+      "id": "0710301",
+      "label": "EXTRAÇÃO DE MINÉRIO DE FERRO"
+    },
+    {
+      "id": "0710302",
+      "label": "PELOTIZAÇÃO, SINTERIZAÇÃO E OUTROS BENEFICIAMENTOS DE MINÉRIO DE FERRO"
+    },
+    {
+      "id": "0321301",
+      "label": "CRIAÇÃO DE PEIXES EM ÁGUA SALGADA E SALOBRA"
+    },
+    {
+      "id": "0321302",
+      "label": "CRIAÇÃO DE CAMARÕES EM ÁGUA SALGADA E SALOBRA"
+    },
+    {
+      "id": "0321303",
+      "label": "CRIAÇÃO DE OSTRAS E MEXILHÕES EM ÁGUA SALGADA E SALOBRA"
+    },
+    {
+      "id": "0321304",
+      "label": "CRIAÇÃO DE PEIXES ORNAMENTAIS EM ÁGUA SALGADA E SALOBRA"
+    },
+    {
+      "id": "0321305",
+      "label": "ATIVIDADES DE APOIO À AQÜICULTURA EM ÁGUA SALGADA E SALOBRA"
+    },
+    {
+      "id": "0321399",
+      "label": "CULTIVOS E SEMICULTIVOS DA AQÜICULTURA EM ÁGUA SALGADA E SALOBRA NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "0322101",
+      "label": "CRIAÇÃO DE PEIXES EM ÁGUA DOCE"
+    },
+    {
+      "id": "0322102",
+      "label": "CRIAÇÃO DE CAMARÕES EM ÁGUA DOCE"
+    },
+    {
+      "id": "0322103",
+      "label": "CRIAÇÃO DE OSTRAS E MEXILHÕES EM ÁGUA DOCE"
+    },
+    {
+      "id": "0322104",
+      "label": "CRIAÇÃO DE PEIXES ORNAMENTAIS EM ÁGUA DOCE"
+    },
+    {
+      "id": "0322105",
+      "label": "RANICULTURA"
+    },
+    {
+      "id": "0322106",
+      "label": "CRIAÇÃO DE JACARÉ"
+    },
+    {
+      "id": "0322107",
+      "label": "ATIVIDADES DE APOIO À AQÜICULTURA EM ÁGUA DOCE"
+    },
+    {
+      "id": "0322199",
+      "label": "CULTIVOS E SEMICULTIVOS DA AQÜICULTURA EM ÁGUA DOCE NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "0500301",
+      "label": "EXTRAÇÃO DE CARVÃO MINERAL"
+    },
+    {
+      "id": "0500302",
+      "label": "BENEFICIAMENTO DE CARVÃO MINERAL"
+    },
+    {
+      "id": "0600001",
+      "label": "EXTRAÇÃO DE PETRÓLEO E GÁS NATURAL"
+    },
+    {
+      "id": "0600002",
+      "label": "EXTRAÇÃO E BENEFICIAMENTO DE XISTO"
+    },
+    {
+      "id": "0600003",
+      "label": "EXTRAÇÃO E BENEFICIAMENTO DE AREIAS BETUMINOSAS"
+    },
+    {
+      "id": "0722701",
+      "label": "EXTRAÇÃO DE MINÉRIO DE ESTANHO"
+    },
+    {
+      "id": "0722702",
+      "label": "BENEFICIAMENTO DE MINÉRIO DE ESTANHO"
+    },
+    {
+      "id": "0723501",
+      "label": "EXTRAÇÃO DE MINÉRIO DE MANGANÊS"
+    },
+    {
+      "id": "0723502",
+      "label": "BENEFICIAMENTO DE MINÉRIO DE MANGANÊS"
+    },
+    {
+      "id": "0724301",
+      "label": "EXTRAÇÃO DE MINÉRIO DE METAIS PRECIOSOS"
+    },
+    {
+      "id": "0724302",
+      "label": "BENEFICIAMENTO DE MINÉRIO DE METAIS PRECIOSOS"
+    },
+    {
+      "id": "0725100",
+      "label": "EXTRAÇÃO DE MINERAIS RADIOATIVOS"
+    },
+    {
+      "id": "0729401",
+      "label": "EXTRAÇÃO DE MINÉRIOS DE NIÓBIO E TITÂNIO"
+    },
+    {
+      "id": "0729402",
+      "label": "EXTRAÇÃO DE MINÉRIO DE TUNGSTÊNIO"
+    },
+    {
+      "id": "0729403",
+      "label": "EXTRAÇÃO DE MINÉRIO DE NÍQUEL"
+    },
+    {
+      "id": "0729404",
+      "label": "EXTRAÇÃO DE MINÉRIOS DE COBRE, CHUMBO, ZINCO E OUTROS MINERAIS METÁLICOS NÃO FERROSOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "0729405",
+      "label": "BENEFICIAMENTO DE MINÉRIOS DE COBRE, CHUMBO, ZINCO E OUTROS MINERAIS METÁLICOS NÃO FERROSOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "0810001",
+      "label": "EXTRAÇÃO DE ARDÓSIA E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0810002",
+      "label": "EXTRAÇÃO DE GRANITO E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0810003",
+      "label": "EXTRAÇÃO DE MÁRMORE E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "1012102",
+      "label": "ABATE DE PEQUENOS ANIMAIS"
+    },
+    {
+      "id": "6621502",
+      "label": "AUDITORIA E CONSULTORIA ATUARIAL"
+    },
+    {
+      "id": "0810004",
+      "label": "EXTRAÇÃO DE CALCÁRIO E DOLOMITA E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0810005",
+      "label": "EXTRAÇÃO DE GESSO E CAULIM"
+    },
+    {
+      "id": "0810006",
+      "label": "EXTRAÇÃO DE AREIA, CASCALHO OU PEDREGULHO E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "9603302",
+      "label": "SERVIÇOS DE CREMAÇÃO"
+    },
+    {
+      "id": "0810007",
+      "label": "EXTRAÇÃO DE ARGILA E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0810008",
+      "label": "EXTRAÇÃO DE SAIBRO E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0810009",
+      "label": "EXTRAÇÃO DE BASALTO E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0810010",
+      "label": "BENEFICIAMENTO DE GESSO E CAULIM ASSOCIADO À EXTRAÇÃO"
+    },
+    {
+      "id": "0810099",
+      "label": "EXTRAÇÃO E BRITAMENTO DE PEDRAS E OUTROS MATERIAIS PARA CONSTRUÇÃO E BENEFICIAMENTO ASSOCIADO"
+    },
+    {
+      "id": "0891600",
+      "label": "EXTRAÇÃO DE MINERAIS PARA FABRICAÇÃO DE ADUBOS, FERTILIZANTES E OUTROS PRODUTOS QUÍMICOS"
+    },
+    {
+      "id": "0892401",
+      "label": "EXTRAÇÃO DE SAL MARINHO"
+    },
+    {
+      "id": "0892402",
+      "label": "EXTRAÇÃO DE SAL GEMA"
+    },
+    {
+      "id": "0892403",
+      "label": "REFINO E OUTROS TRATAMENTOS DO SAL"
+    },
+    {
+      "id": "0893200",
+      "label": "EXTRAÇÃO DE GEMAS (PEDRAS PRECIOSAS E SEMIPRECIOSAS)"
+    },
+    {
+      "id": "0899101",
+      "label": "EXTRAÇÃO DE GRAFITA"
+    },
+    {
+      "id": "0899102",
+      "label": "EXTRAÇÃO DE QUARTZO"
+    },
+    {
+      "id": "0899103",
+      "label": "EXTRAÇÃO DE AMIANTO"
+    },
+    {
+      "id": "0899199",
+      "label": "EXTRAÇÃO DE OUTROS MINERAIS NÃO METÁLICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1043100",
+      "label": "FABRICAÇÃO DE MARGARINA E OUTRAS GORDURAS VEGETAIS E DE ÓLEOS NÃO COMESTÍVEIS DE ANIMAIS"
+    },
+    {
+      "id": "1051100",
+      "label": "PREPARAÇÃO DO LEITE"
+    },
+    {
+      "id": "1351100",
+      "label": "FABRICAÇÃO DE ARTEFATOS TÊXTEIS PARA USO DOMÉSTICO"
+    },
+    {
+      "id": "0910600",
+      "label": "ATIVIDADES DE APOIO À EXTRAÇÃO DE PETRÓLEO E GÁS NATURAL"
+    },
+    {
+      "id": "0990401",
+      "label": "ATIVIDADES DE APOIO À EXTRAÇÃO DE MINÉRIO DE FERRO"
+    },
+    {
+      "id": "0990402",
+      "label": "ATIVIDADES DE APOIO À EXTRAÇÃO DE MINERAIS METÁLICOS NÃO FERROSOS"
+    },
+    {
+      "id": "0990403",
+      "label": "ATIVIDADES DE APOIO À EXTRAÇÃO DE MINERAIS NÃO METÁLICOS"
+    },
+    {
+      "id": "1011201",
+      "label": "FRIGORÍFICO - ABATE DE BOVINOS"
+    },
+    {
+      "id": "1011202",
+      "label": "FRIGORÍFICO - ABATE DE EQÜINOS"
+    },
+    {
+      "id": "1011203",
+      "label": "FRIGORÍFICO - ABATE DE OVINOS E CAPRINOS"
+    },
+    {
+      "id": "1011204",
+      "label": "FRIGORÍFICO - ABATE DE BUFALINOS"
+    },
+    {
+      "id": "1011205",
+      "label": "MATADOURO - ABATE DE RESES SOB CONTRATO - EXCETO ABATE DE SUÍNOS"
+    },
+    {
+      "id": "1012101",
+      "label": "ABATE DE AVES"
+    },
+    {
+      "id": "1012103",
+      "label": "FRIGORÍFICO - ABATE DE SUÍNOS"
+    },
+    {
+      "id": "1012104",
+      "label": "MATADOURO - ABATE DE SUÍNOS SOB CONTRATO"
+    },
+    {
+      "id": "1013901",
+      "label": "FABRICAÇÃO DE PRODUTOS DE CARNE"
+    },
+    {
+      "id": "1013902",
+      "label": "PREPARAÇÃO DE SUBPRODUTOS DO ABATE"
+    },
+    {
+      "id": "1020101",
+      "label": "PRESERVAÇÃO DE PEIXES, CRUSTÁCEOS E MOLUSCOS"
+    },
+    {
+      "id": "1020102",
+      "label": "FABRICAÇÃO DE CONSERVAS DE PEIXES, CRUSTÁCEOS E MOLUSCOS"
+    },
+    {
+      "id": "1031700",
+      "label": "FABRICAÇÃO DE CONSERVAS DE FRUTAS"
+    },
+    {
+      "id": "1032501",
+      "label": "FABRICAÇÃO DE CONSERVAS DE PALMITO"
+    },
+    {
+      "id": "1032599",
+      "label": "FABRICAÇÃO DE CONSERVAS DE LEGUMES E OUTROS VEGETAIS, EXCETO PALMITO"
+    },
+    {
+      "id": "1033301",
+      "label": "FABRICAÇÃO DE SUCOS CONCENTRADOS DE FRUTAS, HORTALIÇAS E LEGUMES"
+    },
+    {
+      "id": "1033302",
+      "label": "FABRICAÇÃO DE SUCOS DE FRUTAS, HORTALIÇAS E LEGUMES, EXCETO CONCENTRADOS"
+    },
+    {
+      "id": "1041400",
+      "label": "FABRICAÇÃO DE ÓLEOS VEGETAIS EM BRUTO, EXCETO ÓLEO DE MILHO"
+    },
+    {
+      "id": "1042200",
+      "label": "FABRICAÇÃO DE ÓLEOS VEGETAIS REFINADOS, EXCETO ÓLEO DE MILHO"
+    },
+    {
+      "id": "1052000",
+      "label": "FABRICAÇÃO DE LATICÍNIOS"
+    },
+    {
+      "id": "1053800",
+      "label": "FABRICAÇÃO DE SORVETES E OUTROS GELADOS COMESTÍVEIS"
+    },
+    {
+      "id": "1061901",
+      "label": "BENEFICIAMENTO DE ARROZ"
+    },
+    {
+      "id": "1061902",
+      "label": "FABRICAÇÃO DE PRODUTOS DO ARROZ"
+    },
+    {
+      "id": "1062700",
+      "label": "MOAGEM DE TRIGO E FABRICAÇÃO DE DERIVADOS"
+    },
+    {
+      "id": "1063500",
+      "label": "FABRICAÇÃO DE FARINHA DE MANDIOCA E DERIVADOS"
+    },
+    {
+      "id": "1064300",
+      "label": "FABRICAÇÃO DE FARINHA DE MILHO E DERIVADOS, EXCETO ÓLEOS DE MILHO"
+    },
+    {
+      "id": "1065101",
+      "label": "FABRICAÇÃO DE AMIDOS E FÉCULAS DE VEGETAIS"
+    },
+    {
+      "id": "1065102",
+      "label": "FABRICAÇÃO DE ÓLEO DE MILHO EM BRUTO"
+    },
+    {
+      "id": "1065103",
+      "label": "FABRICAÇÃO DE ÓLEO DE MILHO REFINADO"
+    },
+    {
+      "id": "1066000",
+      "label": "FABRICAÇÃO DE ALIMENTOS PARA ANIMAIS"
+    },
+    {
+      "id": "1069400",
+      "label": "MOAGEM E FABRICAÇÃO DE PRODUTOS DE ORIGEM VEGETAL NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1071600",
+      "label": "FABRICAÇÃO DE AÇÚCAR EM BRUTO"
+    },
+    {
+      "id": "1072401",
+      "label": "FABRICAÇÃO DE AÇÚCAR DE CANA REFINADO"
+    },
+    {
+      "id": "1072402",
+      "label": "FABRICAÇÃO DE AÇÚCAR DE CEREAIS (DEXTROSE) E DE BETERRABA"
+    },
+    {
+      "id": "1081301",
+      "label": "BENEFICIAMENTO DE CAFÉ"
+    },
+    {
+      "id": "1421500",
+      "label": "FABRICAÇÃO DE MEIAS"
+    },
+    {
+      "id": "4763603",
+      "label": "COMÉRCIO VAREJISTA DE BICICLETAS E TRICICLOS; PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2062200",
+      "label": "FABRICAÇÃO DE PRODUTOS DE LIMPEZA E POLIMENTO"
+    },
+    {
+      "id": "1081302",
+      "label": "TORREFAÇÃO E MOAGEM DE CAFÉ"
+    },
+    {
+      "id": "1082100",
+      "label": "FABRICAÇÃO DE PRODUTOS À BASE DE CAFÉ"
+    },
+    {
+      "id": "1091101",
+      "label": "FABRICAÇÃO DE PRODUTOS DE PANIFICAÇÃO INDUSTRIAL"
+    },
+    {
+      "id": "1091102",
+      "label": "FABRICAÇÃO DE PRODUTOS DE PADARIA E CONFEITARIA COM PREDOMINÂNCIA  DE PRODUÇÃO PRÓPRIA"
+    },
+    {
+      "id": "1092900",
+      "label": "FABRICAÇÃO DE BISCOITOS E BOLACHAS"
+    },
+    {
+      "id": "1093701",
+      "label": "FABRICAÇÃO DE PRODUTOS DERIVADOS DO CACAU E DE CHOCOLATES"
+    },
+    {
+      "id": "1093702",
+      "label": "FABRICAÇÃO DE FRUTAS CRISTALIZADAS, BALAS E SEMELHANTES"
+    },
+    {
+      "id": "1094500",
+      "label": "FABRICAÇÃO DE MASSAS ALIMENTÍCIAS"
+    },
+    {
+      "id": "1095300",
+      "label": "FABRICAÇÃO DE ESPECIARIAS, MOLHOS, TEMPEROS E CONDIMENTOS"
+    },
+    {
+      "id": "1099601",
+      "label": "FABRICAÇÃO DE VINAGRES"
+    },
+    {
+      "id": "1099602",
+      "label": "FABRICAÇÃO DE PÓS ALIMENTÍCIOS"
+    },
+    {
+      "id": "1099603",
+      "label": "FABRICAÇÃO DE FERMENTOS E LEVEDURAS"
+    },
+    {
+      "id": "1099604",
+      "label": "FABRICAÇÃO DE GELO COMUM"
+    },
+    {
+      "id": "1099605",
+      "label": "FABRICAÇÃO DE PRODUTOS PARA INFUSÃO (CHÁ, MATE, ETC.)"
+    },
+    {
+      "id": "1099606",
+      "label": "FABRICAÇÃO DE ADOÇANTES NATURAIS E ARTIFICIAIS"
+    },
+    {
+      "id": "1099607",
+      "label": "FABRICAÇÃO DE ALIMENTOS DIETÉTICOS E COMPLEMENTOS ALIMENTARES"
+    },
+    {
+      "id": "1311100",
+      "label": "PREPARAÇÃO E FIAÇÃO DE FIBRAS DE ALGODÃO"
+    },
+    {
+      "id": "1312000",
+      "label": "PREPARAÇÃO E FIAÇÃO DE FIBRAS TÊXTEIS NATURAIS, EXCETO ALGODÃO"
+    },
+    {
+      "id": "1099699",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS ALIMENTÍCIOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1111901",
+      "label": "FABRICAÇÃO DE AGUARDENTE DE CANA DE AÇÚCAR"
+    },
+    {
+      "id": "1111902",
+      "label": "FABRICAÇÃO DE OUTRAS AGUARDENTES E BEBIDAS DESTILADAS"
+    },
+    {
+      "id": "1112700",
+      "label": "FABRICAÇÃO DE VINHO"
+    },
+    {
+      "id": "1113501",
+      "label": "FABRICAÇÃO DE MALTE, INCLUSIVE MALTE UÍSQUE"
+    },
+    {
+      "id": "1113502",
+      "label": "FABRICAÇÃO DE CERVEJAS E CHOPES"
+    },
+    {
+      "id": "1121600",
+      "label": "FABRICAÇÃO DE ÁGUAS ENVASADAS"
+    },
+    {
+      "id": "1122401",
+      "label": "FABRICAÇÃO DE REFRIGERANTES"
+    },
+    {
+      "id": "1122402",
+      "label": "FABRICAÇÃO DE CHÁ MATE E OUTROS CHÁS PRONTOS PARA CONSUMO"
+    },
+    {
+      "id": "1122403",
+      "label": "FABRICAÇÃO DE REFRESCOS, XAROPES E PÓS PARA REFRESCOS, EXCETO REFRESCOS DE FRUTAS"
+    },
+    {
+      "id": "1122404",
+      "label": "FABRICAÇÃO DE BEBIDAS ISOTÔNICAS"
+    },
+    {
+      "id": "1122499",
+      "label": "FABRICAÇÃO DE OUTRAS BEBIDAS NÃO ALCOÓLICAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "1210700",
+      "label": "PROCESSAMENTO INDUSTRIAL DO FUMO"
+    },
+    {
+      "id": "1220401",
+      "label": "FABRICAÇÃO DE CIGARROS"
+    },
+    {
+      "id": "1220402",
+      "label": "FABRICAÇÃO DE CIGARRILHAS E CHARUTOS"
+    },
+    {
+      "id": "1220403",
+      "label": "FABRICAÇÃO DE FILTROS PARA CIGARROS"
+    },
+    {
+      "id": "1220499",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS DO FUMO, EXCETO CIGARROS, CIGARRILHAS E CHARUTOS"
+    },
+    {
+      "id": "1313800",
+      "label": "FIAÇÃO DE FIBRAS ARTIFICIAIS E SINTÉTICAS"
+    },
+    {
+      "id": "1314600",
+      "label": "FABRICAÇÃO DE LINHAS PARA COSTURAR E BORDAR"
+    },
+    {
+      "id": "1321900",
+      "label": "TECELAGEM DE FIOS DE ALGODÃO"
+    },
+    {
+      "id": "1322700",
+      "label": "TECELAGEM DE FIOS DE FIBRAS TÊXTEIS NATURAIS, EXCETO ALGODÃO"
+    },
+    {
+      "id": "1323500",
+      "label": "TECELAGEM DE FIOS DE FIBRAS ARTIFICIAIS E SINTÉTICAS"
+    },
+    {
+      "id": "1330800",
+      "label": "FABRICAÇÃO DE TECIDOS DE MALHA"
+    },
+    {
+      "id": "1340501",
+      "label": "ESTAMPARIA E TEXTURIZAÇÃO EM FIOS, TECIDOS, ARTEFATOS TÊXTEIS E PEÇAS DO VESTUÁRIO"
+    },
+    {
+      "id": "1340502",
+      "label": "ALVEJAMENTO, TINGIMENTO E TORÇÃO EM FIOS, TECIDOS, ARTEFATOS TÊXTEIS E PEÇAS DO VESTUÁRIO"
+    },
+    {
+      "id": "1932200",
+      "label": "FABRICAÇÃO DE BIOCOMBUSTÍVEIS, EXCETO ÁLCOOL"
+    },
+    {
+      "id": "1340599",
+      "label": "OUTROS SERVIÇOS DE ACABAMENTO EM FIOS, TECIDOS, ARTEFATOS TÊXTEIS E PEÇAS DO VESTUÁRIO"
+    },
+    {
+      "id": "7729202",
+      "label": "ALUGUEL DE MÓVEIS, UTENSÍLIOS E APARELHOS DE USO DOMÉSTICO E PESSOAL; INSTRUMENTOS MUSICAIS"
+    },
+    {
+      "id": "1352900",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE TAPEÇARIA"
+    },
+    {
+      "id": "1353700",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE CORDOARIA"
+    },
+    {
+      "id": "1354500",
+      "label": "FABRICAÇÃO DE TECIDOS ESPECIAIS, INCLUSIVE ARTEFATOS"
+    },
+    {
+      "id": "1359600",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS TÊXTEIS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1411801",
+      "label": "CONFECÇÃO DE ROUPAS ÍNTIMAS"
+    },
+    {
+      "id": "1411802",
+      "label": "FACÇÃO DE ROUPAS ÍNTIMAS"
+    },
+    {
+      "id": "1412601",
+      "label": "CONFECÇÃO DE PEÇAS DE VESTUÁRIO, EXCETO ROUPAS ÍNTIMAS E AS CONFECCIONADAS SOB MEDIDA"
+    },
+    {
+      "id": "1412602",
+      "label": "CONFECÇÃO, SOB MEDIDA, DE PEÇAS DO VESTUÁRIO, EXCETO ROUPAS ÍNTIMAS"
+    },
+    {
+      "id": "1412603",
+      "label": "FACÇÃO DE PEÇAS DO VESTUÁRIO, EXCETO ROUPAS ÍNTIMAS"
+    },
+    {
+      "id": "1413401",
+      "label": "CONFECÇÃO DE ROUPAS PROFISSIONAIS, EXCETO SOB MEDIDA"
+    },
+    {
+      "id": "1413402",
+      "label": "CONFECÇÃO, SOB MEDIDA, DE ROUPAS PROFISSIONAIS"
+    },
+    {
+      "id": "1413403",
+      "label": "FACÇÃO DE ROUPAS PROFISSIONAIS"
+    },
+    {
+      "id": "1622699",
+      "label": "FABRICAÇÃO DE OUTROS ARTIGOS DE CARPINTARIA PARA CONSTRUÇÃO"
+    },
+    {
+      "id": "4763604",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE CAÇA, PESCA E CAMPING"
+    },
+    {
+      "id": "1414200",
+      "label": "FABRICAÇÃO DE ACESSÓRIOS DO VESTUÁRIO, EXCETO PARA SEGURANÇA E PROTEÇÃO"
+    },
+    {
+      "id": "7729203",
+      "label": "ALUGUEL DE MATERIAL MÉDICO"
+    },
+    {
+      "id": "1422300",
+      "label": "FABRICAÇÃO DE ARTIGOS DO VESTUÁRIO, PRODUZIDOS EM MALHARIAS E TRICOTAGENS, EXCETO MEIAS"
+    },
+    {
+      "id": "1510600",
+      "label": "CURTIMENTO E OUTRAS PREPARAÇÕES DE COURO"
+    },
+    {
+      "id": "1521100",
+      "label": "FABRICAÇÃO DE ARTIGOS PARA VIAGEM, BOLSAS E SEMELHANTES DE QUALQUER MATERIAL"
+    },
+    {
+      "id": "1529700",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE COURO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1531901",
+      "label": "FABRICAÇÃO DE CALÇADOS DE COURO"
+    },
+    {
+      "id": "1531902",
+      "label": "ACABAMENTO DE CALÇADOS DE COURO SOB CONTRATO"
+    },
+    {
+      "id": "1532700",
+      "label": "FABRICAÇÃO DE TÊNIS DE QUALQUER MATERIAL"
+    },
+    {
+      "id": "1533500",
+      "label": "FABRICAÇÃO DE CALÇADOS DE MATERIAL SINTÉTICO"
+    },
+    {
+      "id": "1539400",
+      "label": "FABRICAÇÃO DE CALÇADOS DE MATERIAIS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1540800",
+      "label": "FABRICAÇÃO DE PARTES PARA CALÇADOS, DE QUALQUER MATERIAL"
+    },
+    {
+      "id": "1621800",
+      "label": "FABRICAÇÃO DE MADEIRA LAMINADA E DE CHAPAS DE MADEIRA COMPENSADA, PRENSADA E AGLOMERADA"
+    },
+    {
+      "id": "1622601",
+      "label": "FABRICAÇÃO DE CASAS DE MADEIRA PRÉ FABRICADAS"
+    },
+    {
+      "id": "1622602",
+      "label": "FABRICAÇÃO DE ESQUADRIAS DE MADEIRA E DE PEÇAS DE MADEIRA PARA INSTALAÇÕES INDUSTRIAIS E COMERCIAIS"
+    },
+    {
+      "id": "4924800",
+      "label": "TRANSPORTE ESCOLAR"
+    },
+    {
+      "id": "1623400",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE TANOARIA E DE EMBALAGENS DE MADEIRA"
+    },
+    {
+      "id": "4643501",
+      "label": "COMÉRCIO ATACADISTA DE CALÇADOS"
+    },
+    {
+      "id": "8599601",
+      "label": "FORMAÇÃO DE CONDUTORES"
+    },
+    {
+      "id": "1629301",
+      "label": "FABRICAÇÃO DE ARTEFATOS DIVERSOS DE MADEIRA, EXCETO MÓVEIS"
+    },
+    {
+      "id": "1629302",
+      "label": "FABRICAÇÃO DE ARTEFATOS DIVERSOS DE CORTIÇA, BAMBU, PALHA, VIME E OUTROS MATERIAIS TRANÇADOS, EXCETO MÓVEIS"
+    },
+    {
+      "id": "1710900",
+      "label": "FABRICAÇÃO DE CELULOSE E OUTRAS PASTAS PARA A FABRICAÇÃO DE PAPEL"
+    },
+    {
+      "id": "1721400",
+      "label": "FABRICAÇÃO DE PAPEL"
+    },
+    {
+      "id": "1722200",
+      "label": "FABRICAÇÃO DE CARTOLINA E PAPEL CARTÃO"
+    },
+    {
+      "id": "1731100",
+      "label": "FABRICAÇÃO DE EMBALAGENS DE PAPEL"
+    },
+    {
+      "id": "1732000",
+      "label": "FABRICAÇÃO DE EMBALAGENS DE CARTOLINA E PAPEL CARTÃO"
+    },
+    {
+      "id": "1733800",
+      "label": "FABRICAÇÃO DE CHAPAS E DE EMBALAGENS DE PAPELÃO ONDULADO"
+    },
+    {
+      "id": "1741901",
+      "label": "FABRICAÇÃO DE FORMULÁRIOS CONTÍNUOS"
+    },
+    {
+      "id": "1741902",
+      "label": "FABRICAÇÃO DE PRODUTOS DE PAPEL, CARTOLINA, PAPEL CARTÃO E PAPELÃO ONDULADO PARA USO COMERCIAL E DE ESCRITÓRIO"
+    },
+    {
+      "id": "1742701",
+      "label": "FABRICAÇÃO DE FRALDAS DESCARTÁVEIS"
+    },
+    {
+      "id": "1742702",
+      "label": "FABRICAÇÃO DE ABSORVENTES HIGIÊNICOS"
+    },
+    {
+      "id": "1742799",
+      "label": "FABRICAÇÃO DE PRODUTOS DE PAPEL PARA USO DOMÉSTICO E HIGIÊNICO SANITÁRIO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1749400",
+      "label": "FABRICAÇÃO DE PRODUTOS DE PASTAS CELULÓSICAS, PAPEL, CARTOLINA, PAPEL CARTÃO E PAPELÃO ONDULADO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "1922599",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS DERIVADOS DO PETRÓLEO, EXCETO PRODUTOS DO REFINO"
+    },
+    {
+      "id": "1811301",
+      "label": "IMPRESSÃO DE JORNAIS"
+    },
+    {
+      "id": "2011800",
+      "label": "FABRICAÇÃO DE CLORO E ÁLCALIS"
+    },
+    {
+      "id": "1811302",
+      "label": "IMPRESSÃO DE LIVROS, REVISTAS E OUTRAS PUBLICAÇÕES PERIÓDICAS"
+    },
+    {
+      "id": "1812100",
+      "label": "IMPRESSÃO DE MATERIAL DE SEGURANÇA"
+    },
+    {
+      "id": "1813001",
+      "label": "IMPRESSÃO DE MATERIAL PARA USO PUBLICITÁRIO"
+    },
+    {
+      "id": "1813099",
+      "label": "IMPRESSÃO DE MATERIAL PARA OUTROS USOS"
+    },
+    {
+      "id": "1821100",
+      "label": "SERVIÇOS DE PRÉ IMPRESSÃO"
+    },
+    {
+      "id": "1822901",
+      "label": "SERVIÇOS DE ENCADERNAÇÃO E PLASTIFICAÇÃO"
+    },
+    {
+      "id": "1822999",
+      "label": "SERVIÇOS DE ACABAMENTOS GRÁFICOS, EXCETO ENCADERNAÇÃO E PLASTIFICAÇÃO"
+    },
+    {
+      "id": "1830001",
+      "label": "REPRODUÇÃO DE SOM EM QUALQUER SUPORTE"
+    },
+    {
+      "id": "1830002",
+      "label": "REPRODUÇÃO DE VÍDEO EM QUALQUER SUPORTE"
+    },
+    {
+      "id": "1830003",
+      "label": "REPRODUÇÃO DE SOFTWARE EM QUALQUER SUPORTE"
+    },
+    {
+      "id": "1910100",
+      "label": "COQUERIAS"
+    },
+    {
+      "id": "1922501",
+      "label": "FORMULAÇÃO DE COMBUSTÍVEIS"
+    },
+    {
+      "id": "1922502",
+      "label": "RERREFINO DE ÓLEOS LUBRIFICANTES"
+    },
+    {
+      "id": "2013401",
+      "label": "FABRICAÇÃO DE ADUBOS E FERTILIZANTES ORGANOMINERAIS"
+    },
+    {
+      "id": "2012600",
+      "label": "FABRICAÇÃO DE INTERMEDIÁRIOS PARA FERTILIZANTES"
+    },
+    {
+      "id": "2013402",
+      "label": "FABRICAÇÃO DE ADUBOS E FERTILIZANTES, EXCETO ORGANOMINERAIS"
+    },
+    {
+      "id": "2019301",
+      "label": "ELABORAÇÃO DE COMBUSTÍVEIS NUCLEARES"
+    },
+    {
+      "id": "2122000",
+      "label": "FABRICAÇÃO DE MEDICAMENTOS PARA USO VETERINÁRIO"
+    },
+    {
+      "id": "2019399",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS QUÍMICOS INORGÂNICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2021500",
+      "label": "FABRICAÇÃO DE PRODUTOS PETROQUÍMICOS BÁSICOS"
+    },
+    {
+      "id": "2022300",
+      "label": "FABRICAÇÃO DE INTERMEDIÁRIOS PARA PLASTIFICANTES, RESINAS E FIBRAS"
+    },
+    {
+      "id": "2029100",
+      "label": "FABRICAÇÃO DE PRODUTOS QUÍMICOS ORGÂNICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2031200",
+      "label": "FABRICAÇÃO DE RESINAS TERMOPLÁSTICAS"
+    },
+    {
+      "id": "2032100",
+      "label": "FABRICAÇÃO DE RESINAS TERMOFIXAS"
+    },
+    {
+      "id": "2033900",
+      "label": "FABRICAÇÃO DE ELASTÔMEROS"
+    },
+    {
+      "id": "4643502",
+      "label": "COMÉRCIO ATACADISTA DE BOLSAS, MALAS E ARTIGOS DE VIAGEM"
+    },
+    {
+      "id": "2040100",
+      "label": "FABRICAÇÃO DE FIBRAS ARTIFICIAIS E SINTÉTICAS"
+    },
+    {
+      "id": "2051700",
+      "label": "FABRICAÇÃO DE DEFENSIVOS AGRÍCOLAS"
+    },
+    {
+      "id": "2052500",
+      "label": "FABRICAÇÃO DE DESINFESTANTES DOMISSANITÁRIOS"
+    },
+    {
+      "id": "2061400",
+      "label": "FABRICAÇÃO DE SABÕES E DETERGENTES SINTÉTICOS"
+    },
+    {
+      "id": "2063100",
+      "label": "FABRICAÇÃO DE COSMÉTICOS, PRODUTOS DE PERFUMARIA E DE HIGIENE PESSOAL"
+    },
+    {
+      "id": "2071100",
+      "label": "FABRICAÇÃO DE TINTAS, VERNIZES, ESMALTES E LACAS"
+    },
+    {
+      "id": "2072000",
+      "label": "FABRICAÇÃO DE TINTAS DE IMPRESSÃO"
+    },
+    {
+      "id": "2092401",
+      "label": "FABRICAÇÃO DE PÓLVORAS, EXPLOSIVOS E DETONANTES"
+    },
+    {
+      "id": "2092402",
+      "label": "FABRICAÇÃO DE ARTIGOS PIROTÉCNICOS"
+    },
+    {
+      "id": "2092403",
+      "label": "FABRICAÇÃO DE FÓSFOROS DE SEGURANÇA"
+    },
+    {
+      "id": "2093200",
+      "label": "FABRICAÇÃO DE ADITIVOS DE USO INDUSTRIAL"
+    },
+    {
+      "id": "2094100",
+      "label": "FABRICAÇÃO DE CATALISADORES"
+    },
+    {
+      "id": "2099101",
+      "label": "FABRICAÇÃO DE CHAPAS, FILMES, PAPÉIS E OUTROS MATERIAIS E PRODUTOS QUÍMICOS PARA FOTOGRAFIA"
+    },
+    {
+      "id": "2099199",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS QUÍMICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2091600",
+      "label": "FABRICAÇÃO DE ADESIVOS E SELANTES"
+    },
+    {
+      "id": "2110600",
+      "label": "FABRICAÇÃO DE PRODUTOS FARMOQUÍMICOS"
+    },
+    {
+      "id": "2121101",
+      "label": "FABRICAÇÃO DE MEDICAMENTOS ALOPÁTICOS PARA USO HUMANO"
+    },
+    {
+      "id": "2121102",
+      "label": "FABRICAÇÃO DE MEDICAMENTOS HOMEOPÁTICOS PARA USO HUMANO"
+    },
+    {
+      "id": "2121103",
+      "label": "FABRICAÇÃO DE MEDICAMENTOS FITOTERÁPICOS PARA USO HUMANO"
+    },
+    {
+      "id": "2342701",
+      "label": "FABRICAÇÃO DE AZULEJOS E PISOS"
+    },
+    {
+      "id": "2211100",
+      "label": "FABRICAÇÃO DE PNEUMÁTICOS E DE CÂMARAS DE AR"
+    },
+    {
+      "id": "2212900",
+      "label": "REFORMA DE PNEUMÁTICOS USADOS"
+    },
+    {
+      "id": "2391501",
+      "label": "BRITAMENTO DE PEDRAS, EXCETO ASSOCIADO À EXTRAÇÃO"
+    },
+    {
+      "id": "2219600",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE BORRACHA NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2442300",
+      "label": "METALURGIA DOS METAIS PRECIOSOS"
+    },
+    {
+      "id": "3299004",
+      "label": "FABRICAÇÃO DE PAINÉIS E LETREIROS LUMINOSOS"
+    },
+    {
+      "id": "2221800",
+      "label": "FABRICAÇÃO DE LAMINADOS PLANOS E TUBULARES DE MATERIAL PLÁSTICO"
+    },
+    {
+      "id": "2222600",
+      "label": "FABRICAÇÃO DE EMBALAGENS DE MATERIAL PLÁSTICO"
+    },
+    {
+      "id": "2223400",
+      "label": "FABRICAÇÃO DE TUBOS E ACESSÓRIOS DE MATERIAL PLÁSTICO PARA USO NA CONSTRUÇÃO"
+    },
+    {
+      "id": "2229301",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE MATERIAL PLÁSTICO PARA USO PESSOAL E DOMÉSTICO"
+    },
+    {
+      "id": "2229302",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE MATERIAL PLÁSTICO PARA USOS INDUSTRIAIS"
+    },
+    {
+      "id": "2229303",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE MATERIAL PLÁSTICO PARA USO NA CONSTRUÇÃO, EXCETO TUBOS E ACESSÓRIOS"
+    },
+    {
+      "id": "3600602",
+      "label": "DISTRIBUIÇÃO DE ÁGUA POR CAMINHÕES"
+    },
+    {
+      "id": "2229399",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE MATERIAL PLÁSTICO PARA OUTROS USOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2311700",
+      "label": "FABRICAÇÃO DE VIDRO PLANO E DE SEGURANÇA"
+    },
+    {
+      "id": "2312500",
+      "label": "FABRICAÇÃO DE EMBALAGENS DE VIDRO"
+    },
+    {
+      "id": "2424502",
+      "label": "PRODUÇÃO DE RELAMINADOS, TREFILADOS E PERFILADOS DE AÇO, EXCETO ARAMES"
+    },
+    {
+      "id": "2319200",
+      "label": "FABRICAÇÃO DE ARTIGOS DE VIDRO"
+    },
+    {
+      "id": "2320600",
+      "label": "FABRICAÇÃO DE CIMENTO"
+    },
+    {
+      "id": "2330301",
+      "label": "FABRICAÇÃO DE ESTRUTURAS PRÉ MOLDADAS DE CONCRETO ARMADO, EM SÉRIE E SOB ENCOMENDA"
+    },
+    {
+      "id": "2449101",
+      "label": "PRODUÇÃO DE ZINCO EM FORMAS PRIMÁRIAS"
+    },
+    {
+      "id": "2330302",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE CIMENTO PARA USO NA CONSTRUÇÃO"
+    },
+    {
+      "id": "2330303",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE FIBROCIMENTO PARA USO NA CONSTRUÇÃO"
+    },
+    {
+      "id": "2330304",
+      "label": "FABRICAÇÃO DE CASAS PRÉ MOLDADAS DE CONCRETO"
+    },
+    {
+      "id": "2330305",
+      "label": "PREPARAÇÃO DE MASSA DE CONCRETO E ARGAMASSA PARA CONSTRUÇÃO"
+    },
+    {
+      "id": "2330399",
+      "label": "FABRICAÇÃO DE OUTROS ARTEFATOS E PRODUTOS DE CONCRETO, CIMENTO, FIBROCIMENTO, GESSO E MATERIAIS SEMELHANTES"
+    },
+    {
+      "id": "2341900",
+      "label": "FABRICAÇÃO DE PRODUTOS CERÂMICOS REFRATÁRIOS"
+    },
+    {
+      "id": "2342702",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE CERÂMICA E BARRO COZIDO PARA USO NA CONSTRUÇÃO, EXCETO AZULEJOS E PISOS"
+    },
+    {
+      "id": "2349401",
+      "label": "FABRICAÇÃO DE MATERIAL SANITÁRIO DE CERÂMICA"
+    },
+    {
+      "id": "2349499",
+      "label": "FABRICAÇÃO DE PRODUTOS CERÂMICOS NÃO REFRATÁRIOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3314706",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS, APARELHOS E EQUIPAMENTOS PARA INSTALAÇÕES TÉRMICAS"
+    },
+    {
+      "id": "2392300",
+      "label": "FABRICAÇÃO DE CAL E GESSO"
+    },
+    {
+      "id": "2399101",
+      "label": "DECORAÇÃO, LAPIDAÇÃO, GRAVAÇÃO, VITRIFICAÇÃO E OUTROS TRABALHOS EM CERÂMICA, LOUÇA, VIDRO E CRISTAL"
+    },
+    {
+      "id": "2399102",
+      "label": "FABRICAÇÃO DE ABRASIVOS"
+    },
+    {
+      "id": "2443100",
+      "label": "METALURGIA DO COBRE"
+    },
+    {
+      "id": "2599301",
+      "label": "SERVIÇOS DE CONFECÇÃO DE ARMAÇÕES METÁLICAS PARA A CONSTRUÇÃO"
+    },
+    {
+      "id": "2399199",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS DE MINERAIS NÃO METÁLICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2411300",
+      "label": "PRODUÇÃO DE FERRO GUSA"
+    },
+    {
+      "id": "2412100",
+      "label": "PRODUÇÃO DE FERROLIGAS"
+    },
+    {
+      "id": "2422901",
+      "label": "PRODUÇÃO DE LAMINADOS PLANOS DE AÇO AO CARBONO, REVESTIDOS OU NÃO"
+    },
+    {
+      "id": "2422902",
+      "label": "PRODUÇÃO DE LAMINADOS PLANOS DE AÇOS ESPECIAIS"
+    },
+    {
+      "id": "9603303",
+      "label": "SERVIÇOS DE SEPULTAMENTO"
+    },
+    {
+      "id": "2423701",
+      "label": "PRODUÇÃO DE TUBOS DE AÇO SEM COSTURA"
+    },
+    {
+      "id": "2423702",
+      "label": "PRODUÇÃO DE LAMINADOS LONGOS DE AÇO, EXCETO TUBOS"
+    },
+    {
+      "id": "2424501",
+      "label": "PRODUÇÃO DE ARAMES DE AÇO"
+    },
+    {
+      "id": "2431800",
+      "label": "PRODUÇÃO DE TUBOS DE AÇO COM COSTURA"
+    },
+    {
+      "id": "2439300",
+      "label": "PRODUÇÃO DE OUTROS TUBOS DE FERRO E AÇO"
+    },
+    {
+      "id": "2441501",
+      "label": "PRODUÇÃO DE ALUMÍNIO E SUAS LIGAS EM FORMAS PRIMÁRIAS"
+    },
+    {
+      "id": "2441502",
+      "label": "PRODUÇÃO DE LAMINADOS DE ALUMÍNIO"
+    },
+    {
+      "id": "2449102",
+      "label": "PRODUÇÃO DE LAMINADOS DE ZINCO"
+    },
+    {
+      "id": "2449103",
+      "label": "FABRICAÇÃO DE ÂNODOS PARA GALVANOPLASTIA"
+    },
+    {
+      "id": "2449199",
+      "label": "METALURGIA DE OUTROS METAIS NÃO FERROSOS E SUAS LIGAS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2451200",
+      "label": "FUNDIÇÃO DE FERRO E AÇO"
+    },
+    {
+      "id": "2452100",
+      "label": "FUNDIÇÃO DE METAIS NÃO FERROSOS E SUAS LIGAS"
+    },
+    {
+      "id": "2511000",
+      "label": "FABRICAÇÃO DE ESTRUTURAS METÁLICAS"
+    },
+    {
+      "id": "2512800",
+      "label": "FABRICAÇÃO DE ESQUADRIAS DE METAL"
+    },
+    {
+      "id": "2542000",
+      "label": "FABRICAÇÃO DE ARTIGOS DE SERRALHERIA, EXCETO ESQUADRIAS"
+    },
+    {
+      "id": "4679699",
+      "label": "COMÉRCIO ATACADISTA DE MATERIAIS DE CONSTRUÇÃO EM GERAL"
+    },
+    {
+      "id": "2513600",
+      "label": "FABRICAÇÃO DE OBRAS DE CALDEIRARIA PESADA"
+    },
+    {
+      "id": "2550101",
+      "label": "FABRICAÇÃO DE EQUIPAMENTO BÉLICO PESADO, EXCETO VEÍCULOS MILITARES DE COMBATE"
+    },
+    {
+      "id": "2521700",
+      "label": "FABRICAÇÃO DE TANQUES, RESERVATÓRIOS METÁLICOS E CALDEIRAS PARA AQUECIMENTO CENTRAL"
+    },
+    {
+      "id": "2522500",
+      "label": "FABRICAÇÃO DE CALDEIRAS GERADORAS DE VAPOR, EXCETO PARA AQUECIMENTO CENTRAL E PARA VEÍCULOS"
+    },
+    {
+      "id": "2531401",
+      "label": "PRODUÇÃO DE FORJADOS DE AÇO"
+    },
+    {
+      "id": "2531402",
+      "label": "PRODUÇÃO DE FORJADOS DE METAIS NÃO FERROSOS E SUAS LIGAS"
+    },
+    {
+      "id": "2599302",
+      "label": "SERVIÇO DE CORTE E DOBRA DE METAIS"
+    },
+    {
+      "id": "2532201",
+      "label": "PRODUÇÃO DE ARTEFATOS ESTAMPADOS DE METAL"
+    },
+    {
+      "id": "2532202",
+      "label": "METALURGIA DO PÓ"
+    },
+    {
+      "id": "2539001",
+      "label": "SERVIÇOS DE USINAGEM, TORNEARIA E SOLDA"
+    },
+    {
+      "id": "2539002",
+      "label": "SERVIÇOS DE TRATAMENTO E REVESTIMENTO EM METAIS"
+    },
+    {
+      "id": "2541100",
+      "label": "FABRICAÇÃO DE ARTIGOS DE CUTELARIA"
+    },
+    {
+      "id": "2543800",
+      "label": "FABRICAÇÃO DE FERRAMENTAS"
+    },
+    {
+      "id": "2550102",
+      "label": "FABRICAÇÃO DE ARMAS DE FOGO, OUTRAS ARMAS  E MUNIÇÕES"
+    },
+    {
+      "id": "2591800",
+      "label": "FABRICAÇÃO DE EMBALAGENS METÁLICAS"
+    },
+    {
+      "id": "2592601",
+      "label": "FABRICAÇÃO DE PRODUTOS DE TREFILADOS DE METAL PADRONIZADOS"
+    },
+    {
+      "id": "2592602",
+      "label": "FABRICAÇÃO DE PRODUTOS DE TREFILADOS DE METAL, EXCETO PADRONIZADOS"
+    },
+    {
+      "id": "2593400",
+      "label": "FABRICAÇÃO DE ARTIGOS DE METAL PARA USO DOMÉSTICO E PESSOAL"
+    },
+    {
+      "id": "2599399",
+      "label": "FABRICAÇÃO DE OUTROS PRODUTOS DE METAL NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2610800",
+      "label": "FABRICAÇÃO DE COMPONENTES ELETRÔNICOS"
+    },
+    {
+      "id": "2621300",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS DE INFORMÁTICA"
+    },
+    {
+      "id": "2670102",
+      "label": "FABRICAÇÃO DE APARELHOS FOTOGRÁFICOS E CINEMATOGRÁFICOS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2622100",
+      "label": "FABRICAÇÃO DE PERIFÉRICOS PARA EQUIPAMENTOS DE INFORMÁTICA"
+    },
+    {
+      "id": "2722802",
+      "label": "RECONDICIONAMENTO DE BATERIAS E ACUMULADORES PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "3250704",
+      "label": "FABRICAÇÃO DE APARELHOS E UTENSÍLIOS PARA CORREÇÃO DE DEFEITOS FÍSICOS E APARELHOS ORTOPÉDICOS EM GERAL, EXCETO SOB ENCOMENDA"
+    },
+    {
+      "id": "2631100",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS TRANSMISSORES DE COMUNICAÇÃO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2632900",
+      "label": "FABRICAÇÃO DE APARELHOS TELEFÔNICOS E DE OUTROS EQUIPAMENTOS DE COMUNICAÇÃO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2680900",
+      "label": "FABRICAÇÃO DE MÍDIAS VIRGENS, MAGNÉTICAS E ÓPTICAS"
+    },
+    {
+      "id": "3299005",
+      "label": "FABRICAÇÃO DE AVIAMENTOS PARA COSTURA"
+    },
+    {
+      "id": "2640000",
+      "label": "FABRICAÇÃO DE APARELHOS DE RECEPÇÃO, REPRODUÇÃO, GRAVAÇÃO E AMPLIFICAÇÃO DE ÁUDIO E VÍDEO"
+    },
+    {
+      "id": "2710401",
+      "label": "FABRICAÇÃO DE GERADORES DE CORRENTE CONTÍNUA E ALTERNADA, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2815101",
+      "label": "FABRICAÇÃO DE ROLAMENTOS PARA FINS INDUSTRIAIS"
+    },
+    {
+      "id": "2651500",
+      "label": "FABRICAÇÃO DE APARELHOS E EQUIPAMENTOS DE MEDIDA, TESTE E CONTROLE"
+    },
+    {
+      "id": "2652300",
+      "label": "FABRICAÇÃO DE CRONÔMETROS E RELÓGIOS"
+    },
+    {
+      "id": "2731700",
+      "label": "FABRICAÇÃO DE APARELHOS E EQUIPAMENTOS PARA DISTRIBUIÇÃO E CONTROLE DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "3314703",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE VÁLVULAS INDUSTRIAIS"
+    },
+    {
+      "id": "2660400",
+      "label": "FABRICAÇÃO DE APARELHOS ELETROMÉDICOS E ELETROTERAPÊUTICOS E EQUIPAMENTOS DE IRRADIAÇÃO"
+    },
+    {
+      "id": "2670101",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS E INSTRUMENTOS ÓPTICOS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2814301",
+      "label": "FABRICAÇÃO DE COMPRESSORES PARA USO INDUSTRIAL, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2710402",
+      "label": "FABRICAÇÃO DE TRANSFORMADORES, INDUTORES, CONVERSORES, SINCRONIZADORES E SEMELHANTES, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2710403",
+      "label": "FABRICAÇÃO DE MOTORES ELÉTRICOS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2721000",
+      "label": "FABRICAÇÃO DE PILHAS, BATERIAS E ACUMULADORES ELÉTRICOS, EXCETO PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2722801",
+      "label": "FABRICAÇÃO DE BATERIAS E ACUMULADORES PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2732500",
+      "label": "FABRICAÇÃO DE MATERIAL ELÉTRICO PARA INSTALAÇÕES EM CIRCUITO DE CONSUMO"
+    },
+    {
+      "id": "2733300",
+      "label": "FABRICAÇÃO DE FIOS, CABOS E CONDUTORES ELÉTRICOS ISOLADOS"
+    },
+    {
+      "id": "2740601",
+      "label": "FABRICAÇÃO DE LÂMPADAS"
+    },
+    {
+      "id": "2740602",
+      "label": "FABRICAÇÃO DE LUMINÁRIAS E OUTROS EQUIPAMENTOS DE ILUMINAÇÃO"
+    },
+    {
+      "id": "3299006",
+      "label": "FABRICAÇÃO DE VELAS, INCLUSIVE DECORATIVAS"
+    },
+    {
+      "id": "2751100",
+      "label": "FABRICAÇÃO DE FOGÕES, REFRIGERADORES E MÁQUINAS DE LAVAR E SECAR PARA USO DOMÉSTICO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2759701",
+      "label": "FABRICAÇÃO DE APARELHOS ELÉTRICOS DE USO PESSOAL, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2814302",
+      "label": "FABRICAÇÃO DE COMPRESSORES PARA USO NÃO INDUSTRIAL, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2759799",
+      "label": "FABRICAÇÃO DE OUTROS APARELHOS ELETRODOMÉSTICOS NÃO ESPECIFICADOS ANTERIORMENTE, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2790201",
+      "label": "FABRICAÇÃO DE ELETRODOS, CONTATOS E OUTROS ARTIGOS DE CARVÃO E GRAFITA PARA USO ELÉTRICO, ELETROÍMÃS E ISOLADORES"
+    },
+    {
+      "id": "2790202",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS PARA SINALIZAÇÃO E ALARME"
+    },
+    {
+      "id": "2790299",
+      "label": "FABRICAÇÃO DE OUTROS EQUIPAMENTOS E APARELHOS ELÉTRICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "2811900",
+      "label": "FABRICAÇÃO DE MOTORES E TURBINAS, PEÇAS E ACESSÓRIOS, EXCETO PARA AVIÕES E VEÍCULOS RODOVIÁRIOS"
+    },
+    {
+      "id": "2812700",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS HIDRÁULICOS E PNEUMÁTICOS, PEÇAS E ACESSÓRIOS, EXCETO VÁLVULAS"
+    },
+    {
+      "id": "2832100",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS PARA IRRIGAÇÃO AGRÍCOLA, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2813500",
+      "label": "FABRICAÇÃO DE VÁLVULAS, REGISTROS E DISPOSITIVOS SEMELHANTES, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2815102",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS DE TRANSMISSÃO PARA FINS INDUSTRIAIS, EXCETO ROLAMENTOS"
+    },
+    {
+      "id": "2824102",
+      "label": "FABRICAÇÃO DE APARELHOS E EQUIPAMENTOS DE AR CONDICIONADO PARA USO NÃO INDUSTRIAL"
+    },
+    {
+      "id": "3102100",
+      "label": "FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE METAL"
+    },
+    {
+      "id": "2821601",
+      "label": "FABRICAÇÃO DE FORNOS INDUSTRIAIS, APARELHOS E EQUIPAMENTOS NÃO ELÉTRICOS PARA INSTALAÇÕES TÉRMICAS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2821602",
+      "label": "FABRICAÇÃO DE ESTUFAS E FORNOS ELÉTRICOS PARA FINS INDUSTRIAIS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2822401",
+      "label": "FABRICAÇÃO DE MÁQUINAS, EQUIPAMENTOS E APARELHOS PARA TRANSPORTE E ELEVAÇÃO DE PESSOAS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2941700",
+      "label": "FABRICAÇÃO DE PEÇAS E ACESSÓRIOS PARA O SISTEMA MOTOR DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2942500",
+      "label": "FABRICAÇÃO DE PEÇAS E ACESSÓRIOS PARA OS SISTEMAS DE MARCHA E TRANSMISSÃO DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2822402",
+      "label": "FABRICAÇÃO DE MÁQUINAS, EQUIPAMENTOS E APARELHOS PARA TRANSPORTE E ELEVAÇÃO DE CARGAS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "3317102",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE EMBARCAÇÕES PARA ESPORTE E LAZER"
+    },
+    {
+      "id": "4732600",
+      "label": "COMÉRCIO VAREJISTA DE LUBRIFICANTES"
+    },
+    {
+      "id": "2823200",
+      "label": "FABRICAÇÃO DE MÁQUINAS E APARELHOS DE REFRIGERAÇÃO E VENTILAÇÃO PARA USO INDUSTRIAL E COMERCIAL, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2824101",
+      "label": "FABRICAÇÃO DE APARELHOS E EQUIPAMENTOS DE AR CONDICIONADO PARA USO INDUSTRIAL"
+    },
+    {
+      "id": "2950600",
+      "label": "RECONDICIONAMENTO E RECUPERAÇÃO DE MOTORES PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2825900",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA SANEAMENTO BÁSICO E AMBIENTAL, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2829101",
+      "label": "FABRICAÇÃO DE MÁQUINAS DE ESCREVER, CALCULAR E OUTROS EQUIPAMENTOS NÃO ELETRÔNICOS PARA ESCRITÓRIO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2829199",
+      "label": "FABRICAÇÃO DE OUTRAS MÁQUINAS E EQUIPAMENTOS DE USO GERAL NÃO ESPECIFICADOS ANTERIORMENTE, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2831300",
+      "label": "FABRICAÇÃO DE TRATORES AGRÍCOLAS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2943300",
+      "label": "FABRICAÇÃO DE PEÇAS E ACESSÓRIOS PARA O SISTEMA DE FREIOS DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2854200",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA TERRAPLENAGEM, PAVIMENTAÇÃO E CONSTRUÇÃO, PEÇAS E ACESSÓRIOS, EXCETO TRATORES"
+    },
+    {
+      "id": "4724500",
+      "label": "COMÉRCIO VAREJISTA DE HORTIFRUTIGRANJEIROS"
+    },
+    {
+      "id": "2833000",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA A AGRICULTURA E PECUÁRIA, PEÇAS E ACESSÓRIOS, EXCETO PARA IRRIGAÇÃO"
+    },
+    {
+      "id": "2840200",
+      "label": "FABRICAÇÃO DE MÁQUINAS FERRAMENTA, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "3250702",
+      "label": "FABRICAÇÃO DE MOBILIÁRIO PARA USO MÉDICO, CIRÚRGICO, ODONTOLÓGICO E DE LABORATÓRIO"
+    },
+    {
+      "id": "2851800",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA A PROSPECÇÃO E EXTRAÇÃO DE PETRÓLEO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2852600",
+      "label": "FABRICAÇÃO DE OUTRAS MÁQUINAS E EQUIPAMENTOS PARA USO NA EXTRAÇÃO MINERAL, PEÇAS E ACESSÓRIOS, EXCETO NA EXTRAÇÃO DE PETRÓLEO"
+    },
+    {
+      "id": "2853400",
+      "label": "FABRICAÇÃO DE TRATORES, PEÇAS E ACESSÓRIOS, EXCETO AGRÍCOLAS"
+    },
+    {
+      "id": "2944100",
+      "label": "FABRICAÇÃO DE PEÇAS E ACESSÓRIOS PARA O SISTEMA DE DIREÇÃO E SUSPENSÃO DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2861500",
+      "label": "FABRICAÇÃO DE MÁQUINAS PARA A INDÚSTRIA METALÚRGICA, PEÇAS E ACESSÓRIOS, EXCETO MÁQUINAS FERRAMENTA"
+    },
+    {
+      "id": "3101200",
+      "label": "FABRICAÇÃO DE MÓVEIS COM PREDOMINÂNCIA DE MADEIRA"
+    },
+    {
+      "id": "3314704",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE COMPRESSORES"
+    },
+    {
+      "id": "2862300",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA AS INDÚSTRIAS DE ALIMENTOS, BEBIDAS E FUMO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2863100",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA A INDÚSTRIA TÊXTIL, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2864000",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA AS INDÚSTRIAS DO VESTUÁRIO, DO COURO E DE CALÇADOS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "3042300",
+      "label": "FABRICAÇÃO DE TURBINAS, MOTORES E OUTROS COMPONENTES E PEÇAS PARA AERONAVES"
+    },
+    {
+      "id": "3314715",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA USO NA EXTRAÇÃO MINERAL, EXCETO NA EXTRAÇÃO DE PETRÓLEO"
+    },
+    {
+      "id": "2865800",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA AS INDÚSTRIAS DE CELULOSE, PAPEL E PAPELÃO E ARTEFATOS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2866600",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA A INDÚSTRIA DO PLÁSTICO, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "3250703",
+      "label": "FABRICAÇÃO DE APARELHOS E UTENSÍLIOS PARA CORREÇÃO DE DEFEITOS FÍSICOS E APARELHOS ORTOPÉDICOS EM GERAL SOB ENCOMENDA"
+    },
+    {
+      "id": "2869100",
+      "label": "FABRICAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA USO INDUSTRIAL ESPECÍFICO NÃO ESPECIFICADOS ANTERIORMENTE, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "2910701",
+      "label": "FABRICAÇÃO DE AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS"
+    },
+    {
+      "id": "2910702",
+      "label": "FABRICAÇÃO DE CHASSIS COM MOTOR PARA AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS"
+    },
+    {
+      "id": "2910703",
+      "label": "FABRICAÇÃO DE MOTORES PARA AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS"
+    },
+    {
+      "id": "2920401",
+      "label": "FABRICAÇÃO DE CAMINHÕES E ÔNIBUS"
+    },
+    {
+      "id": "2920402",
+      "label": "FABRICAÇÃO DE MOTORES PARA CAMINHÕES E ÔNIBUS"
+    },
+    {
+      "id": "2930101",
+      "label": "FABRICAÇÃO DE CABINES, CARROCERIAS E REBOQUES PARA CAMINHÕES"
+    },
+    {
+      "id": "2930102",
+      "label": "FABRICAÇÃO DE CARROCERIAS PARA ÔNIBUS"
+    },
+    {
+      "id": "2930103",
+      "label": "FABRICAÇÃO DE CABINES, CARROCERIAS E REBOQUES PARA OUTROS VEÍCULOS AUTOMOTORES, EXCETO CAMINHÕES E ÔNIBUS"
+    },
+    {
+      "id": "3299001",
+      "label": "FABRICAÇÃO DE GUARDA CHUVAS E SIMILARES"
+    },
+    {
+      "id": "2945000",
+      "label": "FABRICAÇÃO DE MATERIAL ELÉTRICO E ELETRÔNICO PARA VEÍCULOS AUTOMOTORES, EXCETO BATERIAS"
+    },
+    {
+      "id": "2949201",
+      "label": "FABRICAÇÃO DE BANCOS E ESTOFADOS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "2949299",
+      "label": "FABRICAÇÃO DE OUTRAS PEÇAS E ACESSÓRIOS PARA VEÍCULOS AUTOMOTORES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "3011301",
+      "label": "CONSTRUÇÃO DE EMBARCAÇÕES DE GRANDE PORTE"
+    },
+    {
+      "id": "3011302",
+      "label": "CONSTRUÇÃO DE EMBARCAÇÕES PARA USO COMERCIAL E PARA USOS ESPECIAIS, EXCETO DE GRANDE PORTE"
+    },
+    {
+      "id": "3012100",
+      "label": "CONSTRUÇÃO DE EMBARCAÇÕES PARA ESPORTE E LAZER"
+    },
+    {
+      "id": "3031800",
+      "label": "FABRICAÇÃO DE LOCOMOTIVAS, VAGÕES E OUTROS MATERIAIS RODANTES"
+    },
+    {
+      "id": "3032600",
+      "label": "FABRICAÇÃO DE PEÇAS E ACESSÓRIOS PARA VEÍCULOS FERROVIÁRIOS"
+    },
+    {
+      "id": "3314716",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE TRATORES, EXCETO AGRÍCOLAS"
+    },
+    {
+      "id": "4729601",
+      "label": "TABACARIA"
+    },
+    {
+      "id": "3041500",
+      "label": "FABRICAÇÃO DE AERONAVES"
+    },
+    {
+      "id": "6622300",
+      "label": "CORRETORES E AGENTES DE SEGUROS, DE PLANOS DE PREVIDÊNCIA COMPLEMENTAR E DE SAÚDE"
+    },
+    {
+      "id": "3050400",
+      "label": "FABRICAÇÃO DE VEÍCULOS MILITARES DE COMBATE"
+    },
+    {
+      "id": "3091101",
+      "label": "FABRICAÇÃO DE MOTOCICLETAS"
+    },
+    {
+      "id": "3091102",
+      "label": "FABRICAÇÃO DE PEÇAS E ACESSÓRIOS PARA MOTOCICLETAS"
+    },
+    {
+      "id": "3092000",
+      "label": "FABRICAÇÃO DE BICICLETAS E TRICICLOS NÃO MOTORIZADOS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "3099700",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS DE TRANSPORTE NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3103900",
+      "label": "FABRICAÇÃO DE MÓVEIS DE OUTROS MATERIAIS, EXCETO MADEIRA E METAL"
+    },
+    {
+      "id": "3211601",
+      "label": "LAPIDAÇÃO DE GEMAS"
+    },
+    {
+      "id": "3211602",
+      "label": "FABRICAÇÃO DE ARTEFATOS DE JOALHERIA E OURIVESARIA"
+    },
+    {
+      "id": "3211603",
+      "label": "CUNHAGEM DE MOEDAS E MEDALHAS"
+    },
+    {
+      "id": "3212400",
+      "label": "FABRICAÇÃO DE BIJUTERIAS E ARTEFATOS SEMELHANTES"
+    },
+    {
+      "id": "3220500",
+      "label": "FABRICAÇÃO DE INSTRUMENTOS MUSICAIS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "3299002",
+      "label": "FABRICAÇÃO DE CANETAS, LÁPIS E OUTROS ARTIGOS PARA ESCRITÓRIO"
+    },
+    {
+      "id": "3299003",
+      "label": "FABRICAÇÃO DE LETRAS, LETREIROS E PLACAS DE QUALQUER MATERIAL, EXCETO LUMINOSOS"
+    },
+    {
+      "id": "3530100",
+      "label": "PRODUÇÃO E DISTRIBUIÇÃO DE VAPOR, ÁGUA QUENTE E AR CONDICIONADO"
+    },
+    {
+      "id": "3230200",
+      "label": "FABRICAÇÃO DE ARTEFATOS PARA PESCA E ESPORTE"
+    },
+    {
+      "id": "3240001",
+      "label": "FABRICAÇÃO DE JOGOS ELETRÔNICOS"
+    },
+    {
+      "id": "3240002",
+      "label": "FABRICAÇÃO DE MESAS DE BILHAR, DE SINUCA E ACESSÓRIOS NÃO ASSOCIADA À LOCAÇÃO"
+    },
+    {
+      "id": "3240003",
+      "label": "FABRICAÇÃO DE MESAS DE BILHAR, DE SINUCA E ACESSÓRIOS ASSOCIADA À LOCAÇÃO"
+    },
+    {
+      "id": "3240099",
+      "label": "FABRICAÇÃO DE OUTROS BRINQUEDOS E JOGOS RECREATIVOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3250701",
+      "label": "FABRICAÇÃO DE INSTRUMENTOS NÃO ELETRÔNICOS E UTENSÍLIOS PARA USO MÉDICO, CIRÚRGICO, ODONTOLÓGICO E DE LABORATÓRIO"
+    },
+    {
+      "id": "3250705",
+      "label": "FABRICAÇÃO DE MATERIAIS PARA MEDICINA E ODONTOLOGIA"
+    },
+    {
+      "id": "3250706",
+      "label": "SERVIÇOS DE PRÓTESE DENTÁRIA"
+    },
+    {
+      "id": "3250707",
+      "label": "FABRICAÇÃO DE ARTIGOS ÓPTICOS"
+    },
+    {
+      "id": "3250709",
+      "label": "SERVIÇO DE LABORATÓRIO ÓPTICO"
+    },
+    {
+      "id": "3291400",
+      "label": "FABRICAÇÃO DE ESCOVAS, PINCÉIS E VASSOURAS"
+    },
+    {
+      "id": "3292201",
+      "label": "FABRICAÇÃO DE ROUPAS DE PROTEÇÃO E SEGURANÇA E RESISTENTES A FOGO"
+    },
+    {
+      "id": "3292202",
+      "label": "FABRICAÇÃO DE EQUIPAMENTOS E ACESSÓRIOS PARA SEGURANÇA PESSOAL E PROFISSIONAL"
+    },
+    {
+      "id": "3299099",
+      "label": "FABRICAÇÃO DE PRODUTOS DIVERSOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3311200",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE TANQUES, RESERVATÓRIOS METÁLICOS E CALDEIRAS, EXCETO PARA VEÍCULOS"
+    },
+    {
+      "id": "3312102",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE APARELHOS E INSTRUMENTOS DE MEDIDA, TESTE E CONTROLE"
+    },
+    {
+      "id": "3312103",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE APARELHOS ELETROMÉDICOS E ELETROTERAPÊUTICOS E EQUIPAMENTOS DE IRRADIAÇÃO"
+    },
+    {
+      "id": "3312104",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE EQUIPAMENTOS E INSTRUMENTOS ÓPTICOS"
+    },
+    {
+      "id": "3313901",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE GERADORES, TRANSFORMADORES E MOTORES ELÉTRICOS"
+    },
+    {
+      "id": "3313902",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE BATERIAS E ACUMULADORES ELÉTRICOS, EXCETO PARA VEÍCULOS"
+    },
+    {
+      "id": "3313999",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS, APARELHOS E MATERIAIS ELÉTRICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3314701",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS MOTRIZES NÃO ELÉTRICAS"
+    },
+    {
+      "id": "3314702",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE EQUIPAMENTOS HIDRÁULICOS E PNEUMÁTICOS, EXCETO VÁLVULAS"
+    },
+    {
+      "id": "3314707",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E APARELHOS DE REFRIGERAÇÃO E VENTILAÇÃO PARA USO INDUSTRIAL E COMERCIAL"
+    },
+    {
+      "id": "3314708",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS, EQUIPAMENTOS E APARELHOS PARA TRANSPORTE E ELEVAÇÃO DE CARGAS"
+    },
+    {
+      "id": "3314709",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS DE ESCREVER, CALCULAR E DE OUTROS EQUIPAMENTOS NÃO ELETRÔNICOS PARA ESCRITÓRIO"
+    },
+    {
+      "id": "3314710",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA USO GERAL NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3314711",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA AGRICULTURA E PECUÁRIA"
+    },
+    {
+      "id": "3314712",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE TRATORES AGRÍCOLAS"
+    },
+    {
+      "id": "3314713",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS FERRAMENTA"
+    },
+    {
+      "id": "3314714",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA A PROSPECÇÃO E EXTRAÇÃO DE PETRÓLEO"
+    },
+    {
+      "id": "3314717",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS DE TERRAPLENAGEM, PAVIMENTAÇÃO E CONSTRUÇÃO, EXCETO TRATORES"
+    },
+    {
+      "id": "3314718",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS PARA A INDÚSTRIA METALÚRGICA, EXCETO MÁQUINAS FERRAMENTA"
+    },
+    {
+      "id": "3314719",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA AS INDÚSTRIAS DE ALIMENTOS, BEBIDAS E FUMO"
+    },
+    {
+      "id": "3314720",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E EQUIPAMENTOS PARA A INDÚSTRIA TÊXTIL, DO VESTUÁRIO, DO COURO E CALÇADOS"
+    },
+    {
+      "id": "3314721",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E APARELHOS PARA A INDÚSTRIA DE CELULOSE, PAPEL E PAPELÃO E ARTEFATOS"
+    },
+    {
+      "id": "3314722",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MÁQUINAS E APARELHOS PARA A INDÚSTRIA DO PLÁSTICO"
+    },
+    {
+      "id": "4221905",
+      "label": "MANUTENÇÃO DE ESTAÇÕES E REDES DE TELECOMUNICAÇÕES"
+    },
+    {
+      "id": "3314799",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE OUTRAS MÁQUINAS E EQUIPAMENTOS PARA USOS INDUSTRIAIS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3315500",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE VEÍCULOS FERROVIÁRIOS"
+    },
+    {
+      "id": "3316301",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE AERONAVES, EXCETO A MANUTENÇÃO NA PISTA"
+    },
+    {
+      "id": "3316302",
+      "label": "MANUTENÇÃO DE AERONAVES NA PISTA"
+    },
+    {
+      "id": "3317101",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE EMBARCAÇÕES E ESTRUTURAS FLUTUANTES"
+    },
+    {
+      "id": "3319800",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE EQUIPAMENTOS E PRODUTOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3321000",
+      "label": "INSTALAÇÃO DE MÁQUINAS E EQUIPAMENTOS INDUSTRIAIS"
+    },
+    {
+      "id": "3329501",
+      "label": "SERVIÇOS DE MONTAGEM DE MÓVEIS DE QUALQUER MATERIAL"
+    },
+    {
+      "id": "3511501",
+      "label": "GERAÇÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "3511502",
+      "label": "ATIVIDADES DE COORDENAÇÃO E CONTROLE DA OPERAÇÃO DA GERAÇÃO E TRANSMISSÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "3512300",
+      "label": "TRANSMISSÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "3513100",
+      "label": "COMÉRCIO ATACADISTA DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "3514000",
+      "label": "DISTRIBUIÇÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "4212000",
+      "label": "CONSTRUÇÃO DE OBRAS DE ARTE ESPECIAIS"
+    },
+    {
+      "id": "3520401",
+      "label": "PRODUÇÃO DE GÁS; PROCESSAMENTO DE GÁS NATURAL"
+    },
+    {
+      "id": "3520402",
+      "label": "DISTRIBUIÇÃO DE COMBUSTÍVEIS GASOSOS POR REDES URBANAS"
+    },
+    {
+      "id": "3701100",
+      "label": "GESTÃO DE REDES DE ESGOTO"
+    },
+    {
+      "id": "3702900",
+      "label": "ATIVIDADES RELACIONADAS A ESGOTO, EXCETO A GESTÃO DE REDES"
+    },
+    {
+      "id": "3811400",
+      "label": "COLETA DE RESÍDUOS NÃO PERIGOSOS"
+    },
+    {
+      "id": "4634601",
+      "label": "COMÉRCIO ATACADISTA DE CARNES BOVINAS E SUÍNAS E DERIVADOS"
+    },
+    {
+      "id": "3812200",
+      "label": "COLETA DE RESÍDUOS PERIGOSOS"
+    },
+    {
+      "id": "3821100",
+      "label": "TRATAMENTO E DISPOSIÇÃO DE RESÍDUOS NÃO PERIGOSOS"
+    },
+    {
+      "id": "3822000",
+      "label": "TRATAMENTO E DISPOSIÇÃO DE RESÍDUOS PERIGOSOS"
+    },
+    {
+      "id": "3831901",
+      "label": "RECUPERAÇÃO DE SUCATAS DE ALUMÍNIO"
+    },
+    {
+      "id": "4330403",
+      "label": "OBRAS DE ACABAMENTO EM GESSO E ESTUQUE"
+    },
+    {
+      "id": "3831999",
+      "label": "RECUPERAÇÃO DE MATERIAIS METÁLICOS, EXCETO ALUMÍNIO"
+    },
+    {
+      "id": "3832700",
+      "label": "RECUPERAÇÃO DE MATERIAIS PLÁSTICOS"
+    },
+    {
+      "id": "3839401",
+      "label": "USINAS DE COMPOSTAGEM"
+    },
+    {
+      "id": "4311801",
+      "label": "DEMOLIÇÃO DE EDIFÍCIOS E OUTRAS ESTRUTURAS"
+    },
+    {
+      "id": "3839499",
+      "label": "RECUPERAÇÃO DE MATERIAIS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "3900500",
+      "label": "DESCONTAMINAÇÃO E OUTROS SERVIÇOS DE GESTÃO DE RESÍDUOS"
+    },
+    {
+      "id": "4110700",
+      "label": "INCORPORAÇÃO DE EMPREENDIMENTOS IMOBILIÁRIOS"
+    },
+    {
+      "id": "4330404",
+      "label": "SERVIÇOS DE PINTURA DE EDIFÍCIOS EM GERAL"
+    },
+    {
+      "id": "4623102",
+      "label": "COMÉRCIO ATACADISTA DE COUROS, LÃS, PELES E OUTROS SUBPRODUTOS NÃO COMESTÍVEIS DE ORIGEM ANIMAL"
+    },
+    {
+      "id": "4120400",
+      "label": "CONSTRUÇÃO DE EDIFÍCIOS"
+    },
+    {
+      "id": "4211101",
+      "label": "CONSTRUÇÃO DE RODOVIAS E FERROVIAS"
+    },
+    {
+      "id": "4211102",
+      "label": "PINTURA PARA SINALIZAÇÃO EM PISTAS RODOVIÁRIAS E AEROPORTOS"
+    },
+    {
+      "id": "4311802",
+      "label": "PREPARAÇÃO DE CANTEIRO E LIMPEZA DE TERRENO"
+    },
+    {
+      "id": "4634602",
+      "label": "COMÉRCIO ATACADISTA DE AVES ABATIDAS E DERIVADOS"
+    },
+    {
+      "id": "4213800",
+      "label": "OBRAS DE URBANIZAÇÃO - RUAS, PRAÇAS E CALÇADAS"
+    },
+    {
+      "id": "4221901",
+      "label": "CONSTRUÇÃO DE BARRAGENS E REPRESAS PARA GERAÇÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "4221902",
+      "label": "CONSTRUÇÃO DE ESTAÇÕES E REDES DE DISTRIBUIÇÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "4221903",
+      "label": "MANUTENÇÃO DE REDES DE DISTRIBUIÇÃO DE ENERGIA ELÉTRICA"
+    },
+    {
+      "id": "4221904",
+      "label": "CONSTRUÇÃO DE ESTAÇÕES E REDES DE TELECOMUNICAÇÕES"
+    },
+    {
+      "id": "4623103",
+      "label": "COMÉRCIO ATACADISTA DE ALGODÃO"
+    },
+    {
+      "id": "4222701",
+      "label": "CONSTRUÇÃO DE REDES DE ABASTECIMENTO DE ÁGUA, COLETA DE ESGOTO E CONSTRUÇÕES CORRELATAS, EXCETO OBRAS DE IRRIGAÇÃO"
+    },
+    {
+      "id": "4222702",
+      "label": "OBRAS DE IRRIGAÇÃO"
+    },
+    {
+      "id": "4223500",
+      "label": "CONSTRUÇÃO DE REDES DE TRANSPORTES POR DUTOS, EXCETO PARA ÁGUA E ESGOTO"
+    },
+    {
+      "id": "4291000",
+      "label": "OBRAS PORTUÁRIAS, MARÍTIMAS E FLUVIAIS"
+    },
+    {
+      "id": "4292801",
+      "label": "MONTAGEM DE ESTRUTURAS METÁLICAS"
+    },
+    {
+      "id": "4292802",
+      "label": "OBRAS DE MONTAGEM INDUSTRIAL"
+    },
+    {
+      "id": "4299501",
+      "label": "CONSTRUÇÃO DE INSTALAÇÕES ESPORTIVAS E RECREATIVAS"
+    },
+    {
+      "id": "4299599",
+      "label": "OUTRAS OBRAS DE ENGENHARIA CIVIL NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "4634603",
+      "label": "COMÉRCIO ATACADISTA DE PESCADOS E FRUTOS DO MAR"
+    },
+    {
+      "id": "4312600",
+      "label": "PERFURAÇÕES E SONDAGENS"
+    },
+    {
+      "id": "4313400",
+      "label": "OBRAS DE TERRAPLENAGEM"
+    },
+    {
+      "id": "4319300",
+      "label": "SERVIÇOS DE PREPARAÇÃO DO TERRENO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4330405",
+      "label": "APLICAÇÃO DE REVESTIMENTOS E DE RESINAS EM INTERIORES E EXTERIORES"
+    },
+    {
+      "id": "4321500",
+      "label": "INSTALAÇÃO E MANUTENÇÃO ELÉTRICA"
+    },
+    {
+      "id": "4322301",
+      "label": "INSTALAÇÕES HIDRÁULICAS, SANITÁRIAS E DE GÁS"
+    },
+    {
+      "id": "4322302",
+      "label": "INSTALAÇÃO E MANUTENÇÃO DE SISTEMAS CENTRAIS DE AR CONDICIONADO, DE VENTILAÇÃO E REFRIGERAÇÃO"
+    },
+    {
+      "id": "4322303",
+      "label": "INSTALAÇÕES DE SISTEMA DE PREVENÇÃO CONTRA INCÊNDIO"
+    },
+    {
+      "id": "4329101",
+      "label": "INSTALAÇÃO DE PAINÉIS PUBLICITÁRIOS"
+    },
+    {
+      "id": "4329102",
+      "label": "INSTALAÇÃO DE EQUIPAMENTOS PARA ORIENTAÇÃO À NAVEGAÇÃO MARÍTIMA FLUVIAL E LACUSTRE"
+    },
+    {
+      "id": "4329103",
+      "label": "INSTALAÇÃO, MANUTENÇÃO E REPARAÇÃO DE ELEVADORES, ESCADAS E ESTEIRAS ROLANTES"
+    },
+    {
+      "id": "4520006",
+      "label": "SERVIÇOS DE BORRACHARIA PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4329104",
+      "label": "MONTAGEM E INSTALAÇÃO DE SISTEMAS E EQUIPAMENTOS DE ILUMINAÇÃO E SINALIZAÇÃO EM VIAS PÚBLICAS, PORTOS E AEROPORTOS"
+    },
+    {
+      "id": "4329105",
+      "label": "TRATAMENTOS TÉRMICOS, ACÚSTICOS OU DE VIBRAÇÃO"
+    },
+    {
+      "id": "4329199",
+      "label": "OUTRAS OBRAS DE INSTALAÇÕES EM CONSTRUÇÕES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "4330401",
+      "label": "IMPERMEABILIZAÇÃO EM OBRAS DE ENGENHARIA CIVIL"
+    },
+    {
+      "id": "4330402",
+      "label": "INSTALAÇÃO DE PORTAS, JANELAS, TETOS, DIVISÓRIAS E ARMÁRIOS EMBUTIDOS DE QUALQUER MATERIAL"
+    },
+    {
+      "id": "4330499",
+      "label": "OUTRAS OBRAS DE ACABAMENTO DA CONSTRUÇÃO"
+    },
+    {
+      "id": "4391600",
+      "label": "OBRAS DE FUNDAÇÕES"
+    },
+    {
+      "id": "4399101",
+      "label": "ADMINISTRAÇÃO DE OBRAS"
+    },
+    {
+      "id": "4399102",
+      "label": "MONTAGEM E DESMONTAGEM DE ANDAIMES E OUTRAS ESTRUTURAS TEMPORÁRIAS"
+    },
+    {
+      "id": "4399103",
+      "label": "OBRAS DE ALVENARIA"
+    },
+    {
+      "id": "4399104",
+      "label": "SERVIÇOS DE OPERAÇÃO E FORNECIMENTO DE EQUIPAMENTOS PARA TRANSPORTE E ELEVAÇÃO DE CARGAS E PESSOAS PARA USO EM OBRAS"
+    },
+    {
+      "id": "4399105",
+      "label": "PERFURAÇÃO E CONSTRUÇÃO DE POÇOS DE ÁGUA"
+    },
+    {
+      "id": "4399199",
+      "label": "SERVIÇOS ESPECIALIZADOS PARA CONSTRUÇÃO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4511101",
+      "label": "COMÉRCIO A VAREJO DE AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS NOVOS"
+    },
+    {
+      "id": "4511102",
+      "label": "COMÉRCIO A VAREJO DE AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS USADOS"
+    },
+    {
+      "id": "4511103",
+      "label": "COMÉRCIO POR ATACADO DE AUTOMÓVEIS, CAMIONETAS E UTILITÁRIOS NOVOS E USADOS"
+    },
+    {
+      "id": "4511104",
+      "label": "COMÉRCIO POR ATACADO DE CAMINHÕES NOVOS E USADOS"
+    },
+    {
+      "id": "4511105",
+      "label": "COMÉRCIO POR ATACADO DE REBOQUES E SEMI REBOQUES NOVOS E USADOS"
+    },
+    {
+      "id": "5611204",
+      "label": "BARES E OUTROS ESTABELECIMENTOS ESPECIALIZADOS EM SERVIR BEBIDAS, SEM ENTRETENIMENTO"
+    },
+    {
+      "id": "4511106",
+      "label": "COMÉRCIO POR ATACADO DE ÔNIBUS E MICROÔNIBUS NOVOS E USADOS"
+    },
+    {
+      "id": "4512901",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4512902",
+      "label": "COMÉRCIO SOB CONSIGNAÇÃO DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520001",
+      "label": "SERVIÇOS DE MANUTENÇÃO E REPARAÇÃO MECÂNICA DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520002",
+      "label": "SERVIÇOS DE LANTERNAGEM OU FUNILARIA E PINTURA DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520003",
+      "label": "SERVIÇOS DE MANUTENÇÃO E REPARAÇÃO ELÉTRICA DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520004",
+      "label": "SERVIÇOS DE ALINHAMENTO E BALANCEAMENTO DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520005",
+      "label": "SERVIÇOS DE LAVAGEM, LUBRIFICAÇÃO E POLIMENTO DE VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520007",
+      "label": "SERVIÇOS DE INSTALAÇÃO, MANUTENÇÃO E REPARAÇÃO DE ACESSÓRIOS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4520008",
+      "label": "SERVIÇOS DE CAPOTARIA"
+    },
+    {
+      "id": "4530701",
+      "label": "COMÉRCIO POR ATACADO DE PEÇAS E ACESSÓRIOS NOVOS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4530702",
+      "label": "COMÉRCIO POR ATACADO DE PNEUMÁTICOS E CÂMARAS DE AR"
+    },
+    {
+      "id": "4530703",
+      "label": "COMÉRCIO A VAREJO DE PEÇAS E ACESSÓRIOS NOVOS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4623101",
+      "label": "COMÉRCIO ATACADISTA DE ANIMAIS VIVOS"
+    },
+    {
+      "id": "4530704",
+      "label": "COMÉRCIO A VAREJO DE PEÇAS E ACESSÓRIOS USADOS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4530705",
+      "label": "COMÉRCIO A VAREJO DE PNEUMÁTICOS E CÂMARAS DE AR"
+    },
+    {
+      "id": "4530706",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE PEÇAS E ACESSÓRIOS NOVOS E USADOS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4541201",
+      "label": "COMÉRCIO POR ATACADO DE MOTOCICLETAS E MOTONETAS"
+    },
+    {
+      "id": "4541202",
+      "label": "COMÉRCIO POR ATACADO DE PEÇAS E ACESSÓRIOS PARA MOTOCICLETAS E MOTONETAS"
+    },
+    {
+      "id": "4541203",
+      "label": "COMÉRCIO A VAREJO DE MOTOCICLETAS E MOTONETAS NOVAS"
+    },
+    {
+      "id": "4541204",
+      "label": "COMÉRCIO A VAREJO DE MOTOCICLETAS E MOTONETAS USADAS"
+    },
+    {
+      "id": "4618401",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE MEDICAMENTOS, COSMÉTICOS E PRODUTOS DE PERFUMARIA"
+    },
+    {
+      "id": "4542101",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE MOTOCICLETAS E MOTONETAS, PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "4542102",
+      "label": "COMÉRCIO SOB CONSIGNAÇÃO DE MOTOCICLETAS E MOTONETAS"
+    },
+    {
+      "id": "4543900",
+      "label": "MANUTENÇÃO E REPARAÇÃO DE MOTOCICLETAS E MOTONETAS"
+    },
+    {
+      "id": "4611700",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE MATÉRIAS PRIMAS AGRÍCOLAS E ANIMAIS VIVOS"
+    },
+    {
+      "id": "4612500",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE COMBUSTÍVEIS, MINERAIS, PRODUTOS SIDERÚRGICOS E QUÍMICOS"
+    },
+    {
+      "id": "4613300",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE MADEIRA, MATERIAL DE CONSTRUÇÃO E FERRAGENS"
+    },
+    {
+      "id": "4614100",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE MÁQUINAS, EQUIPAMENTOS, EMBARCAÇÕES E AERONAVES"
+    },
+    {
+      "id": "4615000",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE ELETRODOMÉSTICOS, MÓVEIS E ARTIGOS DE USO DOMÉSTICO"
+    },
+    {
+      "id": "4616800",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE TÊXTEIS, VESTUÁRIO, CALÇADOS E ARTIGOS DE VIAGEM"
+    },
+    {
+      "id": "4617600",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE PRODUTOS ALIMENTÍCIOS, BEBIDAS E FUMO"
+    },
+    {
+      "id": "4618402",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE INSTRUMENTOS E MATERIAIS ODONTO MÉDICO HOSPITALARES"
+    },
+    {
+      "id": "4618403",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE JORNAIS, REVISTAS E OUTRAS PUBLICAÇÕES"
+    },
+    {
+      "id": "4618499",
+      "label": "OUTROS REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO ESPECIALIZADO EM PRODUTOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4619200",
+      "label": "REPRESENTANTES COMERCIAIS E AGENTES DO COMÉRCIO DE MERCADORIAS EM GERAL NÃO ESPECIALIZADO"
+    },
+    {
+      "id": "4621400",
+      "label": "COMÉRCIO ATACADISTA DE CAFÉ EM GRÃO"
+    },
+    {
+      "id": "4622200",
+      "label": "COMÉRCIO ATACADISTA DE SOJA"
+    },
+    {
+      "id": "4623104",
+      "label": "COMÉRCIO ATACADISTA DE FUMO EM FOLHA NÃO BENEFICIADO"
+    },
+    {
+      "id": "4623108",
+      "label": "COMÉRCIO ATACADISTA DE MATÉRIAS PRIMAS AGRÍCOLAS COM ATIVIDADE DE FRACIONAMENTO E ACONDICIONAMENTO ASSOCIADA"
+    },
+    {
+      "id": "4623109",
+      "label": "COMÉRCIO ATACADISTA DE ALIMENTOS PARA ANIMAIS"
+    },
+    {
+      "id": "4623199",
+      "label": "COMÉRCIO ATACADISTA DE MATÉRIAS PRIMAS AGRÍCOLAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "4631100",
+      "label": "COMÉRCIO ATACADISTA DE LEITE E LATICÍNIOS"
+    },
+    {
+      "id": "4632001",
+      "label": "COMÉRCIO ATACADISTA DE CEREAIS E LEGUMINOSAS BENEFICIADOS"
+    },
+    {
+      "id": "4632002",
+      "label": "COMÉRCIO ATACADISTA DE FARINHAS, AMIDOS E FÉCULAS"
+    },
+    {
+      "id": "4632003",
+      "label": "COMÉRCIO ATACADISTA DE CEREAIS E LEGUMINOSAS BENEFICIADOS, FARINHAS, AMIDOS E FÉCULAS, COM ATIVIDADE DE FRACIONAMENTO E ACONDICIONAMENTO ASSOCIADA"
+    },
+    {
+      "id": "4633801",
+      "label": "COMÉRCIO ATACADISTA DE FRUTAS, VERDURAS, RAÍZES, TUBÉRCULOS, HORTALIÇAS E LEGUMES FRESCOS"
+    },
+    {
+      "id": "4633802",
+      "label": "COMÉRCIO ATACADISTA DE AVES VIVAS E OVOS"
+    },
+    {
+      "id": "4634699",
+      "label": "COMÉRCIO ATACADISTA DE CARNES E DERIVADOS DE OUTROS ANIMAIS"
+    },
+    {
+      "id": "4635401",
+      "label": "COMÉRCIO ATACADISTA DE ÁGUA MINERAL"
+    },
+    {
+      "id": "4635402",
+      "label": "COMÉRCIO ATACADISTA DE CERVEJA, CHOPE E REFRIGERANTE"
+    },
+    {
+      "id": "4635403",
+      "label": "COMÉRCIO ATACADISTA DE BEBIDAS COM ATIVIDADE DE FRACIONAMENTO E ACONDICIONAMENTO ASSOCIADA"
+    },
+    {
+      "id": "4635499",
+      "label": "COMÉRCIO ATACADISTA DE BEBIDAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "4636201",
+      "label": "COMÉRCIO ATACADISTA DE FUMO BENEFICIADO"
+    },
+    {
+      "id": "4636202",
+      "label": "COMÉRCIO ATACADISTA DE CIGARROS, CIGARRILHAS E CHARUTOS"
+    },
+    {
+      "id": "4637101",
+      "label": "COMÉRCIO ATACADISTA DE CAFÉ TORRADO, MOÍDO E SOLÚVEL"
+    },
+    {
+      "id": "4637102",
+      "label": "COMÉRCIO ATACADISTA DE AÇÚCAR"
+    },
+    {
+      "id": "4637103",
+      "label": "COMÉRCIO ATACADISTA DE ÓLEOS E GORDURAS"
+    },
+    {
+      "id": "4637104",
+      "label": "COMÉRCIO ATACADISTA DE PÃES, BOLOS, BISCOITOS E SIMILARES"
+    },
+    {
+      "id": "4637105",
+      "label": "COMÉRCIO ATACADISTA DE MASSAS ALIMENTÍCIAS"
+    },
+    {
+      "id": "4637106",
+      "label": "COMÉRCIO ATACADISTA DE SORVETES"
+    },
+    {
+      "id": "4637107",
+      "label": "COMÉRCIO ATACADISTA DE CHOCOLATES, CONFEITOS, BALAS, BOMBONS E SEMELHANTES"
+    },
+    {
+      "id": "4637199",
+      "label": "COMÉRCIO ATACADISTA ESPECIALIZADO EM OUTROS PRODUTOS ALIMENTÍCIOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4639701",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS ALIMENTÍCIOS EM GERAL"
+    },
+    {
+      "id": "4639702",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS ALIMENTÍCIOS EM GERAL, COM ATIVIDADE DE FRACIONAMENTO E ACONDICIONAMENTO ASSOCIADA"
+    },
+    {
+      "id": "4641902",
+      "label": "COMÉRCIO ATACADISTA DE ARTIGOS DE CAMA, MESA E BANHO"
+    },
+    {
+      "id": "4641903",
+      "label": "COMÉRCIO ATACADISTA DE ARTIGOS DE ARMARINHO"
+    },
+    {
+      "id": "4642701",
+      "label": "COMÉRCIO ATACADISTA DE ARTIGOS DO VESTUÁRIO E ACESSÓRIOS, EXCETO PROFISSIONAIS E DE SEGURANÇA"
+    },
+    {
+      "id": "4642702",
+      "label": "COMÉRCIO ATACADISTA DE ROUPAS E ACESSÓRIOS PARA USO PROFISSIONAL E DE SEGURANÇA DO TRABALHO"
+    },
+    {
+      "id": "4644301",
+      "label": "COMÉRCIO ATACADISTA DE MEDICAMENTOS E DROGAS DE USO HUMANO"
+    },
+    {
+      "id": "4644302",
+      "label": "COMÉRCIO ATACADISTA DE MEDICAMENTOS E DROGAS DE USO VETERINÁRIO"
+    },
+    {
+      "id": "4645101",
+      "label": "COMÉRCIO ATACADISTA DE INSTRUMENTOS E MATERIAIS PARA USO MÉDICO, CIRÚRGICO, HOSPITALAR E DE LABORATÓRIOS"
+    },
+    {
+      "id": "4645102",
+      "label": "COMÉRCIO ATACADISTA DE PRÓTESES E ARTIGOS DE ORTOPEDIA"
+    },
+    {
+      "id": "4645103",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS ODONTOLÓGICOS"
+    },
+    {
+      "id": "4646001",
+      "label": "COMÉRCIO ATACADISTA DE COSMÉTICOS E PRODUTOS DE PERFUMARIA"
+    },
+    {
+      "id": "4646002",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS DE HIGIENE PESSOAL"
+    },
+    {
+      "id": "4647801",
+      "label": "COMÉRCIO ATACADISTA DE ARTIGOS DE ESCRITÓRIO E DE PAPELARIA"
+    },
+    {
+      "id": "4647802",
+      "label": "COMÉRCIO ATACADISTA DE LIVROS, JORNAIS E OUTRAS PUBLICAÇÕES"
+    },
+    {
+      "id": "4679601",
+      "label": "COMÉRCIO ATACADISTA DE TINTAS, VERNIZES E SIMILARES"
+    },
+    {
+      "id": "4649401",
+      "label": "COMÉRCIO ATACADISTA DE EQUIPAMENTOS ELÉTRICOS DE USO PESSOAL E DOMÉSTICO"
+    },
+    {
+      "id": "4649402",
+      "label": "COMÉRCIO ATACADISTA DE APARELHOS ELETRÔNICOS DE USO PESSOAL E DOMÉSTICO"
+    },
+    {
+      "id": "4649403",
+      "label": "COMÉRCIO ATACADISTA DE BICICLETAS, TRICICLOS E OUTROS VEÍCULOS RECREATIVOS"
+    },
+    {
+      "id": "4649404",
+      "label": "COMÉRCIO ATACADISTA DE MÓVEIS E ARTIGOS DE COLCHOARIA"
+    },
+    {
+      "id": "4649405",
+      "label": "COMÉRCIO ATACADISTA DE ARTIGOS DE TAPEÇARIA; PERSIANAS E CORTINAS"
+    },
+    {
+      "id": "4649406",
+      "label": "COMÉRCIO ATACADISTA DE LUSTRES, LUMINÁRIAS E ABAJURES"
+    },
+    {
+      "id": "4649407",
+      "label": "COMÉRCIO ATACADISTA DE FILMES, CDS, DVDS, FITAS E DISCOS"
+    },
+    {
+      "id": "4649408",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS DE HIGIENE, LIMPEZA E CONSERVAÇÃO DOMICILIAR"
+    },
+    {
+      "id": "4649409",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS DE HIGIENE, LIMPEZA E CONSERVAÇÃO DOMICILIAR, COM ATIVIDADE DE FRACIONAMENTO E ACONDICIONAMENTO ASSOCIADA"
+    },
+    {
+      "id": "4649410",
+      "label": "COMÉRCIO ATACADISTA DE JÓIAS, RELÓGIOS E BIJUTERIAS, INCLUSIVE PEDRAS PRECIOSAS E SEMIPRECIOSAS LAPIDADAS"
+    },
+    {
+      "id": "4649499",
+      "label": "COMÉRCIO ATACADISTA DE OUTROS EQUIPAMENTOS E ARTIGOS DE USO PESSOAL E DOMÉSTICO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4651601",
+      "label": "COMÉRCIO ATACADISTA DE EQUIPAMENTOS DE INFORMÁTICA"
+    },
+    {
+      "id": "4651602",
+      "label": "COMÉRCIO ATACADISTA DE SUPRIMENTOS PARA INFORMÁTICA"
+    },
+    {
+      "id": "4652400",
+      "label": "COMÉRCIO ATACADISTA DE COMPONENTES ELETRÔNICOS E EQUIPAMENTOS DE TELEFONIA E COMUNICAÇÃO"
+    },
+    {
+      "id": "4661300",
+      "label": "COMÉRCIO ATACADISTA DE MÁQUINAS, APARELHOS E EQUIPAMENTOS PARA USO AGROPECUÁRIO; PARTES E PEÇAS"
+    },
+    {
+      "id": "4679602",
+      "label": "COMÉRCIO ATACADISTA DE MÁRMORES E GRANITOS"
+    },
+    {
+      "id": "4662100",
+      "label": "COMÉRCIO ATACADISTA DE MÁQUINAS, EQUIPAMENTOS PARA TERRAPLENAGEM, MINERAÇÃO E CONSTRUÇÃO; PARTES E PEÇAS"
+    },
+    {
+      "id": "4663000",
+      "label": "COMÉRCIO ATACADISTA DE MÁQUINAS E EQUIPAMENTOS PARA USO INDUSTRIAL; PARTES E PEÇAS"
+    },
+    {
+      "id": "4664800",
+      "label": "COMÉRCIO ATACADISTA DE MÁQUINAS, APARELHOS E EQUIPAMENTOS PARA USO ODONTO MÉDICO HOSPITALAR; PARTES E PEÇAS"
+    },
+    {
+      "id": "4665600",
+      "label": "COMÉRCIO ATACADISTA DE MÁQUINAS E EQUIPAMENTOS PARA USO COMERCIAL; PARTES E PEÇAS"
+    },
+    {
+      "id": "4669901",
+      "label": "COMÉRCIO ATACADISTA DE BOMBAS E COMPRESSORES; PARTES E PEÇAS"
+    },
+    {
+      "id": "4741500",
+      "label": "COMÉRCIO VAREJISTA DE TINTAS E MATERIAIS PARA PINTURA"
+    },
+    {
+      "id": "4669999",
+      "label": "COMÉRCIO ATACADISTA DE OUTRAS MÁQUINAS E EQUIPAMENTOS NÃO ESPECIFICADOS ANTERIORMENTE; PARTES E PEÇAS"
+    },
+    {
+      "id": "4671100",
+      "label": "COMÉRCIO ATACADISTA DE MADEIRA E PRODUTOS DERIVADOS"
+    },
+    {
+      "id": "4672900",
+      "label": "COMÉRCIO ATACADISTA DE FERRAGENS E FERRAMENTAS"
+    },
+    {
+      "id": "4673700",
+      "label": "COMÉRCIO ATACADISTA DE MATERIAL ELÉTRICO"
+    },
+    {
+      "id": "4674500",
+      "label": "COMÉRCIO ATACADISTA DE CIMENTO"
+    },
+    {
+      "id": "4679603",
+      "label": "COMÉRCIO ATACADISTA DE VIDROS, ESPELHOS E VITRAIS"
+    },
+    {
+      "id": "4679604",
+      "label": "COMÉRCIO ATACADISTA ESPECIALIZADO DE MATERIAIS DE CONSTRUÇÃO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4681801",
+      "label": "COMÉRCIO ATACADISTA DE ÁLCOOL CARBURANTE, BIODIESEL, GASOLINA E DEMAIS DERIVADOS DE PETRÓLEO, EXCETO LUBRIFICANTES, NÃO REALIZADO POR TRANSPORTADOR RETALHISTA (T.R.R.)"
+    },
+    {
+      "id": "4681802",
+      "label": "COMÉRCIO ATACADISTA DE COMBUSTÍVEIS REALIZADO POR TRANSPORTADOR RETALHISTA (T.R.R.)"
+    },
+    {
+      "id": "4681803",
+      "label": "COMÉRCIO ATACADISTA DE COMBUSTÍVEIS DE ORIGEM VEGETAL, EXCETO ÁLCOOL CARBURANTE"
+    },
+    {
+      "id": "4681804",
+      "label": "COMÉRCIO ATACADISTA DE COMBUSTÍVEIS DE ORIGEM MINERAL EM BRUTO"
+    },
+    {
+      "id": "4681805",
+      "label": "COMÉRCIO ATACADISTA DE LUBRIFICANTES"
+    },
+    {
+      "id": "4682600",
+      "label": "COMÉRCIO ATACADISTA DE GÁS LIQÜEFEITO DE PETRÓLEO (GLP)"
+    },
+    {
+      "id": "4683400",
+      "label": "COMÉRCIO ATACADISTA DE DEFENSIVOS AGRÍCOLAS, ADUBOS, FERTILIZANTES E CORRETIVOS DO SOLO"
+    },
+    {
+      "id": "4684201",
+      "label": "COMÉRCIO ATACADISTA DE RESINAS E ELASTÔMEROS"
+    },
+    {
+      "id": "4684202",
+      "label": "COMÉRCIO ATACADISTA DE SOLVENTES"
+    },
+    {
+      "id": "4684299",
+      "label": "COMÉRCIO ATACADISTA DE OUTROS PRODUTOS QUÍMICOS E PETROQUÍMICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4685100",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS SIDERÚRGICOS E METALÚRGICOS, EXCETO PARA CONSTRUÇÃO"
+    },
+    {
+      "id": "4686901",
+      "label": "COMÉRCIO ATACADISTA DE PAPEL E PAPELÃO EM BRUTO"
+    },
+    {
+      "id": "4686902",
+      "label": "COMÉRCIO ATACADISTA DE EMBALAGENS"
+    },
+    {
+      "id": "4687701",
+      "label": "COMÉRCIO ATACADISTA DE RESÍDUOS DE PAPEL E PAPELÃO"
+    },
+    {
+      "id": "4721103",
+      "label": "COMÉRCIO VAREJISTA DE LATICÍNIOS E FRIOS"
+    },
+    {
+      "id": "4687702",
+      "label": "COMÉRCIO ATACADISTA DE RESÍDUOS E SUCATAS NÃO METÁLICOS, EXCETO DE PAPEL E PAPELÃO"
+    },
+    {
+      "id": "4687703",
+      "label": "COMÉRCIO ATACADISTA DE RESÍDUOS E SUCATAS METÁLICOS"
+    },
+    {
+      "id": "4689301",
+      "label": "COMÉRCIO ATACADISTA DE PRODUTOS DA EXTRAÇÃO MINERAL, EXCETO COMBUSTÍVEIS"
+    },
+    {
+      "id": "4689302",
+      "label": "COMÉRCIO ATACADISTA DE FIOS E FIBRAS BENEFICIADOS"
+    },
+    {
+      "id": "4689399",
+      "label": "COMÉRCIO ATACADISTA ESPECIALIZADO EM OUTROS PRODUTOS INTERMEDIÁRIOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4691500",
+      "label": "COMÉRCIO ATACADISTA DE MERCADORIAS EM GERAL, COM PREDOMINÂNCIA DE PRODUTOS ALIMENTÍCIOS"
+    },
+    {
+      "id": "4692300",
+      "label": "COMÉRCIO ATACADISTA DE MERCADORIAS EM GERAL, COM PREDOMINÂNCIA DE INSUMOS AGROPECUÁRIOS"
+    },
+    {
+      "id": "4693100",
+      "label": "COMÉRCIO ATACADISTA DE MERCADORIAS EM GERAL, SEM PREDOMINÂNCIA DE ALIMENTOS OU DE INSUMOS AGROPECUÁRIOS"
+    },
+    {
+      "id": "4774100",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE ÓPTICA"
+    },
+    {
+      "id": "4711301",
+      "label": "COMÉRCIO VAREJISTA DE MERCADORIAS EM GERAL, COM PREDOMINÂNCIA DE PRODUTOS ALIMENTÍCIOS   HIPERMERCADOS"
+    },
+    {
+      "id": "4711302",
+      "label": "COMÉRCIO VAREJISTA DE MERCADORIAS EM GERAL, COM PREDOMINÂNCIA DE PRODUTOS ALIMENTÍCIOS - SUPERMERCADOS"
+    },
+    {
+      "id": "4712100",
+      "label": "COMÉRCIO VAREJISTA DE MERCADORIAS EM GERAL, COM PREDOMINÂNCIA DE PRODUTOS ALIMENTÍCIOS - MINIMERCADOS, MERCEARIAS E ARMAZÉNS"
+    },
+    {
+      "id": "4713002",
+      "label": "LOJAS DE VARIEDADES, EXCETO LOJAS DE DEPARTAMENTOS OU MAGAZINES"
+    },
+    {
+      "id": "4721102",
+      "label": "PADARIA E CONFEITARIA COM PREDOMINÂNCIA DE REVENDA"
+    },
+    {
+      "id": "4721104",
+      "label": "COMÉRCIO VAREJISTA DE DOCES, BALAS, BOMBONS E SEMELHANTES"
+    },
+    {
+      "id": "4722901",
+      "label": "COMÉRCIO VAREJISTA DE CARNES - AÇOUGUES"
+    },
+    {
+      "id": "4722902",
+      "label": "PEIXARIA"
+    },
+    {
+      "id": "4723700",
+      "label": "COMÉRCIO VAREJISTA DE BEBIDAS"
+    },
+    {
+      "id": "4729602",
+      "label": "COMÉRCIO VAREJISTA DE MERCADORIAS EM LOJAS DE CONVENIÊNCIA"
+    },
+    {
+      "id": "4729699",
+      "label": "COMÉRCIO VAREJISTA DE PRODUTOS ALIMENTÍCIOS EM GERAL OU ESPECIALIZADO EM PRODUTOS ALIMENTÍCIOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4731800",
+      "label": "COMÉRCIO VAREJISTA DE COMBUSTÍVEIS PARA VEÍCULOS AUTOMOTORES"
+    },
+    {
+      "id": "4742300",
+      "label": "COMÉRCIO VAREJISTA DE MATERIAL ELÉTRICO"
+    },
+    {
+      "id": "4743100",
+      "label": "COMÉRCIO VAREJISTA DE VIDROS"
+    },
+    {
+      "id": "4744001",
+      "label": "COMÉRCIO VAREJISTA DE FERRAGENS E FERRAMENTAS"
+    },
+    {
+      "id": "4744002",
+      "label": "COMÉRCIO VAREJISTA DE MADEIRA E ARTEFATOS"
+    },
+    {
+      "id": "4744003",
+      "label": "COMÉRCIO VAREJISTA DE MATERIAIS HIDRÁULICOS"
+    },
+    {
+      "id": "4744004",
+      "label": "COMÉRCIO VAREJISTA DE CAL, AREIA, PEDRA BRITADA, TIJOLOS E TELHAS"
+    },
+    {
+      "id": "4744005",
+      "label": "COMÉRCIO VAREJISTA DE MATERIAIS DE CONSTRUÇÃO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4744006",
+      "label": "COMÉRCIO VAREJISTA DE PEDRAS PARA REVESTIMENTO"
+    },
+    {
+      "id": "4744099",
+      "label": "COMÉRCIO VAREJISTA DE MATERIAIS DE CONSTRUÇÃO EM GERAL"
+    },
+    {
+      "id": "4751201",
+      "label": "COMÉRCIO VAREJISTA ESPECIALIZADO DE EQUIPAMENTOS E SUPRIMENTOS DE INFORMÁTICA"
+    },
+    {
+      "id": "4751202",
+      "label": "RECARGA DE CARTUCHOS PARA EQUIPAMENTOS DE INFORMÁTICA"
+    },
+    {
+      "id": "4752100",
+      "label": "COMÉRCIO VAREJISTA ESPECIALIZADO DE EQUIPAMENTOS DE TELEFONIA E COMUNICAÇÃO"
+    },
+    {
+      "id": "4753900",
+      "label": "COMÉRCIO VAREJISTA ESPECIALIZADO DE ELETRODOMÉSTICOS E EQUIPAMENTOS DE ÁUDIO E VÍDEO"
+    },
+    {
+      "id": "4754701",
+      "label": "COMÉRCIO VAREJISTA DE MÓVEIS"
+    },
+    {
+      "id": "4754702",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE COLCHOARIA"
+    },
+    {
+      "id": "4754703",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE ILUMINAÇÃO"
+    },
+    {
+      "id": "4755501",
+      "label": "COMÉRCIO VAREJISTA DE TECIDOS"
+    },
+    {
+      "id": "4755502",
+      "label": "COMERCIO VAREJISTA DE ARTIGOS DE ARMARINHO"
+    },
+    {
+      "id": "4755503",
+      "label": "COMERCIO VAREJISTA DE ARTIGOS DE CAMA, MESA E BANHO"
+    },
+    {
+      "id": "4756300",
+      "label": "COMÉRCIO VAREJISTA ESPECIALIZADO DE INSTRUMENTOS MUSICAIS E ACESSÓRIOS"
+    },
+    {
+      "id": "5320201",
+      "label": "SERVIÇOS DE MALOTE NÃO REALIZADOS PELO CORREIO NACIONAL"
+    },
+    {
+      "id": "4757100",
+      "label": "COMÉRCIO VAREJISTA ESPECIALIZADO DE PEÇAS E ACESSÓRIOS PARA APARELHOS ELETROELETRÔNICOS PARA USO DOMÉSTICO, EXCETO INFORMÁTICA E COMUNICAÇÃO"
+    },
+    {
+      "id": "4759801",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE TAPEÇARIA, CORTINAS E PERSIANAS"
+    },
+    {
+      "id": "4759899",
+      "label": "COMÉRCIO VAREJISTA DE OUTROS ARTIGOS DE USO PESSOAL E DOMÉSTICO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4761001",
+      "label": "COMÉRCIO VAREJISTA DE LIVROS"
+    },
+    {
+      "id": "4761002",
+      "label": "COMÉRCIO VAREJISTA DE JORNAIS E REVISTAS"
+    },
+    {
+      "id": "4761003",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE PAPELARIA"
+    },
+    {
+      "id": "4762800",
+      "label": "COMÉRCIO VAREJISTA DE DISCOS, CDS, DVDS E FITAS"
+    },
+    {
+      "id": "4763601",
+      "label": "COMÉRCIO VAREJISTA DE BRINQUEDOS E ARTIGOS RECREATIVOS"
+    },
+    {
+      "id": "4763602",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS ESPORTIVOS"
+    },
+    {
+      "id": "4763605",
+      "label": "COMÉRCIO VAREJISTA DE EMBARCAÇÕES E OUTROS VEÍCULOS RECREATIVOS; PEÇAS E ACESSÓRIOS"
+    },
+    {
+      "id": "4771701",
+      "label": "COMÉRCIO VAREJISTA DE PRODUTOS FARMACÊUTICOS, SEM MANIPULAÇÃO DE FÓRMULAS"
+    },
+    {
+      "id": "4771702",
+      "label": "COMÉRCIO VAREJISTA DE PRODUTOS FARMACÊUTICOS, COM MANIPULAÇÃO DE FÓRMULAS"
+    },
+    {
+      "id": "4771703",
+      "label": "COMÉRCIO VAREJISTA DE PRODUTOS FARMACÊUTICOS HOMEOPÁTICOS"
+    },
+    {
+      "id": "4771704",
+      "label": "COMÉRCIO VAREJISTA DE MEDICAMENTOS VETERINÁRIOS"
+    },
+    {
+      "id": "4772500",
+      "label": "COMÉRCIO VAREJISTA DE COSMÉTICOS, PRODUTOS DE PERFUMARIA E DE HIGIENE PESSOAL"
+    },
+    {
+      "id": "4773300",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS MÉDICOS E ORTOPÉDICOS"
+    },
+    {
+      "id": "4781400",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DO VESTUÁRIO E ACESSÓRIOS"
+    },
+    {
+      "id": "4782201",
+      "label": "COMÉRCIO VAREJISTA DE CALÇADOS"
+    },
+    {
+      "id": "4782202",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE VIAGEM"
+    },
+    {
+      "id": "4783101",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE JOALHERIA"
+    },
+    {
+      "id": "4783102",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS DE RELOJOARIA"
+    },
+    {
+      "id": "4784900",
+      "label": "COMÉRCIO VAREJISTA DE GÁS LIQÜEFEITO DE PETRÓLEO (GLP)"
+    },
+    {
+      "id": "4785701",
+      "label": "COMÉRCIO VAREJISTA DE ANTIGÜIDADES"
+    },
+    {
+      "id": "4785799",
+      "label": "COMÉRCIO VAREJISTA DE OUTROS ARTIGOS USADOS"
+    },
+    {
+      "id": "4789001",
+      "label": "COMÉRCIO VAREJISTA DE SUVENIRES, BIJUTERIAS E ARTESANATOS"
+    },
+    {
+      "id": "4789002",
+      "label": "COMÉRCIO VAREJISTA DE PLANTAS E FLORES NATURAIS"
+    },
+    {
+      "id": "4789003",
+      "label": "COMÉRCIO VAREJISTA DE OBJETOS DE ARTE"
+    },
+    {
+      "id": "4789004",
+      "label": "COMÉRCIO VAREJISTA DE ANIMAIS VIVOS E DE ARTIGOS E ALIMENTOS PARA ANIMAIS DE ESTIMAÇÃO"
+    },
+    {
+      "id": "4789005",
+      "label": "COMÉRCIO VAREJISTA DE PRODUTOS SANEANTES DOMISSANITÁRIOS"
+    },
+    {
+      "id": "4789006",
+      "label": "COMÉRCIO VAREJISTA DE FOGOS DE ARTIFÍCIO E ARTIGOS PIROTÉCNICOS"
+    },
+    {
+      "id": "4789007",
+      "label": "COMÉRCIO VAREJISTA DE EQUIPAMENTOS PARA ESCRITÓRIO"
+    },
+    {
+      "id": "4789008",
+      "label": "COMÉRCIO VAREJISTA DE ARTIGOS FOTOGRÁFICOS E PARA FILMAGEM"
+    },
+    {
+      "id": "4789009",
+      "label": "COMÉRCIO VAREJISTA DE ARMAS E MUNIÇÕES"
+    },
+    {
+      "id": "4789099",
+      "label": "COMÉRCIO VAREJISTA DE OUTROS PRODUTOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4911600",
+      "label": "TRANSPORTE FERROVIÁRIO DE CARGA"
+    },
+    {
+      "id": "4912401",
+      "label": "TRANSPORTE FERROVIÁRIO DE PASSAGEIROS INTERMUNICIPAL E INTERESTADUAL"
+    },
+    {
+      "id": "4912402",
+      "label": "TRANSPORTE FERROVIÁRIO DE PASSAGEIROS MUNICIPAL E EM REGIÃO METROPOLITANA"
+    },
+    {
+      "id": "4912403",
+      "label": "TRANSPORTE METROVIÁRIO"
+    },
+    {
+      "id": "4921301",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, MUNICIPAL"
+    },
+    {
+      "id": "4921302",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, INTERMUNICIPAL EM REGIÃO METROPOLITANA"
+    },
+    {
+      "id": "4922101",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, INTERMUNICIPAL, EXCETO EM REGIÃO METROPOLITANA"
+    },
+    {
+      "id": "4922102",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, INTERESTADUAL"
+    },
+    {
+      "id": "4922103",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, COM ITINERÁRIO FIXO, INTERNACIONAL"
+    },
+    {
+      "id": "4923001",
+      "label": "SERVIÇO DE TÁXI"
+    },
+    {
+      "id": "4923002",
+      "label": "SERVIÇO DE TRANSPORTE DE PASSAGEIROS - LOCAÇÃO DE AUTOMÓVEIS COM MOTORISTA"
+    },
+    {
+      "id": "4929901",
+      "label": "TRANSPORTE RODOVIÁRIO COLETIVO DE PASSAGEIROS, SOB REGIME DE FRETAMENTO, MUNICIPAL"
+    },
+    {
+      "id": "4929903",
+      "label": "ORGANIZAÇÃO DE EXCURSÕES EM VEÍCULOS RODOVIÁRIOS PRÓPRIOS, MUNICIPAL"
+    },
+    {
+      "id": "4929904",
+      "label": "ORGANIZAÇÃO DE EXCURSÕES EM VEÍCULOS RODOVIÁRIOS PRÓPRIOS, INTERMUNICIPAL, INTERESTADUAL E INTERNACIONAL"
+    },
+    {
+      "id": "4929999",
+      "label": "OUTROS TRANSPORTES RODOVIÁRIOS DE PASSAGEIROS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "4930201",
+      "label": "TRANSPORTE RODOVIÁRIO DE CARGA, EXCETO PRODUTOS PERIGOSOS E MUDANÇAS, MUNICIPAL"
+    },
+    {
+      "id": "4930202",
+      "label": "TRANSPORTE RODOVIÁRIO DE CARGA, EXCETO PRODUTOS PERIGOSOS E MUDANÇAS, INTERMUNICIPAL, INTERESTADUAL E INTERNACIONAL"
+    },
+    {
+      "id": "4930203",
+      "label": "TRANSPORTE RODOVIÁRIO DE PRODUTOS PERIGOSOS"
+    },
+    {
+      "id": "4930204",
+      "label": "TRANSPORTE RODOVIÁRIO DE MUDANÇAS"
+    },
+    {
+      "id": "4940000",
+      "label": "TRANSPORTE DUTOVIÁRIO"
+    },
+    {
+      "id": "4950700",
+      "label": "TRENS TURÍSTICOS, TELEFÉRICOS E SIMILARES"
+    },
+    {
+      "id": "5011401",
+      "label": "TRANSPORTE MARÍTIMO DE CABOTAGEM - CARGA"
+    },
+    {
+      "id": "5011402",
+      "label": "TRANSPORTE MARÍTIMO DE CABOTAGEM - PASSAGEIROS"
+    },
+    {
+      "id": "5012201",
+      "label": "TRANSPORTE MARÍTIMO DE LONGO CURSO - CARGA"
+    },
+    {
+      "id": "5012202",
+      "label": "TRANSPORTE MARÍTIMO DE LONGO CURSO - PASSAGEIROS"
+    },
+    {
+      "id": "6612602",
+      "label": "DISTRIBUIDORAS DE TÍTULOS E VALORES MOBILIÁRIOS"
+    },
+    {
+      "id": "5021101",
+      "label": "TRANSPORTE POR NAVEGAÇÃO INTERIOR DE CARGA, MUNICIPAL, EXCETO TRAVESSIA"
+    },
+    {
+      "id": "5021102",
+      "label": "TRANSPORTE POR NAVEGAÇÃO INTERIOR DE CARGA, INTERMUNICIPAL, INTERESTADUAL E INTERNACIONAL, EXCETO TRAVESSIA"
+    },
+    {
+      "id": "5022001",
+      "label": "TRANSPORTE POR NAVEGAÇÃO INTERIOR DE PASSAGEIROS EM LINHAS REGULARES, MUNICIPAL, EXCETO TRAVESSIA"
+    },
+    {
+      "id": "5022002",
+      "label": "TRANSPORTE POR NAVEGAÇÃO INTERIOR DE PASSAGEIROS EM LINHAS REGULARES, INTERMUNICIPAL, INTERESTADUAL E INTERNACIONAL, EXCETO TRAVESSIA"
+    },
+    {
+      "id": "5030101",
+      "label": "NAVEGAÇÃO DE APOIO MARÍTIMO"
+    },
+    {
+      "id": "5030102",
+      "label": "NAVEGAÇÃO DE APOIO PORTUÁRIO"
+    },
+    {
+      "id": "5030103",
+      "label": "SERVIÇO DE REBOCADORES E EMPURRADORES"
+    },
+    {
+      "id": "5091201",
+      "label": "TRANSPORTE POR NAVEGAÇÃO DE TRAVESSIA, MUNICIPAL"
+    },
+    {
+      "id": "5091202",
+      "label": "TRANSPORTE POR NAVEGAÇÃO DE TRAVESSIA INTERMUNICIPAL, INTERESTADUAL E INTERNACIONAL"
+    },
+    {
+      "id": "5099801",
+      "label": "TRANSPORTE AQUAVIÁRIO PARA PASSEIOS TURÍSTICOS"
+    },
+    {
+      "id": "5099899",
+      "label": "OUTROS TRANSPORTES AQUAVIÁRIOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "5111100",
+      "label": "TRANSPORTE AÉREO DE PASSAGEIROS REGULAR"
+    },
+    {
+      "id": "5112901",
+      "label": "SERVIÇO DE TÁXI AÉREO E LOCAÇÃO DE AERONAVES COM TRIPULAÇÃO"
+    },
+    {
+      "id": "5112999",
+      "label": "OUTROS SERVIÇOS DE TRANSPORTE AÉREO DE PASSAGEIROS NÃO REGULAR"
+    },
+    {
+      "id": "5120000",
+      "label": "TRANSPORTE AÉREO DE CARGA"
+    },
+    {
+      "id": "5130700",
+      "label": "TRANSPORTE ESPACIAL"
+    },
+    {
+      "id": "5211701",
+      "label": "ARMAZÉNS GERAIS - EMISSÃO DE WARRANT"
+    },
+    {
+      "id": "5211702",
+      "label": "GUARDA MÓVEIS"
+    },
+    {
+      "id": "6612603",
+      "label": "CORRETORAS DE CÂMBIO"
+    },
+    {
+      "id": "5211799",
+      "label": "DEPÓSITOS DE MERCADORIAS PARA TERCEIROS, EXCETO ARMAZÉNS GERAIS E GUARDA MÓVEIS"
+    },
+    {
+      "id": "5212500",
+      "label": "CARGA E DESCARGA"
+    },
+    {
+      "id": "5221400",
+      "label": "CONCESSIONÁRIAS DE RODOVIAS, PONTES, TÚNEIS E SERVIÇOS RELACIONADOS"
+    },
+    {
+      "id": "5222200",
+      "label": "TERMINAIS RODOVIÁRIOS E FERROVIÁRIOS"
+    },
+    {
+      "id": "5223100",
+      "label": "ESTACIONAMENTO DE VEÍCULOS"
+    },
+    {
+      "id": "5229001",
+      "label": "SERVIÇOS DE APOIO AO TRANSPORTE POR TÁXI, INCLUSIVE CENTRAIS DE CHAMADA"
+    },
+    {
+      "id": "5229002",
+      "label": "SERVIÇOS DE REBOQUE DE VEÍCULOS"
+    },
+    {
+      "id": "8650006",
+      "label": "ATIVIDADES DE FONOAUDIOLOGIA"
+    },
+    {
+      "id": "5229099",
+      "label": "OUTRAS ATIVIDADES AUXILIARES DOS TRANSPORTES TERRESTRES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "5231101",
+      "label": "ADMINISTRAÇÃO DA INFRAESTRUTURA PORTUÁRIA"
+    },
+    {
+      "id": "5231102",
+      "label": "ATIVIDADES DO OPERADOR PORTUÁRIO"
+    },
+    {
+      "id": "5231103",
+      "label": "GESTÃO DE TERMINAIS AQUAVIÁRIOS"
+    },
+    {
+      "id": "5232000",
+      "label": "ATIVIDADES DE AGENCIAMENTO MARÍTIMO"
+    },
+    {
+      "id": "5239701",
+      "label": "SERVIÇOS DE PRATICAGEM"
+    },
+    {
+      "id": "5239799",
+      "label": "ATIVIDADES AUXILIARES DOS TRANSPORTES AQUAVIÁRIOS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "5240101",
+      "label": "OPERAÇÃO DOS AEROPORTOS E CAMPOS DE ATERRISSAGEM"
+    },
+    {
+      "id": "5620101",
+      "label": "FORNECIMENTO DE ALIMENTOS PREPARADOS PREPONDERANTEMENTE PARA EMPRESAS"
+    },
+    {
+      "id": "5620103",
+      "label": "CANTINAS - SERVIÇOS DE ALIMENTAÇÃO PRIVATIVOS"
+    },
+    {
+      "id": "5620104",
+      "label": "FORNECIMENTO DE ALIMENTOS PREPARADOS PREPONDERANTEMENTE PARA CONSUMO DOMICILIAR"
+    },
+    {
+      "id": "5240199",
+      "label": "ATIVIDADES AUXILIARES DOS TRANSPORTES AÉREOS, EXCETO OPERAÇÃO DOS AEROPORTOS E CAMPOS DE ATERRISSAGEM"
+    },
+    {
+      "id": "5250801",
+      "label": "COMISSARIA DE DESPACHOS"
+    },
+    {
+      "id": "5250802",
+      "label": "ATIVIDADES DE DESPACHANTES ADUANEIROS"
+    },
+    {
+      "id": "5250803",
+      "label": "AGENCIAMENTO DE CARGAS, EXCETO PARA O TRANSPORTE MARÍTIMO"
+    },
+    {
+      "id": "5250804",
+      "label": "ORGANIZAÇÃO LOGÍSTICA DO TRANSPORTE DE CARGA"
+    },
+    {
+      "id": "5250805",
+      "label": "OPERADOR DE TRANSPORTE MULTIMODAL - OTM"
+    },
+    {
+      "id": "5310501",
+      "label": "ATIVIDADES DO CORREIO NACIONAL"
+    },
+    {
+      "id": "5310502",
+      "label": "ATIVIDADES DE FRANQUEADAS DO CORREIO NACIONAL"
+    },
+    {
+      "id": "5320202",
+      "label": "SERVIÇOS DE ENTREGA RÁPIDA"
+    },
+    {
+      "id": "5510801",
+      "label": "HOTÉIS"
+    },
+    {
+      "id": "5510802",
+      "label": "APART HOTÉIS"
+    },
+    {
+      "id": "5510803",
+      "label": "MOTÉIS"
+    },
+    {
+      "id": "5590601",
+      "label": "ALBERGUES, EXCETO ASSISTENCIAIS"
+    },
+    {
+      "id": "5590602",
+      "label": "CAMPINGS"
+    },
+    {
+      "id": "5590603",
+      "label": "PENSÕES(ALOJAMENTO)"
+    },
+    {
+      "id": "5590699",
+      "label": "OUTROS ALOJAMENTOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "5611201",
+      "label": "RESTAURANTES E SIMILARES"
+    },
+    {
+      "id": "5611203",
+      "label": "LANCHONETES, CASAS DE CHÁ, DE SUCOS E SIMILARES"
+    },
+    {
+      "id": "5612100",
+      "label": "SERVIÇOS AMBULANTES DE ALIMENTAÇÃO"
+    },
+    {
+      "id": "5811500",
+      "label": "EDIÇÃO DE LIVROS"
+    },
+    {
+      "id": "5812301",
+      "label": "EDIÇÃO DE JORNAIS DIÁRIOS"
+    },
+    {
+      "id": "5812302",
+      "label": "EDIÇÃO DE JORNAIS NÃO DIÁRIOS"
+    },
+    {
+      "id": "5813100",
+      "label": "EDIÇÃO DE REVISTAS"
+    },
+    {
+      "id": "6201502",
+      "label": "WEB DESIGN"
+    },
+    {
+      "id": "5819100",
+      "label": "EDIÇÃO DE CADASTROS, LISTAS E DE OUTROS PRODUTOS GRÁFICOS"
+    },
+    {
+      "id": "5821200",
+      "label": "EDIÇÃO INTEGRADA À IMPRESSÃO DE LIVROS"
+    },
+    {
+      "id": "5822101",
+      "label": "EDIÇÃO INTEGRADA À IMPRESSÃO DE JORNAIS DIÁRIOS"
+    },
+    {
+      "id": "5822102",
+      "label": "EDIÇÃO INTEGRADA À IMPRESSÃO DE JORNAIS NÃO DIÁRIOS"
+    },
+    {
+      "id": "5823900",
+      "label": "EDIÇÃO INTEGRADA À IMPRESSÃO DE REVISTAS"
+    },
+    {
+      "id": "5829800",
+      "label": "EDIÇÃO INTEGRADA À IMPRESSÃO DE CADASTROS, LISTAS E DE OUTROS PRODUTOS GRÁFICOS"
+    },
+    {
+      "id": "6110803",
+      "label": "SERVIÇOS DE COMUNICAÇÃO MULTIMÍDIA - SCM"
+    },
+    {
+      "id": "6120501",
+      "label": "TELEFONIA MÓVEL CELULAR"
+    },
+    {
+      "id": "5911101",
+      "label": "ESTÚDIOS CINEMATOGRÁFICOS"
+    },
+    {
+      "id": "5911102",
+      "label": "PRODUÇÃO DE FILMES PARA PUBLICIDADE"
+    },
+    {
+      "id": "5911199",
+      "label": "ATIVIDADES DE PRODUÇÃO CINEMATOGRÁFICA, DE VÍDEOS E DE PROGRAMAS DE TELEVISÃO NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "5912001",
+      "label": "SERVIÇOS DE DUBLAGEM"
+    },
+    {
+      "id": "5912002",
+      "label": "SERVIÇOS DE MIXAGEM SONORA EM PRODUÇÃO AUDIOVISUAL"
+    },
+    {
+      "id": "7220700",
+      "label": "PESQUISA E DESENVOLVIMENTO EXPERIMENTAL EM CIÊNCIAS SOCIAIS E HUMANAS"
+    },
+    {
+      "id": "5912099",
+      "label": "ATIVIDADES DE PÓS PRODUÇÃO CINEMATOGRÁFICA, DE VÍDEOS E DE PROGRAMAS DE TELEVISÃO NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "5913800",
+      "label": "DISTRIBUIÇÃO CINEMATOGRÁFICA, DE VÍDEO E DE PROGRAMAS DE TELEVISÃO"
+    },
+    {
+      "id": "5914600",
+      "label": "ATIVIDADES DE EXIBIÇÃO CINEMATOGRÁFICA"
+    },
+    {
+      "id": "6110899",
+      "label": "SERVIÇOS DE TELECOMUNICAÇÕES POR FIO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "6550200",
+      "label": "PLANOS DE SAÚDE"
+    },
+    {
+      "id": "5920100",
+      "label": "ATIVIDADES DE GRAVAÇÃO DE SOM E DE EDIÇÃO DE MÚSICA"
+    },
+    {
+      "id": "6010100",
+      "label": "ATIVIDADES DE RÁDIO"
+    },
+    {
+      "id": "6021700",
+      "label": "ATIVIDADES DE TELEVISÃO ABERTA"
+    },
+    {
+      "id": "6022501",
+      "label": "PROGRAMADORAS"
+    },
+    {
+      "id": "6022502",
+      "label": "ATIVIDADES RELACIONADAS À TELEVISÃO POR ASSINATURA, EXCETO PROGRAMADORAS"
+    },
+    {
+      "id": "6462000",
+      "label": "HOLDINGS DE INSTITUIÇÕES NÃO FINANCEIRAS"
+    },
+    {
+      "id": "6110801",
+      "label": "SERVIÇOS DE TELEFONIA FIXA COMUTADA - STFC"
+    },
+    {
+      "id": "6110802",
+      "label": "SERVIÇOS DE REDES DE TRANSPORTES DE TELECOMUNICAÇÕES - SRTT"
+    },
+    {
+      "id": "6612604",
+      "label": "CORRETORAS DE CONTRATOS DE MERCADORIAS"
+    },
+    {
+      "id": "6120502",
+      "label": "SERVIÇO MÓVEL ESPECIALIZADO - SME"
+    },
+    {
+      "id": "6120599",
+      "label": "SERVIÇOS DE TELECOMUNICAÇÕES SEM FIO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "6201501",
+      "label": "DESENVOLVIMENTO DE PROGRAMAS DE COMPUTADOR SOB ENCOMENDA"
+    },
+    {
+      "id": "6130200",
+      "label": "TELECOMUNICAÇÕES POR SATÉLITE"
+    },
+    {
+      "id": "6141800",
+      "label": "OPERADORAS DE TELEVISÃO POR ASSINATURA POR CABO"
+    },
+    {
+      "id": "6470102",
+      "label": "FUNDOS DE INVESTIMENTO PREVIDENCIÁRIOS"
+    },
+    {
+      "id": "6142600",
+      "label": "OPERADORAS DE TELEVISÃO POR ASSINATURA POR MICROONDAS"
+    },
+    {
+      "id": "6143400",
+      "label": "OPERADORAS DE TELEVISÃO POR ASSINATURA POR SATÉLITE"
+    },
+    {
+      "id": "6190601",
+      "label": "PROVEDORES DE ACESSO ÀS REDES DE COMUNICAÇÕES"
+    },
+    {
+      "id": "6190602",
+      "label": "PROVEDORES DE VOZ SOBRE PROTOCOLO INTERNET - VOIP"
+    },
+    {
+      "id": "6190699",
+      "label": "OUTRAS ATIVIDADES DE TELECOMUNICAÇÕES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "6619304",
+      "label": "CAIXAS ELETRÔNICOS"
+    },
+    {
+      "id": "6619305",
+      "label": "OPERADORAS DE CARTÕES DE DÉBITO"
+    },
+    {
+      "id": "6202300",
+      "label": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR CUSTOMIZÁVEIS"
+    },
+    {
+      "id": "6203100",
+      "label": "DESENVOLVIMENTO E LICENCIAMENTO DE PROGRAMAS DE COMPUTADOR NÃO CUSTOMIZÁVEIS"
+    },
+    {
+      "id": "6470103",
+      "label": "FUNDOS DE INVESTIMENTO IMOBILIÁRIOS"
+    },
+    {
+      "id": "6422100",
+      "label": "BANCOS MÚLTIPLOS, COM CARTEIRA COMERCIAL"
+    },
+    {
+      "id": "6204000",
+      "label": "CONSULTORIA EM TECNOLOGIA DA INFORMAÇÃO"
+    },
+    {
+      "id": "6209100",
+      "label": "SUPORTE TÉCNICO, MANUTENÇÃO E OUTROS SERVIÇOS EM TECNOLOGIA DA INFORMAÇÃO"
+    },
+    {
+      "id": "6311900",
+      "label": "TRATAMENTO DE DADOS, PROVEDORES DE SERVIÇOS DE APLICAÇÃO E SERVIÇOS DE HOSPEDAGEM NA INTERNET"
+    },
+    {
+      "id": "6391700",
+      "label": "AGÊNCIAS DE NOTÍCIAS"
+    },
+    {
+      "id": "6399200",
+      "label": "OUTRAS ATIVIDADES DE PRESTAÇÃO DE SERVIÇOS DE INFORMAÇÃO NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "6410700",
+      "label": "BANCO CENTRAL"
+    },
+    {
+      "id": "6421200",
+      "label": "BANCOS COMERCIAIS"
+    },
+    {
+      "id": "6611801",
+      "label": "BOLSA DE VALORES"
+    },
+    {
+      "id": "6423900",
+      "label": "CAIXAS ECONÔMICAS"
+    },
+    {
+      "id": "6424701",
+      "label": "BANCOS COOPERATIVOS"
+    },
+    {
+      "id": "6424702",
+      "label": "COOPERATIVAS CENTRAIS DE CRÉDITO"
+    },
+    {
+      "id": "6424703",
+      "label": "COOPERATIVAS DE CRÉDITO MÚTUO"
+    },
+    {
+      "id": "6424704",
+      "label": "COOPERATIVAS DE CRÉDITO RURAL"
+    },
+    {
+      "id": "6431000",
+      "label": "BANCOS MÚLTIPLOS, SEM CARTEIRA COMERCIAL"
+    },
+    {
+      "id": "6432800",
+      "label": "BANCOS DE INVESTIMENTO"
+    },
+    {
+      "id": "6619399",
+      "label": "OUTRAS ATIVIDADES AUXILIARES DOS SERVIÇOS FINANCEIROS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "6433600",
+      "label": "BANCOS DE DESENVOLVIMENTO"
+    },
+    {
+      "id": "6491300",
+      "label": "SOCIEDADES DE FOMENTO MERCANTIL - FACTORING"
+    },
+    {
+      "id": "6434400",
+      "label": "AGÊNCIAS DE FOMENTO"
+    },
+    {
+      "id": "6435201",
+      "label": "SOCIEDADES DE CRÉDITO IMOBILIÁRIO"
+    },
+    {
+      "id": "6435202",
+      "label": "ASSOCIAÇÕES DE POUPANÇA E EMPRÉSTIMO"
+    },
+    {
+      "id": "6435203",
+      "label": "COMPANHIAS HIPOTECÁRIAS"
+    },
+    {
+      "id": "6436100",
+      "label": "SOCIEDADES DE CRÉDITO, FINANCIAMENTO E INVESTIMENTO - FINANCEIRAS"
+    },
+    {
+      "id": "6437900",
+      "label": "SOCIEDADES DE CRÉDITO AO MICROEMPREENDEDOR"
+    },
+    {
+      "id": "6438701",
+      "label": "BANCOS DE CÂMBIO"
+    },
+    {
+      "id": "6438799",
+      "label": "OUTRAS INSTITUIÇÕES DE INTERMEDIAÇÃO NÃO MONETÁRIA"
+    },
+    {
+      "id": "6440900",
+      "label": "ARRENDAMENTO MERCANTIL"
+    },
+    {
+      "id": "6450600",
+      "label": "SOCIEDADES DE CAPITALIZAÇÃO"
+    },
+    {
+      "id": "6461100",
+      "label": "HOLDINGS DE INSTITUIÇÕES FINANCEIRAS"
+    },
+    {
+      "id": "6463800",
+      "label": "OUTRAS SOCIEDADES DE PARTICIPAÇÃO, EXCETO HOLDINGS"
+    },
+    {
+      "id": "6470101",
+      "label": "FUNDOS DE INVESTIMENTO, EXCETO PREVIDENCIÁRIOS E IMOBILIÁRIOS"
+    },
+    {
+      "id": "6612601",
+      "label": "CORRETORAS DE TÍTULOS E VALORES MOBILIÁRIOS"
+    },
+    {
+      "id": "6492100",
+      "label": "SECURITIZAÇÃO DE CRÉDITOS"
+    },
+    {
+      "id": "6493000",
+      "label": "ADMINISTRAÇÃO DE CONSÓRCIOS PARA AQUISIÇÃO DE BENS E DIREITOS"
+    },
+    {
+      "id": "6499901",
+      "label": "CLUBES DE INVESTIMENTO"
+    },
+    {
+      "id": "6499902",
+      "label": "SOCIEDADES DE INVESTIMENTO"
+    },
+    {
+      "id": "6499903",
+      "label": "FUNDO GARANTIDOR DE CRÉDITO"
+    },
+    {
+      "id": "6499904",
+      "label": "CAIXAS DE FINANCIAMENTO DE CORPORAÇÕES"
+    },
+    {
+      "id": "6499905",
+      "label": "CONCESSÃO DE CRÉDITO PELAS OSCIP"
+    },
+    {
+      "id": "6499999",
+      "label": "OUTRAS ATIVIDADES DE SERVIÇOS FINANCEIROS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "6511101",
+      "label": "SOCIEDADE SEGURADORA DE SEGUROS VIDA"
+    },
+    {
+      "id": "6621501",
+      "label": "PERITOS E AVALIADORES DE SEGUROS"
+    },
+    {
+      "id": "6512000",
+      "label": "SOCIEDADE SEGURADORA DE SEGUROS NÃO VIDA"
+    },
+    {
+      "id": "6520100",
+      "label": "SOCIEDADE SEGURADORA DE SEGUROS SAÚDE"
+    },
+    {
+      "id": "6530800",
+      "label": "RESSEGUROS"
+    },
+    {
+      "id": "6541300",
+      "label": "PREVIDÊNCIA COMPLEMENTAR FECHADA"
+    },
+    {
+      "id": "6542100",
+      "label": "PREVIDÊNCIA COMPLEMENTAR ABERTA"
+    },
+    {
+      "id": "6612605",
+      "label": "AGENTES DE INVESTIMENTOS EM APLICAÇÕES FINANCEIRAS"
+    },
+    {
+      "id": "6613400",
+      "label": "ADMINISTRAÇÃO DE CARTÕES DE CRÉDITO"
+    },
+    {
+      "id": "6619301",
+      "label": "SERVIÇOS DE LIQUIDAÇÃO E CUSTÓDIA"
+    },
+    {
+      "id": "6619302",
+      "label": "CORRESPONDENTES DE INSTITUIÇÕES FINANCEIRAS"
+    },
+    {
+      "id": "6619303",
+      "label": "REPRESENTAÇÕES DE BANCOS ESTRANGEIROS"
+    },
+    {
+      "id": "6629100",
+      "label": "ATIVIDADES AUXILIARES DOS SEGUROS, DA PREVIDÊNCIA COMPLEMENTAR E DOS PLANOS DE SAÚDE NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "6630400",
+      "label": "ATIVIDADES DE ADMINISTRAÇÃO DE FUNDOS POR CONTRATO OU COMISSÃO"
+    },
+    {
+      "id": "6810201",
+      "label": "COMPRA E VENDA DE IMÓVEIS PRÓPRIOS"
+    },
+    {
+      "id": "6810202",
+      "label": "ALUGUEL DE IMÓVEIS PRÓPRIOS"
+    },
+    {
+      "id": "6810203",
+      "label": "LOTEAMENTO DE IMÓVEIS PRÓPRIOS"
+    },
+    {
+      "id": "6821801",
+      "label": "CORRETAGEM NA COMPRA E VENDA E AVALIAÇÃO DE IMÓVEIS"
+    },
+    {
+      "id": "6821802",
+      "label": "CORRETAGEM NO ALUGUEL DE IMÓVEIS"
+    },
+    {
+      "id": "6822600",
+      "label": "GESTÃO E ADMINISTRAÇÃO DA PROPRIEDADE IMOBILIARIA"
+    },
+    {
+      "id": "6911701",
+      "label": "SERVIÇOS ADVOCATÍCIOS"
+    },
+    {
+      "id": "7722500",
+      "label": "ALUGUEL DE FITAS DE VÍDEO, DVDS E SIMILARES"
+    },
+    {
+      "id": "6911703",
+      "label": "AGENTE DE PROPRIEDADE INDUSTRIAL"
+    },
+    {
+      "id": "6912500",
+      "label": "CARTÓRIOS"
+    },
+    {
+      "id": "6920601",
+      "label": "ATIVIDADES DE CONTABILIDADE"
+    },
+    {
+      "id": "7490102",
+      "label": "ESCAFANDRIA E MERGULHO"
+    },
+    {
+      "id": "7020400",
+      "label": "ATIVIDADES DE CONSULTORIA EM GESTÃO EMPRESARIAL, EXCETO CONSULTORIA TÉCNICA ESPECÍFICA"
+    },
+    {
+      "id": "7111100",
+      "label": "SERVIÇOS DE ARQUITETURA"
+    },
+    {
+      "id": "7112000",
+      "label": "SERVIÇOS DE ENGENHARIA"
+    },
+    {
+      "id": "7119701",
+      "label": "SERVIÇOS DE CARTOGRAFIA, TOPOGRAFIA E GEODÉSIA"
+    },
+    {
+      "id": "7119702",
+      "label": "ATIVIDADES DE ESTUDOS GEOLÓGICOS"
+    },
+    {
+      "id": "7119703",
+      "label": "SERVIÇOS DE DESENHO TÉCNICO RELACIONADOS À ARQUITETURA E ENGENHARIA"
+    },
+    {
+      "id": "7119704",
+      "label": "SERVIÇOS DE PERÍCIA TÉCNICA RELACIONADOS À SEGURANÇA DO TRABALHO"
+    },
+    {
+      "id": "7723300",
+      "label": "ALUGUEL DE OBJETOS DO VESTUÁRIO, JÓIAS E ACESSÓRIOS"
+    },
+    {
+      "id": "7119799",
+      "label": "ATIVIDADES TÉCNICAS RELACIONADAS À ENGENHARIA E ARQUITETURA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "7120100",
+      "label": "TESTES E ANÁLISES TÉCNICAS"
+    },
+    {
+      "id": "7210000",
+      "label": "PESQUISA E DESENVOLVIMENTO EXPERIMENTAL EM CIÊNCIAS FÍSICAS E NATURAIS"
+    },
+    {
+      "id": "7311400",
+      "label": "AGÊNCIAS DE PUBLICIDADE"
+    },
+    {
+      "id": "7312200",
+      "label": "AGENCIAMENTO DE ESPAÇOS PARA PUBLICIDADE, EXCETO EM VEÍCULOS DE COMUNICAÇÃO"
+    },
+    {
+      "id": "7319001",
+      "label": "CRIAÇÃO ESTANDES PARA FEIRAS E EXPOSIÇÕES"
+    },
+    {
+      "id": "7319002",
+      "label": "PROMOÇÃO DE VENDAS"
+    },
+    {
+      "id": "7319003",
+      "label": "MARKETING DIRETO"
+    },
+    {
+      "id": "7319004",
+      "label": "CONSULTORIA EM PUBLICIDADE"
+    },
+    {
+      "id": "7319099",
+      "label": "OUTRAS ATIVIDADES DE PUBLICIDADE NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "7320300",
+      "label": "PESQUISAS DE MERCADO E DE OPINIÃO PÚBLICA"
+    },
+    {
+      "id": "7410202",
+      "label": "DESIGN DE INTERIORES"
+    },
+    {
+      "id": "7410203",
+      "label": "DESIGN DE PRODUTO"
+    },
+    {
+      "id": "7410299",
+      "label": "ATIVIDADES DE DESIGN NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "7420001",
+      "label": "ATIVIDADES DE PRODUÇÃO DE FOTOGRAFIAS, EXCETO AÉREA E SUBMARINA"
+    },
+    {
+      "id": "7420002",
+      "label": "ATIVIDADES DE PRODUÇÃO DE FOTOGRAFIAS AÉREAS E SUBMARINAS"
+    },
+    {
+      "id": "7420003",
+      "label": "LABORATÓRIOS FOTOGRÁFICOS"
+    },
+    {
+      "id": "7420004",
+      "label": "FILMAGEM DE FESTAS E EVENTOS"
+    },
+    {
+      "id": "7420005",
+      "label": "SERVIÇOS DE MICROFILMAGEM"
+    },
+    {
+      "id": "7490101",
+      "label": "SERVIÇOS DE TRADUÇÃO, INTERPRETAÇÃO E SIMILARES"
+    },
+    {
+      "id": "8230002",
+      "label": "CASAS DE FESTAS E EVENTOS"
+    },
+    {
+      "id": "7490104",
+      "label": "ATIVIDADES DE INTERMEDIAÇÃO E AGENCIAMENTO DE SERVIÇOS E NEGÓCIOS EM GERAL, EXCETO IMOBILIÁRIOS"
+    },
+    {
+      "id": "7490105",
+      "label": "AGENCIAMENTO DE PROFISSIONAIS PARA ATIVIDADES ESPORTIVAS, CULTURAIS E ARTÍSTICAS"
+    },
+    {
+      "id": "7739001",
+      "label": "ALUGUEL DE MÁQUINAS E EQUIPAMENTOS PARA EXTRAÇÃO DE MINÉRIOS E PETRÓLEO, SEM OPERADOR"
+    },
+    {
+      "id": "7711000",
+      "label": "LOCAÇÃO DE AUTOMÓVEIS SEM CONDUTOR"
+    },
+    {
+      "id": "7719501",
+      "label": "LOCAÇÃO DE EMBARCAÇÕES SEM TRIPULAÇÃO, EXCETO PARA FINS RECREATIVOS"
+    },
+    {
+      "id": "7719502",
+      "label": "LOCAÇÃO DE AERONAVES SEM TRIPULAÇÃO"
+    },
+    {
+      "id": "7719599",
+      "label": "LOCAÇÃO DE OUTROS MEIOS DE TRANSPORTE NÃO ESPECIFICADOS ANTERIORMENTE, SEM CONDUTOR"
+    },
+    {
+      "id": "7721700",
+      "label": "ALUGUEL DE EQUIPAMENTOS RECREATIVOS E ESPORTIVOS"
+    },
+    {
+      "id": "7729299",
+      "label": "ALUGUEL DE OUTROS OBJETOS PESSOAIS E DOMÉSTICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "7731400",
+      "label": "ALUGUEL DE MÁQUINAS E EQUIPAMENTOS AGRÍCOLAS SEM OPERADOR"
+    },
+    {
+      "id": "7732201",
+      "label": "ALUGUEL DE MÁQUINAS E EQUIPAMENTOS PARA CONSTRUÇÃO SEM OPERADOR, EXCETO ANDAIMES"
+    },
+    {
+      "id": "7732202",
+      "label": "ALUGUEL DE ANDAIMES"
+    },
+    {
+      "id": "7733100",
+      "label": "ALUGUEL DE MÁQUINAS E EQUIPAMENTOS PARA ESCRITÓRIOS"
+    },
+    {
+      "id": "7739002",
+      "label": "ALUGUEL DE EQUIPAMENTOS CIENTÍFICOS, MÉDICOS E HOSPITALARES, SEM OPERADOR"
+    },
+    {
+      "id": "7739003",
+      "label": "ALUGUEL DE PALCOS, COBERTURAS E OUTRAS ESTRUTURAS DE USO TEMPORÁRIO, EXCETO ANDAIMES"
+    },
+    {
+      "id": "7739099",
+      "label": "ALUGUEL DE OUTRAS MÁQUINAS E EQUIPAMENTOS COMERCIAIS E INDUSTRIAIS NÃO ESPECIFICADOS ANTERIORMENTE, SEM OPERADOR"
+    },
+    {
+      "id": "7740300",
+      "label": "GESTÃO DE ATIVOS INTANGÍVEIS NÃO FINANCEIROS"
+    },
+    {
+      "id": "7810800",
+      "label": "SELEÇÃO E AGENCIAMENTO DE MÃO DE OBRA"
+    },
+    {
+      "id": "7820500",
+      "label": "LOCAÇÃO DE MÃO DE OBRA TEMPORÁRIA"
+    },
+    {
+      "id": "8599602",
+      "label": "CURSOS DE PILOTAGEM"
+    },
+    {
+      "id": "8591100",
+      "label": "ENSINO DE ESPORTES"
+    },
+    {
+      "id": "7830200",
+      "label": "FORNECIMENTO E GESTÃO DE RECURSOS HUMANOS PARA TERCEIROS"
+    },
+    {
+      "id": "7911200",
+      "label": "AGÊNCIAS DE VIAGENS"
+    },
+    {
+      "id": "7912100",
+      "label": "OPERADORES TURÍSTICOS"
+    },
+    {
+      "id": "7990200",
+      "label": "SERVIÇOS DE RESERVAS E OUTROS SERVIÇOS DE TURISMO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "8011101",
+      "label": "ATIVIDADES DE VIGILÂNCIA E SEGURANÇA PRIVADA"
+    },
+    {
+      "id": "8011102",
+      "label": "SERVIÇOS DE ADESTRAMENTO DE CÃES DE GUARDA"
+    },
+    {
+      "id": "8012900",
+      "label": "ATIVIDADES DE TRANSPORTE DE VALORES"
+    },
+    {
+      "id": "8020001",
+      "label": "ATIVIDADES DE MONITORAMENTO DE SISTEMAS DE SEGURANÇA ELETRÔNICO"
+    },
+    {
+      "id": "8020002",
+      "label": "OUTRAS ATIVIDADES DE SERVIÇOS DE SEGURANÇA"
+    },
+    {
+      "id": "8030700",
+      "label": "ATIVIDADES DE INVESTIGAÇÃO PARTICULAR"
+    },
+    {
+      "id": "8220200",
+      "label": "ATIVIDADES DE TELEATENDIMENTO"
+    },
+    {
+      "id": "8592901",
+      "label": "ENSINO DE DANÇA"
+    },
+    {
+      "id": "8111700",
+      "label": "SERVIÇOS COMBINADOS PARA APOIO A EDIFÍCIOS, EXCETO CONDOMÍNIOS PREDIAIS"
+    },
+    {
+      "id": "8112500",
+      "label": "CONDOMÍNIOS PREDIAIS"
+    },
+    {
+      "id": "8121400",
+      "label": "LIMPEZA EM PRÉDIOS E EM DOMICÍLIOS"
+    },
+    {
+      "id": "8122200",
+      "label": "IMUNIZAÇÃO E CONTROLE DE PRAGAS URBANAS"
+    },
+    {
+      "id": "8129000",
+      "label": "ATIVIDADES DE LIMPEZA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "8130300",
+      "label": "ATIVIDADES PAISAGÍSTICAS"
+    },
+    {
+      "id": "8211300",
+      "label": "SERVIÇOS COMBINADOS DE ESCRITÓRIO E APOIO ADMINISTRATIVO"
+    },
+    {
+      "id": "8219901",
+      "label": "FOTOCÓPIAS"
+    },
+    {
+      "id": "8512100",
+      "label": "EDUCAÇÃO INFANTIL - PRÉESCOLA"
+    },
+    {
+      "id": "8230001",
+      "label": "SERVIÇOS DE ORGANIZAÇÃO DE FEIRAS, CONGRESSOS, EXPOSIÇÕES E FESTAS"
+    },
+    {
+      "id": "8291100",
+      "label": "ATIVIDADES DE COBRANÇAS E INFORMAÇÕES CADASTRAIS"
+    },
+    {
+      "id": "8292000",
+      "label": "ENVASAMENTO E EMPACOTAMENTO SOB CONTRATO"
+    },
+    {
+      "id": "8299701",
+      "label": "MEDIÇÃO DE CONSUMO DE ENERGIA ELÉTRICA, GÁS E ÁGUA"
+    },
+    {
+      "id": "8299702",
+      "label": "EMISSÃO DE VALES ALIMENTAÇÃO, VALES TRANSPORTE E SIMILARES"
+    },
+    {
+      "id": "8299703",
+      "label": "SERVIÇOS DE GRAVAÇÃO DE CARIMBOS, EXCETO CONFECÇÃO"
+    },
+    {
+      "id": "8299704",
+      "label": "LEILOEIROS INDEPENDENTES"
+    },
+    {
+      "id": "8299705",
+      "label": "SERVIÇOS DE LEVANTAMENTO DE FUNDOS SOB CONTRATO"
+    },
+    {
+      "id": "8299706",
+      "label": "CASAS LOTÉRICAS"
+    },
+    {
+      "id": "8299707",
+      "label": "SALAS DE ACESSO À INTERNET"
+    },
+    {
+      "id": "8299799",
+      "label": "OUTRAS ATIVIDADES DE SERVIÇOS PRESTADOS PRINCIPALMENTE ÀS EMPRESAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "9603304",
+      "label": "SERVIÇOS DE FUNERÁRIAS"
+    },
+    {
+      "id": "8412400",
+      "label": "REGULAÇÃO DAS ATIVIDADES DE SAÚDE, EDUCAÇÃO, SERVIÇOS CULTURAIS E OUTROS SERVIÇOS SOCIAIS"
+    },
+    {
+      "id": "8413200",
+      "label": "REGULAÇÃO DAS ATIVIDADES ECONÔMICAS"
+    },
+    {
+      "id": "8421300",
+      "label": "RELAÇÕES EXTERIORES"
+    },
+    {
+      "id": "8422100",
+      "label": "DEFESA"
+    },
+    {
+      "id": "8630599",
+      "label": "ATIVIDADES DE ATENÇÃO AMBULATORIAL NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "8423000",
+      "label": "JUSTIÇA"
+    },
+    {
+      "id": "8424800",
+      "label": "SEGURANÇA E ORDEM PÚBLICA"
+    },
+    {
+      "id": "8425600",
+      "label": "DEFESA CIVIL"
+    },
+    {
+      "id": "8430200",
+      "label": "SEGURIDADE SOCIAL OBRIGATÓRIA"
+    },
+    {
+      "id": "8511200",
+      "label": "EDUCAÇÃO INFANTIL - CRECHE"
+    },
+    {
+      "id": "9603305",
+      "label": "SERVIÇOS DE SOMATOCONSERVAÇÃO"
+    },
+    {
+      "id": "8513900",
+      "label": "ENSINO FUNDAMENTAL"
+    },
+    {
+      "id": "8599603",
+      "label": "TREINAMENTO EM INFORMÁTICA"
+    },
+    {
+      "id": "8599604",
+      "label": "TREINAMENTO EM DESENVOLVIMENTO PROFISSIONAL E GERENCIAL"
+    },
+    {
+      "id": "8599605",
+      "label": "CURSOS PREPARATÓRIOS PARA CONCURSOS"
+    },
+    {
+      "id": "8520100",
+      "label": "ENSINO MÉDIO"
+    },
+    {
+      "id": "8531700",
+      "label": "EDUCAÇÃO SUPERIOR - GRADUAÇÃO"
+    },
+    {
+      "id": "8532500",
+      "label": "EDUCAÇÃO SUPERIOR - GRADUAÇÃO E PÓS GRADUAÇÃO"
+    },
+    {
+      "id": "8640201",
+      "label": "LABORATÓRIOS DE ANATOMIA PATOLÓGICA E CITOLÓGICA"
+    },
+    {
+      "id": "8533300",
+      "label": "EDUCAÇÃO SUPERIOR - PÓS GRADUAÇÃO E EXTENSÃO"
+    },
+    {
+      "id": "8541400",
+      "label": "EDUCAÇÃO PROFISSIONAL DE NÍVEL TÉCNICO"
+    },
+    {
+      "id": "8542200",
+      "label": "EDUCAÇÃO PROFISSIONAL DE NÍVEL TECNOLÓGICO"
+    },
+    {
+      "id": "8550301",
+      "label": "ADMINISTRAÇÃO DE CAIXAS ESCOLARES"
+    },
+    {
+      "id": "8550302",
+      "label": "ATIVIDADES DE APOIO À EDUCAÇÃO, EXCETO CAIXAS ESCOLARES"
+    },
+    {
+      "id": "9603399",
+      "label": "ATIVIDADES FUNERÁRIAS E SERVIÇOS RELACIONADOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "8592902",
+      "label": "ENSINO DE ARTES CÊNICAS, EXCETO DANÇA"
+    },
+    {
+      "id": "8592903",
+      "label": "ENSINO DE MÚSICA"
+    },
+    {
+      "id": "8592999",
+      "label": "ENSINO DE ARTE E CULTURA NÃO ESPECIFICADO ANTERIORMENTE"
+    },
+    {
+      "id": "8593700",
+      "label": "ENSINO DE IDIOMAS"
+    },
+    {
+      "id": "8599699",
+      "label": "OUTRAS ATIVIDADES DE ENSINO NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "8640202",
+      "label": "LABORATÓRIOS CLÍNICOS"
+    },
+    {
+      "id": "8640203",
+      "label": "SERVIÇOS DE DIÁLISE E NEFROLOGIA"
+    },
+    {
+      "id": "8640204",
+      "label": "SERVIÇOS DE TOMOGRAFIA"
+    },
+    {
+      "id": "8610101",
+      "label": "ATIVIDADES DE ATENDIMENTO HOSPITALAR, EXCETO PRONTO SOCORRO E UNIDADES PARA ATENDIMENTO A URGÊNCIAS"
+    },
+    {
+      "id": "8610102",
+      "label": "ATIVIDADES DE ATENDIMENTO EM PRONTO SOCORRO E UNIDADES HOSPITALARES PARA ATENDIMENTO A URGÊNCIAS"
+    },
+    {
+      "id": "8621601",
+      "label": "UTI MÓVEL"
+    },
+    {
+      "id": "8621602",
+      "label": "SERVIÇOS MÓVEIS DE ATENDIMENTO A URGÊNCIAS, EXCETO POR UTI MÓVEL"
+    },
+    {
+      "id": "8622400",
+      "label": "SERVIÇOS DE REMOÇÃO DE PACIENTES, EXCETO OS SERVIÇOS MÓVEIS DE ATENDIMENTO A URGÊNCIAS"
+    },
+    {
+      "id": "9609202",
+      "label": "AGÊNCIAS MATRIMONIAIS"
+    },
+    {
+      "id": "8630501",
+      "label": "ATIVIDADE MÉDICA AMBULATORIAL COM RECURSOS PARA REALIZAÇÃO DE PROCEDIMENTOS CIRÚRGICOS"
+    },
+    {
+      "id": "8630502",
+      "label": "ATIVIDADE MÉDICA AMBULATORIAL COM RECURSOS PARA REALIZAÇÃO DE EXAMES COMPLEMENTARES"
+    },
+    {
+      "id": "8630503",
+      "label": "ATIVIDADE MÉDICA AMBULATORIAL RESTRITA A CONSULTAS"
+    },
+    {
+      "id": "8650004",
+      "label": "ATIVIDADES DE FISIOTERAPIA"
+    },
+    {
+      "id": "8630504",
+      "label": "ATIVIDADE ODONTOLÓGICA"
+    },
+    {
+      "id": "8630506",
+      "label": "SERVIÇOS DE VACINAÇÃO E IMUNIZAÇÃO HUMANA"
+    },
+    {
+      "id": "8630507",
+      "label": "ATIVIDADES DE REPRODUÇÃO HUMANA ASSISTIDA"
+    },
+    {
+      "id": "8640205",
+      "label": "SERVIÇOS DE DIAGNÓSTICO POR IMAGEM COM USO DE RADIAÇÃO IONIZANTE, EXCETO TOMOGRAFIA"
+    },
+    {
+      "id": "8640206",
+      "label": "SERVIÇOS DE RESSONÂNCIA MAGNÉTICA"
+    },
+    {
+      "id": "8640207",
+      "label": "SERVIÇOS DE DIAGNÓSTICO POR IMAGEM SEM USO DE RADIAÇÃO IONIZANTE, EXCETO RESSONÂNCIA MAGNÉTICA"
+    },
+    {
+      "id": "8640208",
+      "label": "SERVIÇOS DE DIAGNÓSTICO POR REGISTRO GRÁFICO - ECG, EEG E OUTROS EXAMES ANÁLOGOS"
+    },
+    {
+      "id": "8640209",
+      "label": "SERVIÇOS DE DIAGNÓSTICO POR MÉTODOS ÓPTICOS - ENDOSCOPIA E OUTROS EXAMES ANÁLOGOS"
+    },
+    {
+      "id": "8640210",
+      "label": "SERVIÇOS DE QUIMIOTERAPIA"
+    },
+    {
+      "id": "8640211",
+      "label": "SERVIÇOS DE RADIOTERAPIA"
+    },
+    {
+      "id": "8640212",
+      "label": "SERVIÇOS DE HEMOTERAPIA"
+    },
+    {
+      "id": "8640213",
+      "label": "SERVIÇOS DE LITOTRIPCIA"
+    },
+    {
+      "id": "8640214",
+      "label": "SERVIÇOS DE BANCOS DE CÉLULAS E TECIDOS HUMANOS"
+    },
+    {
+      "id": "8712300",
+      "label": "ATIVIDADES DE FORNECIMENTO DE INFRAESTRUTURA DE APOIO E ASSISTÊNCIA A PACIENTE NO DOMICÍLIO"
+    },
+    {
+      "id": "8640299",
+      "label": "ATIVIDADES DE SERVIÇOS DE COMPLEMENTAÇÃO DIAGNÓSTICA E TERAPÊUTICA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "8650001",
+      "label": "ATIVIDADES DE ENFERMAGEM"
+    },
+    {
+      "id": "8650002",
+      "label": "ATIVIDADES DE PROFISSIONAIS DA NUTRIÇÃO"
+    },
+    {
+      "id": "8650003",
+      "label": "ATIVIDADES DE PSICOLOGIA E PSICANÁLISE"
+    },
+    {
+      "id": "8650007",
+      "label": "ATIVIDADES DE TERAPIA DE NUTRIÇÃO ENTERAL E PARENTERAL"
+    },
+    {
+      "id": "8650099",
+      "label": "ATIVIDADES DE PROFISSIONAIS DA ÁREA DE SAÚDE NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "8660700",
+      "label": "ATIVIDADES DE APOIO À GESTÃO DE SAÚDE"
+    },
+    {
+      "id": "8690901",
+      "label": "ATIVIDADES DE PRÁTICAS INTEGRATIVAS E COMPLEMENTARES EM SAÚDE HUMANA"
+    },
+    {
+      "id": "8690902",
+      "label": "ATIVIDADES DE BANCO DE LEITE HUMANO"
+    },
+    {
+      "id": "8690903",
+      "label": "ATIVIDADES DE ACUPUNTURA"
+    },
+    {
+      "id": "8690904",
+      "label": "ATIVIDADES DE PODOLOGIA"
+    },
+    {
+      "id": "9529103",
+      "label": "REPARAÇÃO DE RELÓGIOS"
+    },
+    {
+      "id": "8711501",
+      "label": "CLÍNICAS E RESIDÊNCIAS GERIÁTRICAS"
+    },
+    {
+      "id": "8711502",
+      "label": "INSTITUIÇÕES DE LONGA PERMANÊNCIA PARA IDOSOS"
+    },
+    {
+      "id": "8711503",
+      "label": "ATIVIDADES DE ASSISTÊNCIA A DEFICIENTES FÍSICOS, IMUNODEPRIMIDOS E CONVALESCENTES"
+    },
+    {
+      "id": "8711504",
+      "label": "CENTROS DE APOIO A PACIENTES COM CÂNCER E COM AIDS"
+    },
+    {
+      "id": "8711505",
+      "label": "CONDOMÍNIOS RESIDENCIAIS PARA IDOSOS"
+    },
+    {
+      "id": "9002702",
+      "label": "RESTAURAÇÃO DE OBRAS DE ARTE"
+    },
+    {
+      "id": "8720401",
+      "label": "ATIVIDADES DE CENTROS DE ASSISTÊNCIA PSICOSSOCIAL"
+    },
+    {
+      "id": "8730101",
+      "label": "ORFANATOS"
+    },
+    {
+      "id": "8730102",
+      "label": "ALBERGUES ASSISTENCIAIS"
+    },
+    {
+      "id": "8730199",
+      "label": "ATIVIDADES DE ASSISTÊNCIA SOCIAL PRESTADAS EM RESIDÊNCIAS COLETIVAS E PARTICULARES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "9001901",
+      "label": "PRODUÇÃO TEATRAL"
+    },
+    {
+      "id": "9001902",
+      "label": "PRODUÇÃO MUSICAL"
+    },
+    {
+      "id": "9001903",
+      "label": "PRODUÇÃO DE ESPETÁCULOS DE DANÇA"
+    },
+    {
+      "id": "9001904",
+      "label": "PRODUÇÃO DE ESPETÁCULOS CIRCENSES, DE MARIONETES E SIMILARES"
+    },
+    {
+      "id": "9001905",
+      "label": "PRODUÇÃO DE ESPETÁCULOS DE RODEIOS, VAQUEJADAS E SIMILARES"
+    },
+    {
+      "id": "9001906",
+      "label": "ATIVIDADES DE SONORIZAÇÃO E DE ILUMINAÇÃO"
+    },
+    {
+      "id": "9001999",
+      "label": "ARTES CÊNICAS, ESPETÁCULOS E ATIVIDADES COMPLEMENTARES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "9002701",
+      "label": "ATIVIDADES DE ARTISTAS PLÁSTICOS, JORNALISTAS INDEPENDENTES E ESCRITORES"
+    },
+    {
+      "id": "9003500",
+      "label": "GESTÃO DE ESPAÇOS PARA ARTES CÊNICAS, ESPETÁCULOS E OUTRAS ATIVIDADES ARTÍSTICAS"
+    },
+    {
+      "id": "9101500",
+      "label": "ATIVIDADES DE BIBLIOTECAS E ARQUIVOS"
+    },
+    {
+      "id": "9102301",
+      "label": "ATIVIDADES DE MUSEUS E DE EXPLORAÇÃO DE LUGARES E PRÉDIOS HISTÓRICOS E ATRAÇÕES SIMILARES"
+    },
+    {
+      "id": "9102302",
+      "label": "RESTAURAÇÃO E CONSERVAÇÃO DE LUGARES E PRÉDIOS HISTÓRICOS"
+    },
+    {
+      "id": "9103100",
+      "label": "ATIVIDADES DE JARDINS BOTÂNICOS, ZOOLÓGICOS, PARQUES NACIONAIS, RESERVAS ECOLÓGICAS E ÁREAS DE PROTEÇÃO AMBIENTAL"
+    },
+    {
+      "id": "9200301",
+      "label": "CASAS DE BINGO"
+    },
+    {
+      "id": "9200302",
+      "label": "EXPLORAÇÃO DE APOSTAS EM CORRIDAS DE CAVALOS"
+    },
+    {
+      "id": "9200399",
+      "label": "EXPLORAÇÃO DE JOGOS DE AZAR E APOSTAS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "9311500",
+      "label": "GESTÃO DE INSTALAÇÕES DE ESPORTES"
+    },
+    {
+      "id": "9312300",
+      "label": "CLUBES SOCIAIS, ESPORTIVOS E SIMILARES"
+    },
+    {
+      "id": "9313100",
+      "label": "ATIVIDADES DE CONDICIONAMENTO FÍSICO"
+    },
+    {
+      "id": "9319101",
+      "label": "PRODUÇÃO E PROMOÇÃO DE EVENTOS ESPORTIVOS"
+    },
+    {
+      "id": "9319199",
+      "label": "OUTRAS ATIVIDADES ESPORTIVAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "9321200",
+      "label": "PARQUES DE DIVERSÃO E PARQUES TEMÁTICOS"
+    },
+    {
+      "id": "9329801",
+      "label": "DISCOTECAS, DANCETERIAS, SALÕES DE DANÇA E SIMILARES"
+    },
+    {
+      "id": "9329802",
+      "label": "EXPLORAÇÃO DE BOLICHES"
+    },
+    {
+      "id": "9329803",
+      "label": "EXPLORAÇÃO DE JOGOS DE SINUCA, BILHAR E SIMILARES"
+    },
+    {
+      "id": "9329804",
+      "label": "EXPLORAÇÃO DE JOGOS ELETRÔNICOS RECREATIVOS"
+    },
+    {
+      "id": "9609204",
+      "label": "EXPLORAÇÃO DE MÁQUINAS DE SERVIÇOS PESSOAIS ACIONADAS POR MOEDA"
+    },
+    {
+      "id": "9329899",
+      "label": "OUTRAS ATIVIDADES DE RECREAÇÃO E LAZER NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "9411100",
+      "label": "ATIVIDADES DE ORGANIZAÇÕES ASSOCIATIVAS PATRONAIS E EMPRESARIAIS"
+    },
+    {
+      "id": "9412001",
+      "label": "ATIVIDADES DE FISCALIZAÇÃO PROFISSIONAL"
+    },
+    {
+      "id": "9412099",
+      "label": "OUTRAS ATIVIDADES ASSOCIATIVAS PROFISSIONAIS"
+    },
+    {
+      "id": "9420100",
+      "label": "ATIVIDADES DE ORGANIZAÇÕES SINDICAIS"
+    },
+    {
+      "id": "9430800",
+      "label": "ATIVIDADES DE ASSOCIAÇÕES DE DEFESA DE DIREITOS SOCIAIS"
+    },
+    {
+      "id": "9491000",
+      "label": "ATIVIDADES DE ORGANIZAÇÕES RELIGIOSAS OU FILOSÓFICAS"
+    },
+    {
+      "id": "9492800",
+      "label": "ATIVIDADES DE ORGANIZAÇÕES POLÍTICAS"
+    },
+    {
+      "id": "9602502",
+      "label": "ATIVIDADES DE ESTÉTICA E OUTROS SERVIÇOS DE CUIDADOS COM A BELEZA"
+    },
+    {
+      "id": "9493600",
+      "label": "ATIVIDADES DE ORGANIZAÇÕES ASSOCIATIVAS LIGADAS À CULTURA E À ARTE"
+    },
+    {
+      "id": "9609205",
+      "label": "ATIVIDADES DE SAUNA E BANHOS"
+    },
+    {
+      "id": "9609206",
+      "label": "SERVIÇOS DE TATUAGEM E COLOCAÇÃO DE PIERCING"
+    },
+    {
+      "id": "9511800",
+      "label": "REPARAÇÃO E MANUTENÇÃO DE COMPUTADORES E DE EQUIPAMENTOS PERIFÉRICOS"
+    },
+    {
+      "id": "9512600",
+      "label": "REPARAÇÃO E MANUTENÇÃO DE EQUIPAMENTOS DE COMUNICAÇÃO"
+    },
+    {
+      "id": "9521500",
+      "label": "REPARAÇÃO E MANUTENÇÃO DE EQUIPAMENTOS ELETROELETRÔNICOS DE USO PESSOAL E DOMÉSTICO"
+    },
+    {
+      "id": "9529101",
+      "label": "REPARAÇÃO DE CALÇADOS, DE BOLSAS E ARTIGOS DE VIAGEM"
+    },
+    {
+      "id": "9529102",
+      "label": "CHAVEIROS"
+    },
+    {
+      "id": "9529104",
+      "label": "REPARAÇÃO DE BICICLETAS, TRICICLOS E OUTROS VEÍCULOS NÃO MOTORIZADOS"
+    },
+    {
+      "id": "9529105",
+      "label": "REPARAÇÃO DE ARTIGOS DO MOBILIÁRIO"
+    },
+    {
+      "id": "9529106",
+      "label": "REPARAÇÃO DE JÓIAS"
+    },
+    {
+      "id": "9529199",
+      "label": "REPARAÇÃO E MANUTENÇÃO DE OUTROS OBJETOS E EQUIPAMENTOS PESSOAIS E DOMÉSTICOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "9601701",
+      "label": "LAVANDERIAS"
+    },
+    {
+      "id": "9601702",
+      "label": "TINTURARIAS"
+    },
+    {
+      "id": "9601703",
+      "label": "TOALHEIROS"
+    },
+    {
+      "id": "9602501",
+      "label": "CABELEIREIROS, MANICURE E PEDICURE"
+    },
+    {
+      "id": "9603301",
+      "label": "GESTÃO E MANUTENÇÃO DE CEMITÉRIOS"
+    },
+    {
+      "id": "9609207",
+      "label": "ALOJAMENTO DE ANIMAIS DOMÉSTICOS"
+    },
+    {
+      "id": "9609208",
+      "label": "HIGIENE E EMBELEZAMENTO DE ANIMAIS DOMÉSTICOS"
+    },
+    {
+      "id": "9609299",
+      "label": "OUTRAS ATIVIDADES DE SERVIÇOS PESSOAIS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "9700500",
+      "label": "SERVIÇOS DOMÉSTICOS"
+    },
+    {
+      "id": "9900800",
+      "label": "ORGANISMOS INTERNACIONAIS E OUTRAS INSTITUIÇÕES EXTRATERRITORIAIS"
+    },
+    {
+      "id": "3104700",
+      "label": "FABRICAÇÃO DE COLCHÕES"
+    },
+    {
+      "id": "4641901",
+      "label": "COMÉRCIO ATACADISTA DE TECIDOS"
+    },
+    {
+      "id": "7490199",
+      "label": "OUTRAS ATIVIDADES PROFISSIONAIS, CIENTÍFICAS E TÉCNICAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "1921700",
+      "label": "FABRICAÇÃO DE PRODUTOS DO REFINO DE PETRÓLEO"
+    },
+    {
+      "id": "1931400",
+      "label": "FABRICAÇÃO DE ÁLCOOL"
+    },
+    {
+      "id": "2014200",
+      "label": "FABRICAÇÃO DE GASES INDUSTRIAIS"
+    },
+    {
+      "id": "2073800",
+      "label": "FABRICAÇÃO DE IMPERMEABILIZANTES, SOLVENTES E PRODUTOS AFINS"
+    },
+    {
+      "id": "2123800",
+      "label": "FABRICAÇÃO DE PREPARAÇÕES FARMACÊUTICAS"
+    },
+    {
+      "id": "2421100",
+      "label": "PRODUÇÃO DE SEMI ACABADOS DE AÇO"
+    },
+    {
+      "id": "3600601",
+      "label": "CAPTAÇÃO, TRATAMENTO E DISTRIBUIÇÃO DE ÁGUA"
+    },
+    {
+      "id": "1096100",
+      "label": "FABRICAÇÃO DE ALIMENTOS E PRATOS PRONTOS"
+    },
+    {
+      "id": "3329599",
+      "label": "INSTALAÇÃO DE OUTROS EQUIPAMENTOS NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "7500100",
+      "label": "ATIVIDADES VETERINÁRIAS"
+    },
+    {
+      "id": "8650005",
+      "label": "ATIVIDADES DE TERAPIA OCUPACIONAL"
+    },
+    {
+      "id": "8720499",
+      "label": "ATIVIDADES DE ASSISTÊNCIA PSICOSSOCIAL E À SAÚDE A PORTADORES DE DISTÚRBIOS PSÍQUICOS, DEFICIÊNCIA MENTAL E DEPENDÊNCIA QUÍMICA E GRUPOS SIMILARES NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "1610205",
+      "label": "SERVIÇO DE TRATAMENTO DE MADEIRA REALIZADO SOB CONTRATO"
+    },
+    {
+      "id": "5611205",
+      "label": "BARES E OUTROS ESTABELECIMENTOS ESPECIALIZADOS EM SERVIR BEBIDAS, COM ENTRETENIMENTO "
+    },
+    {
+      "id": "7490103",
+      "label": "SERVIÇOS DE AGRONOMIA E DE CONSULTORIA ÀS ATIVIDADES AGRÍCOLAS E PECUÁRIAS"
+    },
+    {
+      "id": "8219999",
+      "label": "PREPARAÇÃO DE DOCUMENTOS E SERVIÇOS ESPECIALIZADOS DE APOIO ADMINISTRATIVO NÃO ESPECIFICADOS ANTERIORMENTE"
+    },
+    {
+      "id": "6319400",
+      "label": "PORTAIS, PROVEDORES DE CONTEÚDO E OUTROS SERVIÇOS DE INFORMAÇÃO NA INTERNET"
+    },
+    {
+      "id": "9499500",
+      "label": "ATIVIDADES ASSOCIATIVAS NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "4713005",
+      "label": "LOJAS FRANCAS (DUTY FREE) DE AEROPORTOS, PORTOS E EM FRONTEIRAS TERRESTRES"
+    },
+    {
+      "id": "8411600",
+      "label": "ADMINISTRAÇÃO PÚBLICA EM GERAL"
+    },
+    {
+      "id": "8690999",
+      "label": "OUTRAS ATIVIDADES DE ATENÇÃO À SAÚDE HUMANA NÃO ESPECIFICADAS ANTERIORMENTE"
+    },
+    {
+      "id": "2391502",
+      "label": "APARELHAMENTO DE PEDRAS PARA CONSTRUÇÃO, EXCETO ASSOCIADO À EXTRAÇÃO"
+    },
+    {
+      "id": "2391503",
+      "label": "APARELHAMENTO DE PLACAS E EXECUÇÃO DE TRABALHOS EM MÁRMORE, GRANITO, ARDÓSIA E OUTRAS PEDRAS"
+    },
+    {
+      "id": "6511102",
+      "label": "PLANOS DE AUXÍLIO FUNERAL"
+    },
+    {
+      "id": "4541206",
+      "label": "COMÉRCIO A VAREJO DE PEÇAS E ACESSÓRIOS NOVOS PARA MOTOCICLETAS E MOTONETAS"
+    },
+    {
+      "id": "4541207",
+      "label": "COMÉRCIO A VAREJO DE PEÇAS E ACESSÓRIOS USADOS PARA MOTOCICLETAS E MOTONETAS"
+    },
+    {
+      "id": "6911702",
+      "label": "ATIVIDADES AUXILIARES DA JUSTIÇA"
+    },
+    {
+      "id": "6920602",
+      "label": "ATIVIDADES DE CONSULTORIA E AUDITORIA CONTÁBIL E TRIBUTÁRIA"
+    },
+    {
+      "id": "8800600",
+      "label": "SERVIÇOS DE ASSISTÊNCIA SOCIAL SEM ALOJAMENTO"
+    },
+    {
+      "id": "4713004",
+      "label": "LOJAS DE DEPARTAMENTOS OU MAGAZINES, EXCETO LOJAS FRANCAS (DUTY FREE)"
+    }
+  ]
+}
