@@ -3,7 +3,8 @@ const router = express.Router();
 const ctrl = require('../controllers/departments.controller');
 const { requireAuth, requireRole } = require('../middleware/auth');
 
-router.use(requireAuth);
+// Dados internos do escritório: só a equipe acessa.
+router.use(requireAuth, requireRole('ADMIN', 'ACCOUNTANT'));
 
 router.get('/', ctrl.listDepartments);
 router.post('/', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createDepartment);

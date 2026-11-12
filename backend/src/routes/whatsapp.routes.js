@@ -1,14 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/whatsapp.controller');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireRole } = require('../middleware/auth');
 
 // Endpoints públicos exigidos pela Meta (sem autenticação de usuário).
 router.get('/webhook', ctrl.verifyWebhook);
 router.post('/webhook', ctrl.receiveWebhook);
 router.post('/evolution/webhook', ctrl.receiveEvolutionWebhook);
 
-router.use(requireAuth);
+// Caixa de entrada é da equipe do escritório; usuários do portal não acessam.
+router.use(requireAuth, requireRole('ADMIN', 'ACCOUNTANT'));
 
 router.get('/status', ctrl.getStatus);
 router.post('/evolution/connect', ctrl.connectEvolution);

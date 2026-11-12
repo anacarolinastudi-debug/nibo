@@ -66,32 +66,9 @@ async function login(req, res) {
   const data = loginSchema.parse(req.body);
   const normalizedEmail = data.email.trim().toLowerCase();
 
-  let user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-
-  if (!user && normalizedEmail === 'admin@exemplo.com' && data.password === 'senha123') {
-    const passwordHash = await bcrypt.hash('senha123', 10);
-    const firm = await prisma.accountingFirm.upsert({
-      where: { cnpj: '11222333000144' },
-      update: {},
-      create: {
-        name: 'Contábil Exemplo Ltda',
-        cnpj: '11222333000144',
-        email: 'contato@contabilexemplo.com.br',
-      },
-    });
-
-    user = await prisma.user.create({
-      data: {
-        name: 'Administrador teste',
-        email: 'admin@exemplo.com',
-        passwordHash,
-        role: 'ADMIN',
-        accountingFirmId: firm.id,
-      },
-    });
-
-    await seedCatalogForFirm(firm.id);
-  }
+  // O antigo login de demonstração (criado automaticamente com senha fixa) foi
+  // removido: em produção ele permitia que qualquer pessoa virasse administradora.
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
   if (!user || !user.active) {
     return res.status(401).json({ error: 'E-mail ou senha incorretos.' });

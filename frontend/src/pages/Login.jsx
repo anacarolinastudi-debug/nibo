@@ -150,10 +150,6 @@ export default function Login() {
                 {!loading && <ArrowRight size={17} strokeWidth={1.9} />}
               </button>
 
-              <div className="mt-5 rounded-lg border border-ink/10 bg-white/70 px-3 py-3 text-center text-xs leading-5 text-ink/50">
-                Dados de teste: admin@exemplo.com / senha123
-              </div>
-
               <p className="mt-5 text-center text-xs text-ink/45">
                 Ainda não tem conta?{' '}
                 <Link to="/registrar" className="font-medium text-[#003f82] hover:underline">

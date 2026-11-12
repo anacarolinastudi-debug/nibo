@@ -1,5 +1,13 @@
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const { isValidWebhookToken, buildWebhookUrl } = require('../utils/webhookToken');
+
+// Só aceita webhooks com o token do escritório na URL (gerado pelo sistema).
+function authorizedWebhookFirm(req) {
+  const firmId = typeof req.query.firmId === 'string' ? req.query.firmId : '';
+  if (!isValidWebhookToken(firmId, req.query.token)) return null;
+  return firmId;
+}
 
 function firmWhere(req) {
   return { accountingFirmId: req.user.accountingFirmId };
@@ -118,8 +126,8 @@ function getStatus(req, res) {
     missing: evolutionConfigured ? [] : evolutionMissing,
     metaMissing: [...sendMissing, ...webhookMissing],
     apiVersion: process.env.WHATSAPP_API_VERSION || 'v21.0',
-    webhookUrl: `${apiBase}/api/whatsapp/webhook?firmId=${req.user.accountingFirmId}`,
-    evolutionWebhookUrl: `${apiBase}/api/whatsapp/evolution/webhook?firmId=${req.user.accountingFirmId}`,
+    webhookUrl: buildWebhookUrl(apiBase, '/api/whatsapp/webhook', req.user.accountingFirmId),
+    evolutionWebhookUrl: buildWebhookUrl(apiBase, '/api/whatsapp/evolution/webhook', req.user.accountingFirmId),
   });
 }
 
@@ -159,16 +167,15 @@ async function findOrCreateConversation(accountingFirmId, phoneNumber, contactNa
 // Recebe as notificações de mensagens enviadas pela Meta. O formato exato
 // segue o payload do WhatsApp Cloud API (entry[].changes[].value.messages[]).
 async function receiveWebhook(req, res) {
+  const accountingFirmId = authorizedWebhookFirm(req);
+  if (!accountingFirmId) return res.sendStatus(403);
   res.sendStatus(200); // a Meta exige resposta rápida; processamos depois
 
   try {
-    const fallbackFirm = await prisma.accountingFirm.findFirst({ select: { id: true }, orderBy: { createdAt: 'asc' } });
     const entries = req.body?.entry || [];
     for (const entry of entries) {
       for (const change of entry.changes || []) {
         const value = change.value || {};
-        const accountingFirmId = value.metadata?.accountingFirmId || req.query.firmId || fallbackFirm?.id;
-        if (!accountingFirmId) continue;
 
         for (const statusUpdate of value.statuses || []) {
           const nextStatus = {
@@ -180,7 +187,7 @@ async function receiveWebhook(req, res) {
 
           if (!nextStatus || !statusUpdate.id) continue;
           await prisma.whatsAppMessage.updateMany({
-            where: { waMessageId: statusUpdate.id },
+            where: { waMessageId: statusUpdate.id, conversation: { accountingFirmId } },
             data: { status: nextStatus },
           });
         }
@@ -216,12 +223,14 @@ async function receiveWebhook(req, res) {
 }
 
 async function receiveEvolutionWebhook(req, res) {
+  const accountingFirmId = authorizedWebhookFirm(req);
+  if (!accountingFirmId) {
+    console.warn('Webhook da Evolution recusado: URL sem token válido. Clique em "Conectar" no Relacionamento para sincronizar a URL nova.');
+    return res.sendStatus(403);
+  }
   res.sendStatus(200);
 
   try {
-    const fallbackFirm = await prisma.accountingFirm.findFirst({ select: { id: true }, orderBy: { createdAt: 'asc' } });
-    const accountingFirmId = req.query.firmId || fallbackFirm?.id;
-    if (!accountingFirmId) return;
 
     const payload = req.body || {};
     const event = payload.event || payload.type;
@@ -246,7 +255,7 @@ async function receiveEvolutionWebhook(req, res) {
         ERROR: 'FALHA',
       }[status];
       if (nextStatus && waMessageId) {
-        await prisma.whatsAppMessage.updateMany({ where: { waMessageId }, data: { status: nextStatus } });
+        await prisma.whatsAppMessage.updateMany({ where: { waMessageId, conversation: { accountingFirmId } }, data: { status: nextStatus } });
       }
       return;
     }
@@ -353,7 +362,7 @@ async function testEvolutionConnection(req, res) {
 async function connectEvolution(req, res) {
   if (!isEvolutionConfigured()) return res.status(400).json({ error: 'Evolution API ainda não configurada.' });
   const apiBase = getApiBase(req);
-  const webhookUrl = `${apiBase}/api/whatsapp/evolution/webhook?firmId=${req.user.accountingFirmId}`;
+  const webhookUrl = buildWebhookUrl(apiBase, '/api/whatsapp/evolution/webhook', req.user.accountingFirmId);
 
   const webhookResult = await setEvolutionWebhook(webhookUrl).catch((error) => ({ error: error.message }));
   if (webhookResult?.error) {

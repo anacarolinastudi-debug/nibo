@@ -23,6 +23,8 @@ const errorHandler = require('./middleware/errorHandler');
 const prisma = require('./lib/prisma');
 
 const app = express();
+// O Render fica atrás de um proxy: usa o IP real do visitante (para o limite de login).
+app.set('trust proxy', 1);
 
 app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
 app.use('/api/content', express.json({ limit: '2mb' }));

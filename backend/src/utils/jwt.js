@@ -1,9 +1,18 @@
 const jwt = require('jsonwebtoken');
 
-const fallbackSecret = 'contabil-gestao-fallback-secret';
+// Chave reserva só para desenvolvimento local. Em produção (Render ou
+// NODE_ENV=production) a ausência de JWT_SECRET impede o servidor de emitir
+// ou aceitar tokens, em vez de usar uma chave conhecida por qualquer pessoa.
+const devFallbackSecret = 'contabil-gestao-dev-only-secret';
+
+function isProduction() {
+  return process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
+}
 
 function getJwtSecret() {
-  return process.env.JWT_SECRET || fallbackSecret;
+  if (process.env.JWT_SECRET) return process.env.JWT_SECRET;
+  if (isProduction()) throw new Error('JWT_SECRET não configurada neste ambiente.');
+  return devFallbackSecret;
 }
 
 function generateToken(payload) {
@@ -16,4 +25,4 @@ function verifyToken(token) {
   return jwt.verify(token, getJwtSecret());
 }
 
-module.exports = { generateToken, verifyToken };
+module.exports = { generateToken, verifyToken, getJwtSecret, isProduction };

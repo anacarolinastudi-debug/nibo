@@ -50,6 +50,9 @@ const contactSchema = z.object({
 });
 
 const firmWhere = (req) => ({ accountingFirmId: req.user.accountingFirmId });
+const isStaff = (req) => ['ADMIN', 'ACCOUNTANT'].includes(req.user.role);
+// Usuário do portal só enxerga o próprio cadastro.
+const clientScope = (req) => (isStaff(req) ? firmWhere(req) : { ...firmWhere(req), id: req.user.clientId || '__none__' });
 
 function decryptText(value) {
   if (!value) return '';
@@ -106,7 +109,7 @@ function prepareClientData(data, { existing } = {}) {
 
 async function list(req, res) {
   const clients = await prisma.client.findMany({
-    where: firmWhere(req),
+    where: clientScope(req),
     orderBy: { name: 'asc' },
     include: { _count: { select: { demands: true, contacts: true, obligationLinks: true } } },
   });
@@ -114,9 +117,10 @@ async function list(req, res) {
 }
 
 async function getById(req, res) {
+  if (!isStaff(req) && req.params.id !== req.user.clientId) return res.status(404).json({ error: 'Cliente não encontrado.' });
   const client = await prisma.client.findFirst({ where: { id: req.params.id, ...firmWhere(req) }, include: { contacts: true } });
   if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
-  res.json(serializeClient(client, { includeGovbrAccess: true }));
+  res.json(serializeClient(client, { includeGovbrAccess: isStaff(req) }));
 }
 
 async function create(req, res) {
@@ -180,7 +184,11 @@ async function clearForSetup(req, res) {
 
 async function listContacts(req, res) {
   const contacts = await prisma.clientContact.findMany({
-    where: { ...firmWhere(req), ...(req.query.clientId ? { clientId: req.query.clientId } : {}) },
+    where: {
+      client: firmWhere(req),
+      ...(req.query.clientId ? { clientId: req.query.clientId } : {}),
+      ...(isStaff(req) ? {} : { clientId: req.user.clientId || '__none__' }),
+    },
     orderBy: [{ client: { name: 'asc' } }, { name: 'asc' }],
     include: { client: { select: { id: true, name: true, cnpj: true } } },
   });

@@ -415,3 +415,14 @@ Atualização registrada em 12/11/2026:
 - O envio por e-mail lê o anexo do armazenamento; se o arquivo não existir mais, o sistema avisa em vez de enviar sem anexo.
 - Variáveis no Render: `SUPABASE_URL` (`https://llznbomfpioquprfvmuz.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` (chave secreta do projeto, nunca registrar aqui) e `SUPABASE_STORAGE_BUCKET` (`arquivos`). Sem elas, o backend grava em `backend/private-files/` (só para desenvolvimento local).
 - Verificado em 12/11/2026: o Supabase (plano gratuito) não mantém cópias de segurança do banco. O backup local diário (seção em `docs/BACKUP-E-SETUP.md`) está ativo, com cópias completas e verificadas diariamente. A chave de leitura dessas cópias fica apenas na conta Windows deste computador.
+
+## 13. Correções de segurança
+
+Atualização registrada em 12/11/2026:
+
+- Usuários do portal do cliente passam a ver só o próprio cadastro e nunca recebem login/senha gov.br. A equipe (ADMIN/ACCOUNTANT) continua vendo.
+- Relacionamento (WhatsApp), Radar e-CAC, Departamentos, modelos, processos e transferência de responsabilidades ficam restritos à equipe do escritório.
+- Webhooks do WhatsApp (Meta e Evolution) exigem um token por escritório na URL (`?firmId=...&token=...`). Webhooks antigos sem token são recusados: depois do deploy, clicar em **Conectar** no Relacionamento para a Evolution receber a URL nova. Para a Meta, atualizar a URL de callback no painel da Meta com a URL exibida na tela.
+- Removido o login de demonstração criado automaticamente (`admin@exemplo.com` / `senha123`) e o aviso com esses dados na tela de login. Se esse usuário já existir no banco, desativá-lo ou trocar a senha em Configurações > Equipe.
+- Em produção, o servidor não usa mais chave reserva para os tokens de login: sem `JWT_SECRET` no Render, o login fica indisponível em vez de inseguro.
+- Login, cadastro e "Esqueci minha senha" limitados a 8 tentativas por e-mail e 30 por IP a cada 15 minutos.
