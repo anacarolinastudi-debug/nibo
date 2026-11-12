@@ -405,3 +405,13 @@ Nunca enviar ao GitHub ou registrar neste documento:
 - tokens de acesso do GitHub, Vercel ou Render.
 
 As senhas administrativas devem permanecer nos gerenciadores oficiais de cada servico ou em um gerenciador de senhas confiavel.
+
+## 12. Armazenamento de arquivos e backup
+
+Atualização registrada em 12/11/2026:
+
+- Documentos, arquivos da Conferência e capturas de depuração do Radar e-CAC passam a ser gravados em um bucket **privado** do Supabase Storage (`arquivos`, criado automaticamente pelo backend no primeiro envio). O disco do Render deixa de ser usado para arquivos, porque é apagado a cada reinício/deploy.
+- A pasta `/uploads` deixou de ser pública. Os arquivos só abrem pelas rotas autenticadas `GET /api/documents/:id/file` e `GET /api/obligations/protocols/:id/file`, respeitando o escritório e, para usuários do portal, o próprio cliente.
+- O envio por e-mail lê o anexo do armazenamento; se o arquivo não existir mais, o sistema avisa em vez de enviar sem anexo.
+- Variáveis no Render: `SUPABASE_URL` (`https://llznbomfpioquprfvmuz.supabase.co`), `SUPABASE_SERVICE_ROLE_KEY` (chave secreta do projeto, nunca registrar aqui) e `SUPABASE_STORAGE_BUCKET` (`arquivos`). Sem elas, o backend grava em `backend/private-files/` (só para desenvolvimento local).
+- Verificado em 12/11/2026: o Supabase (plano gratuito) não mantém cópias de segurança do banco. O backup local diário (seção em `docs/BACKUP-E-SETUP.md`) está ativo, com cópias completas e verificadas diariamente. A chave de leitura dessas cópias fica apenas na conta Windows deste computador.

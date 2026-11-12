@@ -19,3 +19,5 @@ backend/uploads/
 .vercel/
 .render/
 coverage/
+private-files/
+backend/private-files/

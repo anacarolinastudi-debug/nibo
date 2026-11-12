@@ -12,9 +12,8 @@
 // =====================================================================
 
 const { chromium } = require('playwright');
-const fs = require('fs');
-const path = require('path');
 const prisma = require('../lib/prisma');
+const fileStorage = require('./fileStorage.service');
 const certCrypto = require('../utils/certCrypto');
 
 const GOVBR_LOGIN_URL = 'https://sso.acesso.gov.br/login?client_id=cav.receita.fazenda.gov.br';
@@ -44,23 +43,25 @@ async function loadCertificate(accountingFirmId) {
   };
 }
 
-// Salva uma screenshot e o HTML da página no momento da falha, e devolve
-// as URLs públicas (servidas em /uploads) para facilitar o diagnóstico
-// remoto, sem precisar de acesso ao servidor.
+// Salva uma screenshot e o HTML da página no momento da falha no armazenamento
+// PRIVADO (Supabase Storage em produção) e devolve as referências, para
+// diagnóstico por quem tem acesso ao bucket. Nada disso fica público.
 async function withDebugArtifacts(page, label) {
   try {
-    const dir = path.join(__dirname, '..', '..', 'uploads', 'ecac-debug');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    const stamp = Date.now();
-    const screenshotFile = path.join(dir, `${label}-${stamp}.png`);
-    const htmlFile = path.join(dir, `${label}-${stamp}.html`);
-    await page.screenshot({ path: screenshotFile, fullPage: true });
-    fs.writeFileSync(htmlFile, await page.content());
-    return {
-      screenshotUrl: `/uploads/ecac-debug/${label}-${stamp}.png`,
-      htmlUrl: `/uploads/ecac-debug/${label}-${stamp}.html`,
-      currentUrl: page.url(),
-    };
+    const safeLabel = String(label).replace(/[^a-zA-Z0-9_-]/g, '');
+    const screenshotUrl = await fileStorage.saveFile({
+      buffer: await page.screenshot({ fullPage: true }),
+      originalName: `${safeLabel}.png`,
+      mimeType: 'image/png',
+      folder: `ecac-debug/${safeLabel}`,
+    });
+    const htmlUrl = await fileStorage.saveFile({
+      buffer: Buffer.from(await page.content(), 'utf8'),
+      originalName: `${safeLabel}.html`,
+      mimeType: 'text/html',
+      folder: `ecac-debug/${safeLabel}`,
+    });
+    return { screenshotUrl, htmlUrl, currentUrl: page.url() };
   } catch {
     // Captura de tela é só para depuração; nunca deve derrubar o robô.
     return null;

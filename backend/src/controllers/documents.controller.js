@@ -1,5 +1,7 @@
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const fileStorage = require('../services/fileStorage.service');
+const { sendStoredFile } = require('../utils/sendStoredFile');
 
 function clientScope(user) {
   if (user.role === 'CLIENT') return { clientId: user.clientId };
@@ -34,11 +36,24 @@ async function upload(req, res) {
 
   const data = metaSchema.parse(req.body);
 
+  const client = await prisma.client.findFirst({
+    where: { id: data.clientId, accountingFirmId: req.user.accountingFirmId },
+    select: { id: true },
+  });
+  if (!client) return res.status(404).json({ error: 'Cliente não encontrado.' });
+
+  const fileUrl = await fileStorage.saveFile({
+    buffer: req.file.buffer,
+    originalName: req.file.originalname,
+    mimeType: req.file.mimetype,
+    folder: `${req.user.accountingFirmId}/documentos`,
+  });
+
   const document = await prisma.document.create({
     data: {
       name: req.file.originalname,
       category: data.category,
-      fileUrl: `/uploads/${req.file.filename}`,
+      fileUrl,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       refMonth: data.refMonth,
@@ -55,8 +70,15 @@ async function remove(req, res) {
   const existing = await prisma.document.findFirst({ where: { id: req.params.id, ...clientScope(req.user) } });
   if (!existing) return res.status(404).json({ error: 'Documento não encontrado.' });
 
-  await prisma.document.delete({ where: { id: req.params.id } });
+  await prisma.document.delete({ where: { id: existing.id } });
+  await fileStorage.deleteFile(existing.fileUrl);
   res.status(204).send();
 }
 
-module.exports = { list, upload, remove };
+async function download(req, res) {
+  const existing = await prisma.document.findFirst({ where: { id: req.params.id, ...clientScope(req.user) } });
+  if (!existing) return res.status(404).json({ error: 'Documento não encontrado.' });
+  await sendStoredFile(res, existing.fileUrl, existing.name, existing.mimeType);
+}
+
+module.exports = { list, upload, remove, download };

@@ -16,6 +16,12 @@ services:
         sync: false
       - key: CERT_ENCRYPTION_KEY
         generateValue: true
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: arquivos
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: "0"
       - key: NODE_OPTIONS

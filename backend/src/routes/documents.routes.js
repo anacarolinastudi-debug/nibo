@@ -7,6 +7,7 @@ const upload = require('../middleware/upload');
 router.use(requireAuth);
 
 router.get('/', ctrl.list);
+router.get('/:id/file', ctrl.download);
 router.post('/', upload.single('file'), ctrl.upload);
 router.delete('/:id', ctrl.remove);
 

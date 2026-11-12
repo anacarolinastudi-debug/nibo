@@ -1,8 +1,8 @@
 const { z } = require('zod');
-const fs = require('fs/promises');
-const path = require('path');
 const pdfParse = require('pdf-parse');
 const prisma = require('../lib/prisma');
+const fileStorage = require('../services/fileStorage.service');
+const { sendStoredFile } = require('../utils/sendStoredFile');
 const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
 const { sendEmail, missingEmailConfig } = require('../services/email.service');
 
@@ -315,8 +315,7 @@ function matchRobot(fileName, pdfText, robots) {
 async function extractPdfText(file) {
   if (file.mimetype !== 'application/pdf') return '';
   try {
-    const buffer = await fs.readFile(file.path);
-    const parsed = await pdfParse(buffer);
+    const parsed = await pdfParse(file.buffer);
     return parsed.text || '';
   } catch (error) {
     console.warn(`Nao foi possivel ler o PDF ${file.originalname}:`, error.message);
@@ -367,6 +366,13 @@ const bodySchema = z.object({
     });
   }
 
+  const storedFileUrl = await fileStorage.saveFile({
+    buffer: req.file.buffer,
+    originalName: req.file.originalname,
+    mimeType: req.file.mimetype,
+    folder: `${req.user.accountingFirmId}/conferencia`,
+  });
+
   const document = await prisma.protocolDocument.create({
     data: {
       accountingFirmId: req.user.accountingFirmId,
@@ -376,7 +382,7 @@ const bodySchema = z.object({
       fileName: req.file.originalname,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
-      fileUrl: `/uploads/${req.file.filename}`,
+      fileUrl: storedFileUrl,
       deliveryType: data.deliveryType,
       reference: data.reference || null,
       status: 'CONFERENCIA',
@@ -499,9 +505,10 @@ async function sendProtocolByEmail(req, res) {
   if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
   if (!existing.client?.email) return res.status(400).json({ error: 'O cliente nao tem e-mail informado no cadastro.' });
 
-  const filePath = existing.fileUrl?.startsWith('/uploads/')
-    ? path.join(__dirname, '..', '..', 'uploads', path.basename(existing.fileUrl))
-    : null;
+  const fileBuffer = existing.fileUrl ? await fileStorage.readFile(existing.fileUrl) : null;
+  if (existing.fileUrl && !fileBuffer) {
+    return res.status(409).json({ error: 'O arquivo deste protocolo não está mais disponível. Envie o arquivo novamente antes de mandar por e-mail.' });
+  }
 
   const result = await sendEmail({
     to: existing.client.email,
@@ -513,7 +520,7 @@ async function sendProtocolByEmail(req, res) {
       existing.reference ? `Competência: ${existing.reference}` : null,
       existing.clientNote ? `Observação: ${existing.clientNote}` : null,
     ].filter(Boolean).join('\n'),
-    attachments: filePath ? [{ filename: existing.fileName, path: filePath }] : [],
+    attachments: fileBuffer ? [{ filename: existing.fileName, content: fileBuffer, contentType: existing.mimeType || undefined }] : [],
   });
 
   if (!result.sent) {
@@ -551,10 +558,19 @@ async function removeProtocolDocument(req, res) {
   const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
   if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
   await prisma.protocolDocument.delete({ where: { id: existing.id } });
+  await fileStorage.deleteFile(existing.fileUrl);
   res.status(204).send();
 }
 
+async function downloadProtocolFile(req, res) {
+  const clientOnly = req.user.role === 'CLIENT' ? { clientId: req.user.clientId || '__none__' } : {};
+  const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req), ...clientOnly } });
+  if (!existing?.fileUrl) return res.status(404).json({ error: 'Documento nao encontrado.' });
+  await sendStoredFile(res, existing.fileUrl, existing.fileName, existing.mimeType);
+}
+
 module.exports = {
+  downloadProtocolFile,
   listObligations,
   createObligation,
   seedCatalog,

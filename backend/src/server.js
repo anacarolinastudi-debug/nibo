@@ -33,8 +33,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Disponibiliza os arquivos enviados (documentos) publicamente via URL
-app.use('/uploads', express.static('uploads'));
+// Arquivos enviados NÃO são servidos publicamente. O acesso passa pelas rotas
+// autenticadas /api/documents/:id/file e /api/obligations/protocols/:id/file.
 
 // Rota de saúde, útil para checar se o servidor está de pé depois do deploy
 app.get('/health', (req, res) => res.json({ status: 'ok' }));

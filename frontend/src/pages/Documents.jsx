@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import api from '../api/client';
+import { openStoredFile } from '../utils/openStoredFile';
 import { useAuth } from '../context/AuthContext';
 
 const CATEGORY_LABELS = {
@@ -136,10 +137,10 @@ export default function Documents() {
             {documents.map((doc) => (
               <tr key={doc.id}>
                 <td className="px-4 py-3">
-                  <a href={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:4000'}${doc.fileUrl}`}
-                    target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">
+                  <button type="button" onClick={() => openStoredFile(`/documents/${doc.id}/file`)}
+                    className="text-left text-brand-600 hover:underline">
                     {doc.name}
-                  </a>
+                  </button>
                 </td>
                 <td className="px-4 py-3 text-ink/60">{CATEGORY_LABELS[doc.category]}</td>
                 <td className="px-4 py-3 text-ink/60">{doc.client?.name}</td>

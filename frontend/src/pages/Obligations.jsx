@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ClipboardCheck, ClipboardList, Link2, ListChecks, Mail, MessageCircle, MessageSquare, MoreVertical, PanelLeftClose, PanelLeftOpen, Pencil, Send, Settings, Trash2, Users, WalletCards, X } from 'lucide-react';
 import { obligations as seedObligations } from '../data/niboMockData';
 import api from '../api/client';
+import { fetchStoredFileUrl } from '../utils/openStoredFile';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import ContentMenuLink from '../components/ContentMenuLink';
@@ -788,7 +789,6 @@ function KanbanView({ tasks, setTasks, reloadKey }) {
   );
 }
 
-const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:4000/api').replace(/\/api\/?$/, '');
 
 const documentStatusMeta = {
   CONFERENCIA: { label: 'Aguardando conferência', color: 'bg-red-500' },
@@ -1153,13 +1153,31 @@ function DocumentPanel({ document: doc, serverClients, serverObligations, server
     }
   }
 
-  const fileUrl = doc.fileUrl ? `${API_ORIGIN}${doc.fileUrl}` : null;
+  const [fileUrl, setFileUrl] = useState(null);
+  const [fileError, setFileError] = useState('');
+  useEffect(() => {
+    if (!doc.id || !doc.fileUrl) return undefined;
+    let objectUrl = null;
+    let cancelled = false;
+    setFileError('');
+    fetchStoredFileUrl(`/obligations/protocols/${doc.id}/file`)
+      .then((url) => {
+        objectUrl = url;
+        if (cancelled) URL.revokeObjectURL(url);
+        else setFileUrl(url);
+      })
+      .catch(() => { if (!cancelled) setFileError('Arquivo indisponível. Envie o documento novamente.'); });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [doc.id, doc.fileUrl]);
 
   return (
     <div className="fixed inset-0 z-40 flex bg-black/30">
       <div className="ml-auto flex h-full w-full max-w-[1100px] bg-white shadow-xl">
         <div className="hidden flex-1 items-center justify-center bg-[#2b2b2b] lg:flex">
-          {fileUrl ? <iframe title="Documento" src={fileUrl} className="h-full w-full" /> : <p className="text-white/60">Sem arquivo anexado</p>}
+          {fileUrl ? <iframe title="Documento" src={fileUrl} className="h-full w-full" /> : <p className="text-white/60">{fileError || (doc.fileUrl ? 'Carregando arquivo...' : 'Sem arquivo anexado')}</p>}
         </div>
         <div className="w-full max-w-[420px] overflow-y-auto p-6">
           <div className="mb-6 flex items-center justify-between">
