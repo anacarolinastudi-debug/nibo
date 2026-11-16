@@ -207,6 +207,7 @@ footer { margin-top: 32px; font-size: 13px; color: var(--muted); }
   <footer>Todos os links abrem em nova aba. Este cronograma é revisado todos os dias com as novidades da reforma; as datas do Simples Nacional, da NFS-e e do split payment mudaram algumas vezes, então confira no portal oficial antes de orientar clientes.</footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* ============ DADOS-INICIO (editado pela revisão diária) ============ */
 const ATUALIZADO_EM = "2026-11-16";
@@ -521,6 +522,7 @@ const DL_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stro
 let state = { done: [], answers: {}, graded: {} };
 let filter = "all";
 const openQuiz = new Set();
+const showKey = new Set(); // módulos com o gabarito aberto (só na tela, não fica salvo)
 const LS = "reforma-estudo-v4";
 try { const raw = localStorage.getItem(LS); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch (e) {}
 const isDone = id => state.done.includes(id);
@@ -529,61 +531,111 @@ WEEKS.forEach(w => { if (!w.pause) w.days.forEach((_, i) => allIds.push(`w${w.n}
 document.getElementById("total").textContent = allIds.length;
 const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" style="color:var(--surface)"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
 
-/* ---------- download para imprimir ---------- */
-function printableHtml(weeks, title) {
-  const rows = weeks.map(w => {
-    const s = parse(w.start);
-    const tasks = w.days.map(([k, t, refs], i) => `
-      <tr><td class="c">☐</td><td class="d">${DAY[i]} ${fmt(addDays(s, i))}</td>
-      <td><b>${TAG[k]}</b> · ${esc(t)} (1h)${refs.length ? `<div class="r">${refs.map(r => `${esc(r.l)}: <a href="${esc(r.u)}">${esc(r.u)}</a>`).join("<br>")}</div>` : ""}</td></tr>`).join("");
-    const quiz = w.quiz.map((q, i) => `<li>${esc(q[0])}<ol type="a">${q[1].map(o => `<li>${esc(o)}</li>`).join("")}</ol></li>`).join("");
-    const key = w.quiz.map((q, i) => `${i + 1}-${"abcd"[q[2]]}`).join("  ");
-    return `<section><h2>Módulo ${w.n}: ${esc(w.title)}</h2>
-      <p class="m">${fmtY(s)} a ${fmtY(addDays(s, 4))} · ${VIG[w.vig.s]}: ${esc(w.vig.l)}</p>
-      <p><b>Passado:</b> ${esc(w.past)}<br><b>Atual:</b> ${esc(w.cur)}<br><b>No fiscal:</b> ${esc(w.fiscal)}</p>
-      ${w.note ? `<p class="m">${esc(w.note)}</p>` : ""}
-      <table>${tasks}</table>
-      <h3>Provinha</h3><ol class="q">${quiz}</ol>
-      <p class="k">Gabarito: ${key}</p></section>`;
-  }).join("");
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title>
-<style>
-  @page { size: A4; margin: 16mm; }
-  body { font: 11pt/1.45 Arial, Helvetica, sans-serif; color: #111; max-width: 780px; margin: 24px auto; padding: 0 16px; }
-  h1 { font-size: 18pt; margin: 0 0 4px; } h2 { font-size: 14pt; margin: 0 0 4px; } h3 { font-size: 12pt; margin: 14px 0 4px; }
-  .m { color: #555; margin: 0 0 8px; } section { page-break-after: always; margin-bottom: 32px; } section:last-child { page-break-after: auto; }
-  table { width: 100%; border-collapse: collapse; } td { border-bottom: 1px solid #ccc; padding: 6px 4px; vertical-align: top; }
-  td.c { width: 22px; font-size: 14pt; } td.d { width: 82px; white-space: nowrap; color: #444; }
-  .r { font-size: 9pt; color: #333; margin-top: 3px; word-break: break-all; } a { color: #0f6e66; }
-  ol.q > li { margin-bottom: 6px; } .k { font-size: 9pt; color: #666; margin-top: 10px; }
-  .top { color: #555; margin-bottom: 20px; }
-</style></head><body>
-<h1>${esc(title)}</h1><p class="top">Estudo da Reforma Tributária · 1h por dia · atualizado em ${fmtY(parse(ATUALIZADO_EM))}. Abra este arquivo no navegador e use Ctrl+P para imprimir.</p>
-${rows}</body></html>`;
+/* ---------- download em PDF: uma página A4 por módulo, sem gabarito ---------- */
+const pdfText = s => String(s).replace(/→/g, "->").replace(/[↗☐✓]/g, "").replace(/[^\x00-\xFF–—‘’“”•…€]/g, "");
+const INK = [23, 35, 31], MUTED = [91, 107, 102], ACCENT = [15, 110, 102];
+
+function layoutModule(doc, w, s, draw, pageInfo) {
+  const M = 14, W = 182, BOTTOM = 284;
+  const lh = fs => fs * 0.3528 * 1.28;
+  let y = M;
+  const font = (fs, bold) => { doc.setFont("helvetica", bold ? "bold" : "normal"); doc.setFontSize(fs); };
+  const write = (txt, fs, o = {}) => {
+    font(fs, o.bold);
+    const x = o.x ?? M, width = o.w ?? (M + W - x);
+    const lines = doc.splitTextToSize(pdfText(txt), width);
+    if (draw) { doc.setTextColor(...(o.color || INK)); lines.forEach((l, i) => doc.text(l, x, y + lh(fs) * 0.78 + i * lh(fs))); }
+    y += lines.length * lh(fs) + (o.after ?? 0);
+  };
+  const st = parse(w.start);
+  write("ESTUDO DA REFORMA TRIBUTÁRIA · MÓDULO " + String(w.n).padStart(2, "0"), 8 * s, { bold: true, color: ACCENT, after: 1 });
+  write(w.title, 16 * s, { bold: true, after: 1 });
+  write(`${fmtY(st)} a ${fmtY(addDays(st, 4))} · ${VIG[w.vig.s]}: ${w.vig.l}`, 9 * s, { color: MUTED, after: 3 * s });
+  write("Passado: " + w.past, 9.5 * s, { after: 0.8 });
+  write("Atual: " + w.cur, 9.5 * s, { after: 0.8 });
+  write("No fiscal: " + w.fiscal, 9.5 * s, { after: w.note ? 0.8 : 0 });
+  if (w.note) write(w.note, 9 * s, { color: MUTED });
+  y += 4 * s;
+  write("Rotina da semana · 1 hora por dia", 11.5 * s, { bold: true, after: 2 * s });
+  w.days.forEach(([kind, text, refs], i) => {
+    const y0 = y, fs = 9.5 * s, box = 3.4 * s;
+    if (draw) { doc.setDrawColor(...MUTED); doc.setLineWidth(0.3); doc.rect(M, y0 + 0.6, box, box); }
+    font(9 * s, true);
+    if (draw) { doc.setTextColor(...MUTED); doc.text(`${DAY[i]} ${fmt(addDays(st, i))}`, M + 6, y0 + lh(9 * s) * 0.78); }
+    y = y0;
+    write(`${TAG[kind]} · ${text}`, fs, { x: M + 27 });
+    if (refs.length) {
+      const rfs = 8 * s; font(rfs, false);
+      let x = M + 27; const sep = "  ·  ", sepW = doc.getTextWidth(sep), maxX = M + W;
+      y += 0.6;
+      refs.forEach((r, k) => {
+        const label = pdfText(r.l), lw = doc.getTextWidth(label);
+        if (x + lw > maxX && x > M + 27) { x = M + 27; y += lh(rfs); }
+        if (draw) { doc.setTextColor(...ACCENT); doc.textWithLink(label, x, y + lh(rfs) * 0.78, { url: r.u }); }
+        x += lw;
+        if (k < refs.length - 1) { if (draw) { doc.setTextColor(...MUTED); doc.text(sep, x, y + lh(rfs) * 0.78); } x += sepW; }
+      });
+      y += lh(rfs);
+    }
+    y += 2.2 * s;
+  });
+  y += 3 * s;
+  write("Provinha", 11.5 * s, { bold: true, after: 0.5 });
+  write("Marque uma alternativa por pergunta. Confira as respostas na aba Estudos do sistema.", 8.5 * s, { color: MUTED, after: 2 * s });
+  w.quiz.forEach(([q, opts], i) => {
+    write(`${i + 1}. ${q}`, 9.5 * s, { bold: true, after: 0.6 });
+    write(opts.map((o, j) => `(   ) ${"abcd"[j]}) ${o}`).join("      "), 9 * s, { x: M + 4, after: 2 * s });
+  });
+  if (draw) {
+    if (BOTTOM - y > 18) {
+      y += 3 * s;
+      write("Anotações", 10 * s, { bold: true, after: 2 });
+      doc.setDrawColor(200, 208, 205); doc.setLineWidth(0.2);
+      for (let ly = y + 6; ly < BOTTOM - 2; ly += 7) doc.line(M, ly, M + W, ly);
+    }
+    font(7.5, false); doc.setTextColor(...MUTED);
+    doc.text(pdfText(`Atualizado em ${fmtY(parse(ATUALIZADO_EM))} · ${pageInfo}`), M, 291);
+  }
+  return y;
+}
+
+function buildPdf(weeks) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const probe = new jsPDF({ unit: "mm", format: "a4" });
+  weeks.forEach((w, i) => {
+    if (i) doc.addPage();
+    let s = 1;
+    while (s > 0.56 && layoutModule(probe, w, s, false) > 284) s -= 0.03;
+    layoutModule(doc, w, s, true, weeks.length > 1 ? `página ${i + 1} de ${weeks.length}` : `módulo ${w.n} de 13`);
+  });
+  return doc.output("blob");
 }
 
 const toastEl = document.getElementById("toast");
 function toast(msg) { toastEl.textContent = msg; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.textContent = "", 6000); }
 
-async function download(weeks, filename, title) {
-  const html = printableHtml(weeks, title);
+async function download(weeks, filename) {
+  if (!window.jspdf?.jsPDF) { toast("O gerador de PDF não carregou. Verifique a internet e recarregue a página."); return; }
+  let blob;
+  try { blob = buildPdf(weeks); } catch (e) { toast("Não foi possível gerar o PDF."); return; }
   let dl = null;
   try { dl = await window.claude?.use?.("downloads"); } catch (e) {}
   if (dl) {
-    try { await dl.save({ filename, data: new Blob([html], { type: "text/html" }) }); toast("Arquivo salvo. Abra no navegador e use Ctrl+P para imprimir."); }
+    try { await dl.save({ filename, data: blob }); toast("PDF salvo. É só abrir e imprimir."); }
     catch (e) { toast("O download foi cancelado ou não pôde ser feito."); }
     return;
   }
   try {
-    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const url = URL.createObjectURL(blob);
     const a = document.createElement("a"); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-    toast("Arquivo baixado. Abra no navegador e use Ctrl+P para imprimir.");
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast("PDF baixado. É só abrir e imprimir.");
   } catch (e) { toast("Não foi possível baixar aqui."); }
 }
 const dlAll = document.getElementById("dl-all");
-dlAll.innerHTML = DL_ICON + "Baixar cronograma completo";
-dlAll.addEventListener("click", () => download(WEEKS.filter(w => !w.pause), "cronograma-reforma-tributaria.html", "Cronograma completo"));
+dlAll.innerHTML = DL_ICON + "Baixar PDF completo";
+dlAll.addEventListener("click", () => download(WEEKS.filter(w => !w.pause), "cronograma-reforma-tributaria.pdf"));
 
 /* ---------- render ---------- */
 function refLink(r) {
@@ -601,6 +653,7 @@ function quizBlock(w) {
   const sum = el("summary");
   sum.append(document.createTextNode(`Provinha do módulo ${w.n} · ${w.quiz.length} perguntas`));
   const graded = !!state.graded[w.n];
+  const reveal = graded || showKey.has(w.n);
   if (graded) sum.append(el("span", "pill score", `Nota ${score(w)}/${w.quiz.length}`));
   det.append(sum);
   const body = el("div", "qbody");
@@ -613,13 +666,14 @@ function quizBlock(w) {
       const b = el("button", "opt", `${"abcd"[oi]}) ${o}`); b.type = "button";
       const chosen = state.answers[qid] === oi;
       if (graded) { b.disabled = true; if (oi === right) b.classList.add("right"); else if (chosen) b.classList.add("wrong"); }
-      else if (chosen) b.classList.add("sel");
+      else { if (chosen) b.classList.add("sel"); if (reveal && oi === right) b.classList.add("right"); }
       b.setAttribute("aria-pressed", chosen);
       b.addEventListener("click", () => { state.answers[qid] = oi; persist(); render(); });
       list.append(b);
     });
     box.append(list);
     if (graded) box.append(el("p", "why", (state.answers[qid] === right ? "Certo. " : "Resposta certa: " + "abcd"[right] + ". ") + why));
+    else if (reveal) box.append(el("p", "why", "Resposta certa: " + "abcd"[right] + ". " + why));
     body.append(box);
   });
   const foot = el("div", "qfoot");
@@ -628,7 +682,10 @@ function quizBlock(w) {
     const go = el("button", "btn primary", "Corrigir provinha"); go.type = "button";
     go.disabled = answered < w.quiz.length;
     go.addEventListener("click", () => { state.graded[w.n] = true; persist(); render(); });
-    foot.append(go, el("span", "why", answered < w.quiz.length ? `Respondidas: ${answered} de ${w.quiz.length}` : "Tudo respondido"));
+    const key = el("button", "btn", reveal ? "Esconder respostas" : "Ver respostas"); key.type = "button";
+    key.setAttribute("aria-pressed", reveal);
+    key.addEventListener("click", () => { reveal ? showKey.delete(w.n) : showKey.add(w.n); render(); });
+    foot.append(go, key, el("span", "why", answered < w.quiz.length ? `Respondidas: ${answered} de ${w.quiz.length}` : "Tudo respondido"));
   } else {
     const s = score(w);
     foot.append(el("span", "result", s >= 4 ? `Você acertou ${s} de 5. Pode seguir.` : `Você acertou ${s} de 5. Vale rever o módulo antes de seguir.`));
@@ -714,8 +771,8 @@ function render() {
     });
     card.append(ul, quizBlock(w));
     const wf = el("div", "wfoot");
-    const db = el("button", "btn dl"); db.type = "button"; db.innerHTML = DL_ICON; db.append(document.createTextNode("Baixar esta semana para imprimir"));
-    db.addEventListener("click", () => download([w], `reforma-modulo-${String(w.n).padStart(2, "0")}.html`, `Módulo ${w.n}: ${w.title}`));
+    const db = el("button", "btn dl"); db.type = "button"; db.innerHTML = DL_ICON; db.append(document.createTextNode("Baixar PDF desta semana"));
+    db.addEventListener("click", () => download([w], `reforma-modulo-${String(w.n).padStart(2, "0")}.pdf`));
     wf.append(db); card.append(wf);
     weeksEl.append(card);
   }
