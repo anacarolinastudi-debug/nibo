@@ -1180,3 +1180,13 @@ model AuditLog {
   @@index([accountingFirmId])
   @@map("audit_logs")
 }
+
+// Progresso do cronograma de estudos (aba Estudos), um registro por pessoa e plano.
+model StudyProgress {
+  userId    String
+  plan      String
+  data      Json
+  updatedAt DateTime @updatedAt
+  @@id([userId, plan])
+  @@map("study_progress")
+}

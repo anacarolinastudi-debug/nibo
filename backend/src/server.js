@@ -71,6 +71,7 @@ app.use('/api/firm', firmRoutes);
 app.use('/api/departments', departmentsRoutes);
 app.use('/api/content', require('./routes/content.routes'));
 app.use('/api/updates', require('./routes/updates.routes'));
+app.use('/api/study', require('./routes/study.routes'));
 
 // Precisa ser o último middleware
 app.use(errorHandler);

@@ -1,19 +1,61 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { ExternalLink } from 'lucide-react';
+import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import ContentMenuLink from '../components/ContentMenuLink';
 
 // Cronograma de estudos da reforma tributária. O conteúdo é uma página estática
-// em /public/estudos, revisada diariamente; o progresso fica salvo no navegador.
+// em /public/estudos, revisada diariamente. O progresso de cada pessoa fica no
+// banco do sistema: a página pede para carregar e salvar por postMessage.
 const STUDY_PAGE = '/estudos/reforma-tributaria.html';
+const STUDY_PLAN = 'reforma-tributaria';
 const CLAUDE_VERSION = 'https://claude.ai/artifact/3ux8RaTESwJLEEgsBA2JuR';
 
 export default function Studies() {
   const { user } = useAuth();
   if (!['ADMIN', 'ACCOUNTANT'].includes(user?.role)) return <Navigate to="/" replace />;
+  return <StudiesHub key={user.id} />;
+}
+
+function StudiesHub() {
+  const frame = useRef(null);
+  const saving = useRef(Promise.resolve());
+  const [lastSaved, setLastSaved] = useState(null);
+
+  useEffect(() => {
+    const origin = window.location.origin;
+    const reply = (message) => frame.current?.contentWindow?.postMessage(message, origin);
+    async function onMessage(event) {
+      if (event.origin !== origin || event.source !== frame.current?.contentWindow || !event.data) return;
+      const { type, state } = event.data;
+      if (type === 'study:ready') {
+        try {
+          const { data } = await api.get(`/study/progress/${STUDY_PLAN}`);
+          reply({ type: 'study:load', state: data.data });
+          if (data.updatedAt) setLastSaved(data.updatedAt);
+        } catch {
+          reply({ type: 'study:error' });
+        }
+      } else if (type === 'study:save' && state) {
+        // Uma gravação por vez, na ordem em que as marcações chegaram.
+        saving.current = saving.current.then(async () => {
+          try {
+            const { data } = await api.put(`/study/progress/${STUDY_PLAN}`, state);
+            setLastSaved(data.updatedAt);
+            reply({ type: 'study:saved' });
+          } catch {
+            reply({ type: 'study:error' });
+          }
+        });
+      }
+    }
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, []);
+
   return <div className="min-h-screen bg-white text-[#3f4548]">
     <NiboRail />
     <aside className="fixed inset-y-0 left-[46px] hidden w-[236px] flex-col border-r bg-[#f4f7fb] xl:flex">
@@ -31,14 +73,12 @@ export default function Studies() {
           <div>
             <Link to="/" className="mb-2 inline-block text-sm text-[#16829b] xl:hidden">Voltar para obrigacoes</Link>
             <h1 className="text-2xl font-semibold">Estudos</h1>
-            <p className="mt-1 text-sm text-[#68737a]">Cronograma da reforma tributária com foco fiscal, revisado diariamente. O progresso marcado aqui fica salvo neste navegador.</p>
+            <p className="mt-1 text-sm text-[#68737a]">Cronograma da reforma tributária com foco fiscal, revisado diariamente. O que você marca fica salvo no sistema, na sua conta.</p>
+            {lastSaved && <p className="mt-1 text-xs text-[#68737a]" aria-live="polite">Ultimo salvamento: {new Date(lastSaved).toLocaleString('pt-BR', { timeZone: 'America/Cuiaba' })}</p>}
           </div>
-          <div className="flex flex-wrap gap-2">
-            <a href={STUDY_PAGE} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-[#f4f7fb]"><ExternalLink size={16} aria-hidden="true" /> Abrir em tela cheia</a>
-            <a href={CLAUDE_VERSION} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-[#f4f7fb]"><ExternalLink size={16} aria-hidden="true" /> Abrir no Claude</a>
-          </div>
+          <a href={CLAUDE_VERSION} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded border px-3 py-2 text-sm hover:bg-[#f4f7fb]"><ExternalLink size={16} aria-hidden="true" /> Abrir no Claude</a>
         </header>
-        <iframe title="Cronograma de estudos da reforma tributária" src={STUDY_PAGE} className="min-h-[75vh] w-full flex-1 rounded border border-[#d8dfe3] bg-white" />
+        <iframe ref={frame} title="Cronograma de estudos da reforma tributária" src={STUDY_PAGE} className="min-h-[75vh] w-full flex-1 rounded border border-[#d8dfe3] bg-white" />
       </section>
     </main>
   </div>;

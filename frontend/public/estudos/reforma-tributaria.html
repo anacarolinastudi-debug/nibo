@@ -746,22 +746,49 @@ function renderLibrary() {
   });
 }
 
-/* ---------- persistência: banco do artifact (conta Claude) ou navegador ---------- */
+/* ---------- persistência: conta Claude (artifact), sistema Contábil Gestão (aba Estudos) ou navegador ---------- */
 let docRef = null, writing = false, dirty = false;
 const saveEl = document.getElementById("save");
+const snapshot = () => ({ done: state.done, answers: state.answers, graded: state.graded });
+
+/* Dentro da aba Estudos do sistema, a página conversa com a tela que a contém,
+   que grava o progresso no banco do sistema com o login de quem está usando. */
+let systemFrame = null;
+try { if (window.parent !== window && window.parent.location.origin === location.origin) systemFrame = window.parent; } catch (e) {}
+let systemTimer = null;
+function systemSave() {
+  clearTimeout(systemTimer);
+  saveEl.textContent = "Salvando no sistema…";
+  systemTimer = setTimeout(() => systemFrame.postMessage({ type: "study:save", state: snapshot() }, location.origin), 600);
+}
+if (systemFrame) {
+  window.addEventListener("message", ev => {
+    if (ev.origin !== location.origin || ev.source !== systemFrame || !ev.data) return;
+    const m = ev.data;
+    if (m.type === "study:load") {
+      if (m.state && Array.isArray(m.state.done)) { state = { done: m.state.done, answers: m.state.answers || {}, graded: m.state.graded || {} }; render(); }
+      else if (state.done.length || Object.keys(state.answers).length) systemSave();
+      saveEl.textContent = "Progresso salvo no sistema";
+    } else if (m.type === "study:saved") saveEl.textContent = "Progresso salvo no sistema";
+    else if (m.type === "study:error") saveEl.textContent = "Não foi possível salvar no sistema agora. Ficou guardado neste navegador.";
+  });
+}
+
 function persist() {
   try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+  if (systemFrame) { systemSave(); return; }
   if (!docRef) { saveEl.textContent = "Salvo neste navegador"; return; }
   dirty = true; flush();
 }
 async function flush() {
   if (writing || !dirty) return;
   writing = true; dirty = false; saveEl.textContent = "Salvando…";
-  try { await docRef.set({ done: state.done, answers: state.answers, graded: state.graded, atualizadoEm: new Date().toISOString() }); saveEl.textContent = "Progresso salvo"; }
+  try { await docRef.set({ ...snapshot(), atualizadoEm: new Date().toISOString() }); saveEl.textContent = "Progresso salvo"; }
   catch (e) { saveEl.textContent = "Não foi possível salvar agora. Ficou guardado neste navegador."; }
   writing = false; if (dirty) flush();
 }
 (async () => {
+  if (systemFrame) { saveEl.textContent = "Carregando do sistema…"; systemFrame.postMessage({ type: "study:ready" }, location.origin); return; }
   let settled = false;
   const fallback = () => { settled = true; clearTimeout(timer); docRef = null; saveEl.textContent = "Salvo neste navegador"; };
   const timer = setTimeout(() => { if (!settled) saveEl.textContent = "Salvo neste navegador"; }, 10000);
