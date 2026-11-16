@@ -213,6 +213,8 @@ const ATUALIZADO_EM = "2026-11-16";
 const UPDATES = [
   { d: "2026-11-16", t: "Cronograma reorganizado pela ordem de vigência: NF-e, cClassTrib e NFS-e (já em vigor) vêm primeiro; Simples e a virada de 2027 logo em seguida." },
   { d: "2026-11-16", t: "Portal da NF-e (SVRS) informa a NT 2025.002 na versão 1.53 como a versão em vigor do leiaute de IBS/CBS." },
+  { d: "2026-11-12", t: "Receita e Comitê Gestor adiaram de 16/11 para 14/12/2026 a entrada em produção das NTs 2026.005 (Simples), 2026.006 (vinculação de pagamento) e 2026.008 (valor líquido) da NF-e. A NT 2025.002 segue valendo." },
+  { d: "2026-11-11", t: "Receita anunciou que a NF-e/NFC-e no novo modelo para o Simples que vende mercadorias só será exigida a partir de 01/03/2027; em janeiro e fevereiro vale o procedimento atual. A CBS continua começando em 01/01/2027." },
   { d: "2026-10-28", t: "Ministério da Fazenda atualizou a página de perguntas e respostas da reforma." },
 ];
 
@@ -297,7 +299,7 @@ const WEEKS = [
 
   { n: 2, start: "2026-11-23", title: "Nota fiscal de produtos: NF-e e NFC-e",
     vig: { s: "on", l: "Em vigor desde 03/08/2026" },
-    past: "NT 2025.002 e o novo leiaute do XML (2025)", cur: "Grupo IBS/CBS obrigatório no regime regular",
+    past: "NT 2025.002 e o novo leiaute do XML (2025)", cur: "Grupo IBS/CBS obrigatório no regime regular; NTs 2026.006 e 2026.008 entram em produção em 14/12/2026",
     fiscal: "O que muda no XML, quais campos são novos e o que acontece se a nota sair sem eles. É a rotina que já está valendo.",
     days: [
       ["past", "Ler o resumo do que muda nas notas fiscais em 2026", [R.migalhas]],
@@ -347,9 +349,9 @@ const WEEKS = [
       ["Onde fica a documentação oficial da NFS-e Nacional?", ["gov.br/nfse", "No site de cada prefeitura apenas", "No Portal do Simples", "No eSocial"], 0, "O portal gov.br/nfse reúne leiautes e notas técnicas."] ] },
 
   { n: 5, start: "2026-12-14", title: "Simples Nacional e MEI",
-    vig: { s: "soon", l: "Começa em 01/01/2027" },
+    vig: { s: "soon", l: "Começa em 01/01/2027; nota no novo modelo para venda de mercadorias só a partir de 01/03/2027" },
     past: "Como a LC 214 tratou o Simples", cur: "Regras de 2027 e alterações da LC 227 (aula 8)",
-    fiscal: "É o tema com mais impacto no escritório: muitos clientes são do Simples e vão ter que decidir se recolhem IBS/CBS por fora.",
+    fiscal: "É o tema com mais impacto no escritório: muitos clientes são do Simples e vão ter que decidir se recolhem IBS/CBS por fora. Atenção: quem vende mercadorias só precisa emitir a NF-e/NFC-e no novo modelo a partir de 01/03/2027 (anúncio da Receita em 11/11/2026).",
     days: [
       ["past", "Ler na LC 214 o capítulo do Simples Nacional e do MEI", [R.lc214]],
       ["past", "Ler o guia do Simples na reforma", [R.simples]],
