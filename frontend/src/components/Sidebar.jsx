@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { BadgeDollarSign, ClipboardCheck, ClipboardList, Files, LayoutDashboard, Newspaper, ReceiptText, Users, WalletCards } from 'lucide-react';
+import { BadgeDollarSign, GraduationCap, ClipboardCheck, ClipboardList, Files, LayoutDashboard, Newspaper, ReceiptText, Users, WalletCards } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Images } from 'lucide-react';
 
@@ -11,6 +11,7 @@ const links = [
   { to: '/financeiro', label: 'Financeiro', icon: WalletCards },
   { to: '/conteudos', label: 'Conteúdos', icon: Images, staffOnly: true },
   { to: '/atualizacoes', label: 'Atualizacoes', icon: Newspaper, updatesOnly: true },
+  { to: '/estudos', label: 'Estudos', icon: GraduationCap, updatesOnly: true },
   { to: '/notas-fiscais', label: 'Notas fiscais', icon: ReceiptText },
   { to: '/folha-pagamento', label: 'Folha de pagamento', icon: BadgeDollarSign },
   { to: '/documentos', label: 'Documentos', icon: Files },

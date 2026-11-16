@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+</head>
+<body>
+<title>Estudo da Reforma Tributária</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: cabeçalho com rotina, progresso e últimas mudanças; linha do tempo por mês na ordem de vigência; cada módulo com selo de vigência, tarefas diárias de 1h, links, provinha e download; biblioteca no rodapé */
+:root {
+  --bg: #f5f7f6; --surface: #ffffff; --fg: #17231f; --muted: #5b6b66; --line: #dbe3e0;
+  --accent: #0f6e66; --accent-soft: #e2f0ed; --done: #2f7d4f; --bad: #b3362b; --bad-soft: #fbe6e3;
+  --past: #7a5a2e; --past-soft: #f4ecdf; --bridge: #4b5aa8; --bridge-soft: #e8eaf7;
+  --now: #b4621a; --now-soft: #fbeedf;
+  --f-display: "Manrope", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111816; --surface: #19221f; --fg: #e4ece9; --muted: #98a8a3; --line: #2c3934;
+  --accent: #4fb8ab; --accent-soft: #1d3330; --done: #6cc28d; --bad: #f08a7e; --bad-soft: #3d1f1c;
+  --past: #d9b27a; --past-soft: #33291b; --bridge: #9aa6ec; --bridge-soft: #23284a;
+  --now: #e8a15c; --now-soft: #3a2a1a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111816; --surface: #19221f; --fg: #e4ece9; --muted: #98a8a3; --line: #2c3934;
+  --accent: #4fb8ab; --accent-soft: #1d3330; --done: #6cc28d; --bad: #f08a7e; --bad-soft: #3d1f1c;
+  --past: #d9b27a; --past-soft: #33291b; --bridge: #9aa6ec; --bridge-soft: #23284a;
+  --now: #e8a15c; --now-soft: #3a2a1a; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 900px; margin: 0 auto; padding-block: 32px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3, h4 { font-family: var(--f-display); text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 5vw, 36px); font-weight: 800; letter-spacing: -0.02em; }
+.lead { color: var(--muted); margin: 8px 0 0; max-width: 66ch; }
+a { color: var(--accent); }
+
+.routine { margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.rday { border-radius: 8px; padding: 10px 12px; font-size: 13px; display: grid; gap: 2px; }
+.rday b { font-family: var(--f-display); font-size: 14px; }
+.rday.past { background: var(--past-soft); } .rday.past b { color: var(--past); }
+.rday.cur { background: var(--accent-soft); } .rday.cur b { color: var(--accent); }
+.rday.bridge { background: var(--bridge-soft); } .rday.bridge b { color: var(--bridge); }
+
+.updates { margin-top: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 14px 16px; display: grid; gap: 8px; }
+.updates h2 { font-size: 15px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.updates h2 small { font-family: var(--f-mono); font-size: 12px; color: var(--muted); font-weight: 500; }
+.updates ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.updates li { display: grid; grid-template-columns: 52px 1fr; gap: 10px; font-size: 14px; }
+.updates li time { font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding-top: 2px; }
+.updates li div { min-width: 0; }
+
+.summary { margin-top: 20px; display: grid; gap: 12px; }
+.bar { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: baseline; font-variant-numeric: tabular-nums; }
+.stats strong { font-family: var(--f-display); font-size: 22px; }
+.save { font-size: 13px; color: var(--muted); margin-left: auto; }
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn { font: 500 13px var(--f-body); padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--fg); cursor: pointer; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn[aria-pressed="true"], .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.btn.dl { display: inline-flex; gap: 6px; align-items: center; }
+.btn.dl svg { width: 14px; height: 14px; }
+button:focus-visible, a:focus-visible, summary:focus-visible, input:focus-visible + .box { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toast { font-size: 13px; color: var(--muted); }
+
+.month { margin-top: 36px; }
+.month h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-weight: 700;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.weeks { display: grid; gap: 14px; margin-top: 12px; }
+
+.week { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 12px; }
+.week.now { border-color: var(--now); box-shadow: 0 0 0 3px var(--now-soft); }
+.whead { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.wnum { font-family: var(--f-mono); font-size: 12px; color: var(--accent); }
+.whead h3 { font-size: 17px; font-weight: 700; flex: 1 1 260px; min-width: 0; }
+.dates { font-family: var(--f-mono); font-size: 12px; color: var(--muted); }
+.pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; text-transform: uppercase; letter-spacing: .06em; }
+.pill.now { background: var(--now-soft); color: var(--now); }
+.pill.ok { background: var(--accent-soft); color: var(--done); }
+.pill.score { background: var(--bridge-soft); color: var(--bridge); }
+.vig { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+.vig .st { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 4px; }
+.vig .st.on { background: var(--accent-soft); color: var(--done); }
+.vig .st.soon { background: var(--now-soft); color: var(--now); }
+.vig .st.later { background: var(--line); color: var(--muted); }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pair div { font-size: 13px; padding: 8px 10px; border-radius: 6px; min-width: 0; }
+.pair .p { background: var(--past-soft); } .pair .c { background: var(--accent-soft); }
+.pair span { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; }
+.pair .p span { color: var(--past); } .pair .c span { color: var(--accent); }
+.fiscal { font-size: 13px; margin: 0; padding: 8px 10px; border-left: 3px solid var(--bridge); background: var(--bridge-soft); border-radius: 0 6px 6px 0; }
+.fiscal b { color: var(--bridge); }
+.note { font-size: 13px; color: var(--now); margin: 0; }
+
+ul.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.tasks li { display: grid; grid-template-columns: 22px 64px 1fr; gap: 4px 10px; align-items: start; padding: 8px 6px; border-radius: 6px; }
+.tasks li:hover { background: var(--bg); }
+.tasks label.chk { display: contents; cursor: pointer; }
+.tasks input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.box { width: 20px; height: 20px; border: 2px solid var(--muted); border-radius: 5px; display: grid; place-items: center; margin-top: 1px; cursor: pointer; }
+.box svg { width: 13px; height: 13px; opacity: 0; }
+.tasks input:checked + .box { background: var(--done); border-color: var(--done); }
+.tasks input:checked + .box svg { opacity: 1; }
+.day { font-family: var(--f-mono); font-size: 12px; color: var(--muted); padding-top: 2px; font-variant-numeric: tabular-nums; cursor: pointer; }
+.body { min-width: 0; display: grid; gap: 6px; }
+.txt { cursor: pointer; }
+.tag { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; padding: 1px 6px; border-radius: 4px; margin-right: 6px; vertical-align: 1px; white-space: nowrap; }
+.tag.past { background: var(--past-soft); color: var(--past); }
+.tag.cur { background: var(--accent-soft); color: var(--accent); }
+.tag.bridge { background: var(--bridge-soft); color: var(--bridge); }
+.tasks li.checked .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+
+.refs { display: flex; flex-wrap: wrap; gap: 6px; }
+a.ref { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--accent);
+  text-decoration: underline; text-underline-offset: 2px; text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  border: 1px solid var(--line); border-radius: 6px; padding: 3px 9px; background: var(--surface); position: relative; z-index: 1; }
+a.ref:hover { border-color: var(--accent); background: var(--accent-soft); }
+a.ref .k { font-family: var(--f-mono); font-size: 10.5px; color: var(--muted); text-decoration: none; }
+
+details.quiz { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+details.quiz > summary { cursor: pointer; padding: 10px 14px; font-family: var(--f-display); font-weight: 700; font-size: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+details.quiz > summary::marker { color: var(--bridge); }
+.qbody { padding: 4px 14px 14px; display: grid; gap: 14px; }
+.q { display: grid; gap: 6px; }
+.q h4 { font-family: var(--f-body); font-size: 14px; font-weight: 600; }
+.opts { display: grid; gap: 4px; }
+.opt { text-align: left; font: 14px var(--f-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; cursor: pointer; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.opt.right { border-color: var(--done); background: var(--accent-soft); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt:disabled { cursor: default; }
+.why { font-size: 13px; color: var(--muted); margin: 0; }
+.qfoot, .wfoot { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.result { font-weight: 600; }
+
+.pause { padding: 14px 18px; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); font-size: 14px; }
+.pause b { color: var(--fg); }
+
+.library { margin-top: 48px; display: grid; gap: 16px; }
+.library h2 { font-size: 20px; }
+.libcols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.libcol { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+.libcol h3 { font-size: 14px; margin-bottom: 8px; }
+.libcol ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; }
+.libcol small { color: var(--muted); display: block; }
+footer { margin-top: 32px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 560px) {
+  .pair { grid-template-columns: 1fr; }
+  .tasks li { grid-template-columns: 22px 1fr; }
+  .day { grid-column: 2; grid-row: 1; padding: 0; }
+  .body { grid-column: 2; }
+  .save { margin-left: 0; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .bar > span { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Estudo da Reforma Tributária</h1>
+    <p class="lead">13 módulos com foco no setor fiscal, na ordem em que as regras entram em vigor: primeiro o que já vale, depois o que começa em 01/01/2027, por último o que vem depois. São 1 hora por dia, de segunda a sexta, com uma provinha no fim de cada módulo.</p>
+    <div class="routine" aria-label="Rotina da semana">
+      <div class="rday past"><b>Seg e Ter · Passado</b>O que já foi aprovado: emenda, leis complementares e o que vem do sistema antigo.</div>
+      <div class="rday cur"><b>Qua e Qui · Atual</b>O que vale hoje: aulas da Receita, notas técnicas, prazos de 2026 e 2027.</div>
+      <div class="rday bridge"><b>Sex · Prática e provinha</b>40 min aplicando num cliente do escritório e 20 min de provinha.</div>
+    </div>
+    <section class="updates" aria-labelledby="upd-h">
+      <h2 id="upd-h">Últimas mudanças na reforma <small id="upd-when"></small></h2>
+      <ul id="upd-list"></ul>
+    </section>
+    <div class="summary">
+      <div class="bar" aria-hidden="true"><span id="bar"></span></div>
+      <div class="stats">
+        <span><strong id="count">0</strong> de <span id="total">0</span> horas estudadas</span>
+        <span id="pct">0%</span>
+        <span id="quizstat"></span>
+        <span class="save" id="save">Carregando seu progresso…</span>
+      </div>
+      <div class="filters" role="group" aria-label="Filtrar módulos">
+        <button type="button" class="btn" id="f-all" aria-pressed="true">Todos</button>
+        <button type="button" class="btn" id="f-open" aria-pressed="false">Só pendentes</button>
+        <button type="button" class="btn" id="f-now">Ir para a semana atual</button>
+        <button type="button" class="btn" id="f-lib">Ver referências</button>
+        <button type="button" class="btn dl" id="dl-all"></button>
+      </div>
+      <span class="toast" id="toast" role="status" aria-live="polite"></span>
+    </div>
+  </header>
+
+  <main id="timeline"></main>
+
+  <section class="library" id="biblioteca" aria-labelledby="lib-h">
+    <h2 id="lib-h">Referências</h2>
+    <div class="libcols" id="libcols"></div>
+  </section>
+
+  <footer>Todos os links abrem em nova aba. Este cronograma é revisado todos os dias com as novidades da reforma; as datas do Simples Nacional, da NFS-e e do split payment mudaram algumas vezes, então confira no portal oficial antes de orientar clientes.</footer>
+</div>
+
+<script>
+/* ============ DADOS-INICIO (editado pela revisão diária) ============ */
+const ATUALIZADO_EM = "2026-11-16";
+const UPDATES = [
+  { d: "2026-11-16", t: "Cronograma reorganizado pela ordem de vigência: NF-e, cClassTrib e NFS-e (já em vigor) vêm primeiro; Simples e a virada de 2027 logo em seguida." },
+  { d: "2026-11-16", t: "Portal da NF-e (SVRS) informa a NT 2025.002 na versão 1.53 como a versão em vigor do leiaute de IBS/CBS." },
+  { d: "2026-10-28", t: "Ministério da Fazenda atualizou a página de perguntas e respostas da reforma." },
+];
+
+const YT = id => "https://www.youtube.com/watch?v=" + id;
+const R = {
+  ec132:   { t: "TEXTO", l: "EC 132/2023", u: "https://www.planalto.gov.br/ccivil_03/constituicao/emendas/emc/emc132.htm", d: "Texto da emenda no Planalto" },
+  lc214:   { t: "TEXTO", l: "LC 214/2025", u: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm", d: "Lei geral do IBS, CBS e IS" },
+  lc227:   { t: "TEXTO", l: "LC 227/2026", u: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp227.htm", d: "Comitê Gestor do IBS e ajustes na LC 214" },
+  d12955:  { t: "TEXTO", l: "Decreto 12.955/2026", u: "https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2026/decreto/D12955.htm", d: "Regulamento da CBS" },
+  faz:     { t: "TEXTO", l: "Perguntas e respostas (Fazenda)", u: "https://www.gov.br/fazenda/pt-br/acesso-a-informacao/acoes-e-programas/reforma-tributaria/perguntas-e-respostas", d: "Ministério da Fazenda" },
+  rfbmods: { t: "SLIDES", l: "Slides do curso RFB/CFC", u: "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/reforma-tributaria-do-consumo/curso/material-de-apoio/modulos-do-curso", d: "PDF de cada aula, na Receita Federal" },
+  rfbm1:   { t: "SLIDES", l: "Slides da aula 1", u: "https://www.gov.br/receitafederal/pt-br/acesso-a-informacao/acoes-e-programas/programas-e-atividades/reforma-tributaria-do-consumo/curso/material-de-apoio/modulos-do-curso/curso-cfc-rfb-modulo-1-mombelli_maio-2026-final.pdf/view", d: "Normas gerais, PDF da Receita" },
+  manual:  { t: "TEXTO", l: "Manual de serviços da reforma (Receita)", u: "https://www.gov.br/receitafederal/pt-br/centrais-de-conteudo/publicacoes/manuais/reforma-tributaria-do-consumo/manual-servicos-rtc.pdf", d: "Calculadora, apuração e serviços digitais (PDF)" },
+  calc:    { t: "FERRAMENTA", l: "Calculadora oficial de tributos", u: "https://consumo.tributos.gov.br/servico/calcular-tributos-consumo/calculadora/regime-geral", d: "Motor de cálculo da Receita: CBS, IBS e IS" },
+  classtrib:{ t: "FERRAMENTA", l: "Tabela oficial cClassTrib e CST", u: "https://dfe-portal.svrs.rs.gov.br/CFF/ClassificacaoTributaria", d: "Portal da Conformidade Fácil (SVRS)" },
+  nfe:     { t: "TEXTO", l: "Portal NF-e (SVRS): notas técnicas", u: "https://dfe-portal.svrs.rs.gov.br/Nfe", d: "Avisos e NT 2025.002 em vigor" },
+  nfse:    { t: "TEXTO", l: "Portal NFS-e Nacional", u: "https://www.gov.br/nfse/pt-br", d: "Página oficial da NFS-e" },
+  nfsertc: { t: "TEXTO", l: "NFS-e: documentação da reforma", u: "https://www.gov.br/nfse/pt-br/biblioteca/documentacao-tecnica/rtc", d: "Leiaute e regras de IBS/CBS na NFS-e" },
+  nfseato: { t: "TEXTO", l: "NFS-e: cronograma (Ato Conjunto 7/2026)", u: "https://www.gov.br/nfse/pt-br/noticias/cgnfs-e-informa-ato-conjunto-rfb-cgibs-no-7-2026-atualiza-o-cronograma-de-obrigatoriedade-de-emissao-da-nfs-e-para-ibs-e-cbs", d: "Prazos de obrigatoriedade na NFS-e" },
+  nfse009: { t: "TEXTO", l: "NFS-e: regras de preenchimento e NT 009", u: "https://www.gov.br/nfse/pt-br/noticias/nfs-e-nacional-confira-oas-rientacoes-sobre-leiaute-em-producao-regras-de-preenchimento-de-ibs-cbs-e-status-da-nota-tecnica-009", d: "Orientações do comitê gestor da NFS-e" },
+  senado:  { t: "TEXTO", l: "Senado Notícias: LC 227", u: "https://www12.senado.leg.br/noticias/materias/2026/01/14/reforma-tributaria-lei-cria-comite-gestor-do-ibs-e-define-regras-do-imposto", d: "Como funciona o Comitê Gestor" },
+  comsefaz:{ t: "TEXTO", l: "Comsefaz: 2026 de adaptação", u: "https://comsefaz.org.br/novo/reforma-tributaria-comeca-em-2026-com-periodo-de-adaptacao-destaque-informativo-dos-novos-tributos-e-dispensa-de-penalidades/", d: "Secretários de Fazenda sobre o ano-teste" },
+  rfbreg:  { t: "TEXTO", l: "Receita: aula de regimes", u: "https://www.gov.br/receitafederal/pt-br/assuntos/noticias/2026/julho/curso-sobre-a-reforma-tributaria-do-consumo-aborda-regimes-diferenciados-e-especificos", d: "Resumo da aula de regimes diferenciados" },
+  mattos227:{ t: "TEXTO", l: "Mattos Filho: LC 227", u: "https://www.mattosfilho.com.br/unico/lc-227-reforma-tributaria/", d: "Análise da lei e dos vetos" },
+  mattosreg:{ t: "TEXTO", l: "Mattos Filho: regulamentos", u: "https://www.mattosfilho.com.br/unico/regulamentos-ibs-cbs/", d: "Decreto 12.955 e Resolução CGIBS 6" },
+  pwc:     { t: "TEXTO", l: "PwC: resumo da EC 132", u: "https://www.pwc.com.br/pt/thinking-about-taxes/tax-intelligence/2023/reforma-tributaria-sobre-o-consumo-promulgacao-da-emenda-constitucional-n-132.pdf", d: "Resumo na promulgação (PDF)" },
+  sijur:   { t: "TEXTO", l: "Cronograma ano a ano", u: "https://www.sijur.com.br/cronograma-reforma-tributaria/", d: "Tabela da transição, 2026 a 2033" },
+  migalhas:{ t: "TEXTO", l: "Migalhas: notas fiscais em 2026", u: "https://www.migalhas.com.br/quentes/445692/veja-o-que-muda-nas-notas-fiscais-com-a-reforma-tributaria-em-2026", d: "O que muda na NF-e" },
+  cst:     { t: "TEXTO", l: "Guia: tabelas de CST e cClassTrib", u: "https://simplifique.contmatic.com.br/blogs/ibs-e-cbs-entenda-as-tabelas-de-classificacao-e-cst", d: "Explicação didática (blog)" },
+  nfecampos:{ t: "TEXTO", l: "Guia: novos campos da NF-e", u: "https://simplifique.contmatic.com.br/blogs/nf-e-novos-campos-reforma-tributaria-2026", d: "Grupos IBS, CBS e IS no XML (blog)" },
+  simples: { t: "TEXTO", l: "Guia: Simples, IBS e CBS", u: "https://simplifique.contmatic.com.br/blogs/simples-nacional-ibs-cbs-reforma-tributaria-2026", d: "Simples na reforma (blog)" },
+  split:   { t: "TEXTO", l: "Guia: split payment", u: "https://www.thomsonreuters.com.br/pt/tax-accounting/onesource-mastersaf/blog/split-payment-reforma-tributaria.html", d: "Quando começa e como funciona (blog)" },
+  cfc:     { t: "VÍDEO", l: "Curso RFB/CFC: playlist", u: "https://www.youtube.com/playlist?list=PLw2ZKoI7RG_csmR4mhKQ840wwG_QEL4gn", d: "As 18 aulas gravadas, mai. a set. 2026" },
+  dialogos:{ t: "VÍDEO", l: "Diálogos (Receita): playlist", u: "https://www.youtube.com/playlist?list=PL7zsee2Wcyb4NShpfArt0soZ1_jprxT6g", d: "Série curta da Receita Federal" },
+  a1:  { t: "VÍDEO", l: "Aula 1: normas gerais", u: YT("94Y7E74L96g") },
+  a2:  { t: "VÍDEO", l: "Aula 2: comércio internacional", u: YT("yIgNeXWVHaY") },
+  a3:  { t: "VÍDEO", l: "Aula 3: fundo de compensação (ICMS)", u: YT("UUyV5jWrcgU") },
+  a4:  { t: "VÍDEO", l: "Aula 4: cadastro", u: YT("t-4p8YFlIpk") },
+  a5:  { t: "VÍDEO", l: "Aula 5: obrigações acessórias", u: YT("v71xSBfdG7o") },
+  a6:  { t: "VÍDEO", l: "Aula 6: apuração assistida", u: YT("N5dKpUHWjz0") },
+  a7:  { t: "VÍDEO", l: "Aula 7: compensação e ressarcimento", u: YT("mhc2aIK2iek") },
+  a8:  { t: "VÍDEO", l: "Aula 8: Simples Nacional e MEI", u: YT("6dCaC0OOOoY") },
+  a10: { t: "VÍDEO", l: "Aula 10: regimes diferenciados e específicos", u: YT("V_rK8lh7fFA") },
+  a11: { t: "VÍDEO", l: "Aula 11: saúde e loterias", u: YT("4nSAZW3IysM") },
+  a12: { t: "VÍDEO", l: "Aula 12: serviços financeiros", u: YT("iCqG0H6D7HM") },
+  a13: { t: "VÍDEO", l: "Aula 13: bens imóveis", u: YT("esA8WZsj7O8") },
+  a15: { t: "VÍDEO", l: "Aula 15: Zona Franca de Manaus", u: YT("m6vHM6uPIJg") },
+  g1:  { t: "VÍDEO", l: "Diálogos 1: normas constitucionais", u: YT("doRL2krvTkE") },
+  g2:  { t: "VÍDEO", l: "Diálogos 2: normas gerais da LC 214", u: YT("4MWq_eX8cNA") },
+  g3:  { t: "VÍDEO", l: "Diálogos 3: regimes de apuração", u: YT("Lq7i-EB8OOg") },
+  g4:  { t: "VÍDEO", l: "Diálogos 4: normas gerais, arts. 58 a 62", u: YT("cAVuTn_cfVU") },
+  g5:  { t: "VÍDEO", l: "Diálogos 5: importações e exportações", u: YT("AhMWluAAG4Y") },
+  g6:  { t: "VÍDEO", l: "Diálogos 6: bens de capital", u: YT("Oxvk0_Cj_lk") },
+  g7:  { t: "VÍDEO", l: "Diálogos 7: cashback e cesta básica", u: YT("OnYLXTy_rM4") },
+  g8:  { t: "VÍDEO", l: "Diálogos 8: regimes diferenciados", u: YT("OEsJOB7jw_g") },
+  g10: { t: "VÍDEO", l: "Diálogos 10: combustíveis, saúde, loterias", u: YT("Fmoy3tEiUqY") },
+  g11: { t: "VÍDEO", l: "Diálogos 11: administrações tributárias", u: YT("PH5qcuCDOVU") },
+  g12: { t: "VÍDEO", l: "Diálogos 12: bens imóveis", u: YT("Moez4PfPkkY") },
+  g14: { t: "VÍDEO", l: "Diálogos 14: cooperativas e restaurantes", u: YT("HIBFMd13dDQ") },
+  g15: { t: "VÍDEO", l: "Diálogos 15: transição", u: YT("UNQ4T023dEU") },
+};
+
+/* vig: { s: "on" (em vigor) | "soon" (prestes a entrar) | "later", l: texto }
+   quiz: [enunciado, [opções], índice da correta, explicação] */
+const WEEKS = [
+  { n: 1, start: "2026-11-16", title: "Ano-teste de 2026 e fundamentos",
+    vig: { s: "on", l: "Em vigor desde 01/01/2026" },
+    past: "EC 132/2023 e normas gerais da LC 214/2025", cur: "CBS 0,9% e IBS 0,1% destacados na nota em 2026",
+    fiscal: "Hoje você lida com PIS, Cofins, IPI, ICMS e ISS. A reforma troca os cinco por CBS, IBS e Imposto Seletivo, e 2026 é o ano de teste.",
+    days: [
+      ["past", "Ler as perguntas e respostas da Fazenda: IVA dual, princípio do destino, cobrança por fora", [R.faz, R.g1]],
+      ["past", "Ler na LC 214 incidência, base de cálculo e local da operação", [R.lc214, R.g2]],
+      ["cur", "Ler sobre o ano-teste de 2026 e a dispensa de penalidades", [R.comsefaz]],
+      ["cur", "Assistir à aula 1 do curso da Receita (normas gerais)", [R.a1, R.rfbm1]],
+      ["bridge", "Montar quadro de/para: PIS/Cofins → CBS, ICMS/ISS → IBS, IPI → IS. Depois, provinha", []] ],
+    quiz: [
+      ["Quais tributos a CBS substitui?", ["ICMS e ISS", "PIS e Cofins", "IPI", "IRPJ e CSLL"], 1, "A CBS é federal e substitui PIS e Cofins."],
+      ["Quais tributos o IBS substitui?", ["PIS e Cofins", "IPI e IOF", "ICMS e ISS", "ITCMD e ITBI"], 2, "O IBS é de estados e municípios e substitui ICMS (estadual) e ISS (municipal)."],
+      ["O que significa o princípio do destino?", ["O imposto fica com o local da sede do vendedor", "O imposto fica com o estado e o município onde o bem ou serviço é consumido", "O imposto é dividido igualmente entre os estados", "O imposto fica com a União"], 1, "Com o destino, a arrecadação vai para onde está o consumidor."],
+      ["Quais são as alíquotas de teste em 2026?", ["CBS 0,9% e IBS 0,1%", "CBS 8,8% e IBS 17,7%", "CBS 1% e IBS 1%", "Não há alíquota em 2026"], 0, "Em 2026 a CBS é destacada a 0,9% e o IBS a 0,1%, como teste."],
+      ["Na venda de mercadoria, o local da operação é, em regra:", ["Onde fica a sede do vendedor", "O local da entrega ou disponibilização ao destinatário", "A capital do estado do vendedor", "Brasília"], 1, "Para bens materiais, vale o local da entrega ao destinatário."] ] },
+
+  { n: 2, start: "2026-11-23", title: "Nota fiscal de produtos: NF-e e NFC-e",
+    vig: { s: "on", l: "Em vigor desde 03/08/2026" },
+    past: "NT 2025.002 e o novo leiaute do XML (2025)", cur: "Grupo IBS/CBS obrigatório no regime regular",
+    fiscal: "O que muda no XML, quais campos são novos e o que acontece se a nota sair sem eles. É a rotina que já está valendo.",
+    days: [
+      ["past", "Ler o resumo do que muda nas notas fiscais em 2026", [R.migalhas]],
+      ["past", "Ler o guia dos novos campos da NF-e: grupos IBS, CBS e IS", [R.nfecampos]],
+      ["cur", "Assistir à primeira metade da aula 5 (obrigações acessórias)", [R.a5]],
+      ["cur", "Terminar a aula 5 e ver os avisos da NT 2025.002 no portal", [R.a5, R.nfe, R.rfbmods]],
+      ["bridge", "Abrir o XML de uma NF-e de cliente e achar o grupo IBS/CBS. Depois, provinha", []] ],
+    quiz: [
+      ["Qual nota técnica traz o leiaute de IBS, CBS e IS na NF-e e NFC-e?", ["NT 2019.001", "NT 2025.002", "NT 2023.004", "Não há nota técnica"], 1, "A NT 2025.002 define os grupos novos no XML da NF-e e da NFC-e."],
+      ["Desde quando o grupo IBS/CBS é obrigatório na NF-e do regime regular?", ["01/01/2026", "03/08/2026", "01/01/2027", "2033"], 1, "O preenchimento passou a ser exigido em 03/08/2026 para o regime regular."],
+      ["Quais documentos passaram a exigir os campos de IBS/CBS em 03/08/2026?", ["NF-e, NFC-e e CT-e", "Só a NFS-e", "Só o cupom fiscal antigo", "Nenhum"], 0, "NF-e, NFC-e e CT-e. A NFS-e tem cronograma próprio."],
+      ["Em 2026, o valor de CBS destacado na nota:", ["É um custo a mais para a empresa", "É teste e pode ser compensado com PIS/Cofins", "Substitui o ICMS", "É devolvido ao consumidor"], 1, "Em 2026 a CBS de teste é compensável com PIS/Cofins devidos."],
+      ["Para optantes do Simples, IBS e CBS passam a produzir efeitos:", ["Desde 2026", "A partir de 2027", "Só em 2033", "Nunca"], 1, "O Simples não recolhe as alíquotas de teste em 2026; as regras valem a partir de 2027."] ] },
+
+  { n: 3, start: "2026-11-30", title: "CST, cClassTrib e a Calculadora oficial",
+    vig: { s: "on", l: "Em uso nas notas desde 03/08/2026" },
+    past: "Como funcionam CST e CFOP no ICMS hoje", cur: "Tabela cClassTrib e motor de cálculo da Receita",
+    fiscal: "Assim como o ICMS tem CST, IBS e CBS têm um CST próprio e o cClassTrib. Errar esse código é o erro fiscal mais comum na transição.",
+    days: [
+      ["past", "Ler o guia sobre as tabelas de CST e cClassTrib", [R.cst]],
+      ["past", "Navegar na tabela oficial e achar os códigos de tributação integral, redução e isenção", [R.classtrib]],
+      ["cur", "Testar a Calculadora oficial com uma venda real de cliente", [R.calc]],
+      ["cur", "Ler no manual da Receita como a Calculadora gera os grupos do XML", [R.manual]],
+      ["bridge", "Classificar 10 itens de um cliente com CST e cClassTrib. Depois, provinha", []] ],
+    quiz: [
+      ["Para que serve o cClassTrib?", ["Identificar o CFOP da operação", "Indicar a classificação tributária de IBS/CBS (integral, redução, isenção etc.)", "Calcular o ICMS-ST", "Substituir o NCM"], 1, "O cClassTrib diz qual tratamento de IBS/CBS a operação tem."],
+      ["O cClassTrib 000001 significa:", ["Exportação", "Situações tributadas integralmente pelo IBS e CBS", "Alíquota zero", "Imunidade"], 1, "É o código da tributação integral, o mais usado."],
+      ["Os 3 primeiros dígitos do cClassTrib correspondem a:", ["O CFOP", "O CST de IBS/CBS", "O NCM", "O código do município"], 1, "Cada cClassTrib está vinculado a um CST; os 3 primeiros dígitos são o CST."],
+      ["Onde está a tabela oficial de cClassTrib?", ["No site da Sefaz-SP", "No Portal da Conformidade Fácil (SVRS)", "Na LC 116", "Não existe tabela oficial"], 1, "A tabela oficial fica no portal SVRS, seção Classificação Tributária."],
+      ["O que é a Calculadora de Tributos da Receita?", ["Um simulador sem valor oficial", "O motor oficial que calcula CBS, IBS e IS e gera os grupos do XML", "Um programa de folha", "Uma tabela de alíquotas do ICMS"], 1, "É o motor de cálculo oficial, com memória de cálculo e base legal."] ] },
+
+  { n: 4, start: "2026-12-07", title: "Serviços: NFS-e Nacional com IBS/CBS",
+    vig: { s: "on", l: "Em vigor desde 01/10/2026 (cronograma do Ato Conjunto 7/2026)" },
+    past: "ISS hoje: LC 116 e recolhimento no município do prestador", cur: "NFS-e Nacional com IBS/CBS e regras de preenchimento",
+    fiscal: "Escritório que atende prestadores de serviço precisa dominar a NFS-e Nacional, que é o documento padrão para IBS/CBS em serviços.",
+    days: [
+      ["past", "Ler na página da NFS-e Nacional como o padrão nacional funciona", [R.nfse]],
+      ["past", "Rever na LC 214 o local da operação para serviços (destino)", [R.lc214]],
+      ["cur", "Ler a documentação da reforma na NFS-e", [R.nfsertc]],
+      ["cur", "Ler o cronograma atualizado e as regras de preenchimento", [R.nfseato, R.nfse009]],
+      ["bridge", "Conferir uma NFS-e emitida por cliente e listar o que falta para IBS/CBS. Depois, provinha", []] ],
+    quiz: [
+      ["Hoje, em regra, o ISS é recolhido:", ["No município do tomador sempre", "No município do estabelecimento prestador", "Para o estado", "Para a União"], 1, "Pela LC 116, a regra geral é o local do estabelecimento prestador (com exceções)."],
+      ["Com o IBS, a arrecadação sobre serviços vai para:", ["O município do prestador", "O estado e o município de destino", "A União", "O CGIBS fica com tudo"], 1, "O IBS segue o princípio do destino."],
+      ["Qual ato atualizou o cronograma de obrigatoriedade de IBS/CBS na NFS-e?", ["Ato Conjunto RFB/CGIBS nº 7/2026", "LC 116/2003", "EC 132/2023", "Decreto 12.955/2026"], 0, "O Ato Conjunto RFB/CGIBS nº 7/2026 atualizou o cronograma da NFS-e."],
+      ["Até 2032, o prestador de serviços:", ["Só recolhe IBS", "Convive com ISS e IBS/CBS ao mesmo tempo", "Fica isento", "Só recolhe ISS"], 1, "Na transição, o ISS cai aos poucos enquanto o IBS sobe."],
+      ["Onde fica a documentação oficial da NFS-e Nacional?", ["gov.br/nfse", "No site de cada prefeitura apenas", "No Portal do Simples", "No eSocial"], 0, "O portal gov.br/nfse reúne leiautes e notas técnicas."] ] },
+
+  { n: 5, start: "2026-12-14", title: "Simples Nacional e MEI",
+    vig: { s: "soon", l: "Começa em 01/01/2027" },
+    past: "Como a LC 214 tratou o Simples", cur: "Regras de 2027 e alterações da LC 227 (aula 8)",
+    fiscal: "É o tema com mais impacto no escritório: muitos clientes são do Simples e vão ter que decidir se recolhem IBS/CBS por fora.",
+    days: [
+      ["past", "Ler na LC 214 o capítulo do Simples Nacional e do MEI", [R.lc214]],
+      ["past", "Ler o guia do Simples na reforma", [R.simples]],
+      ["cur", "Assistir à primeira metade da aula 8", [R.a8]],
+      ["cur", "Terminar a aula 8 e ler as alterações da LC 227 ao Simples", [R.a8, R.lc227]],
+      ["bridge", "Comparar, num cliente B2B: ficar no DAS ou recolher IBS/CBS por fora. Depois, provinha", []] ],
+    quiz: [
+      ["Por padrão, o optante do Simples recolhe IBS/CBS:", ["Por fora, em guia separada", "Dentro do DAS", "Não recolhe", "Só em 2033"], 1, "Sem opção, IBS/CBS ficam dentro do DAS."],
+      ["Qual é a alternativa do optante do Simples?", ["Sair do Simples obrigatoriamente", "Recolher IBS/CBS por fora, no regime regular, mantendo os demais tributos no DAS", "Pagar só ICMS", "Virar MEI"], 1, "É o chamado regime híbrido."],
+      ["Por que um cliente B2B do Simples pode preferir recolher por fora?", ["Para pagar menos ICMS", "Porque o comprador aproveita o crédito integral de IBS/CBS", "Para não emitir nota", "Porque o DAS acaba"], 1, "Dentro do DAS, o crédito do comprador é limitado ao que foi pago no Simples."],
+      ["Quem compra de optante que recolhe dentro do DAS tem crédito:", ["Integral, pela alíquota cheia", "Igual ao IBS/CBS pago no Simples", "Nenhum, nunca", "Em dobro"], 1, "O crédito corresponde ao valor efetivamente pago no regime do Simples."],
+      ["Em 2026, o optante do Simples precisou recolher as alíquotas de teste?", ["Sim", "Não", "Só o MEI", "Só no comércio"], 1, "As regras para o Simples só produzem efeitos a partir de 2027."] ] },
+
+  { pause: true, start: "2026-12-21", end: "2027-01-03" },
+
+  { n: 6, start: "2027-01-04", title: "A virada de 2027: CBS cheia e fim de PIS/Cofins",
+    vig: { s: "soon", l: "Começa em 01/01/2027" },
+    past: "Regras de transição gravadas no ADCT em 2023", cur: "O que muda na nota e na apuração a partir de janeiro",
+    fiscal: "Primeira semana do ano novo: confira se os clientes do Presumido e do Real já emitem com CBS cheia e se o PIS/Cofins saiu da apuração.",
+    days: [
+      ["past", "Ler os arts. 125 a 133 do ADCT (transição)", [R.ec132]],
+      ["past", "Montar a tabela ano a ano de 2026 a 2033", [R.sijur]],
+      ["cur", "Assistir ao episódio da série Diálogos sobre a transição", [R.g15]],
+      ["cur", "Estudar 2027: CBS cheia, fim de PIS/Cofins, IPI zerado e Imposto Seletivo", [R.sijur, R.faz]],
+      ["bridge", "Conferir a primeira nota de 2027 de um cliente do Lucro Presumido. Depois, provinha", []] ],
+    quiz: [
+      ["Em que ano PIS e Cofins deixam de existir?", ["2026", "2027", "2029", "2033"], 1, "Em 2027 a CBS passa a ser cobrada de verdade e PIS/Cofins são extintos."],
+      ["Em 2027 e 2028, qual é a alíquota do IBS?", ["0,1% (0,05% estadual + 0,05% municipal)", "1%", "Alíquota cheia", "Zero"], 0, "O IBS segue em teste até 2028: 0,05% estadual e 0,05% municipal."],
+      ["Em 2029, ICMS e ISS passam a ser cobrados a:", ["50% das alíquotas atuais", "90% das alíquotas atuais", "Zero", "100% das alíquotas atuais"], 1, "De 2029 a 2032, ICMS e ISS caem para 90%, 80%, 70% e 60%."],
+      ["Em que ano ICMS e ISS deixam de existir?", ["2027", "2029", "2032", "2033"], 3, "Em 2033 o sistema novo vale integralmente."],
+      ["O que acontece com o IPI em 2027?", ["É extinto para todos os produtos", "Tem alíquota zerada, exceto produtos com industrialização incentivada na Zona Franca de Manaus", "Dobra de alíquota", "Nada muda"], 1, "O IPI é zerado em 2027, mas continua para proteger a Zona Franca de Manaus."] ] },
+
+  { n: 7, start: "2027-01-11", title: "Créditos e apuração assistida",
+    vig: { s: "soon", l: "Vale com a CBS cheia, desde 01/01/2027" },
+    past: "Não cumulatividade na LC 214/2025", cur: "Apuração assistida pela Receita (aula 6)",
+    fiscal: "Hoje o crédito de PIS/Cofins tem muitas restrições. Com IBS/CBS, quase toda compra gera crédito, mas só se o imposto foi pago.",
+    days: [
+      ["past", "Ler na LC 214 as regras de crédito e o que é uso e consumo pessoal", [R.lc214]],
+      ["past", "Assistir aos episódios Diálogos sobre apuração e bens de capital", [R.g3, R.g6]],
+      ["cur", "Assistir à primeira metade da aula 6 (apuração assistida)", [R.a6]],
+      ["cur", "Terminar a aula 6 e ler o manual de serviços sobre a apuração", [R.a6, R.manual]],
+      ["bridge", "Simular a apuração de créditos de um cliente do Lucro Real. Depois, provinha", []] ],
+    quiz: [
+      ["Na não cumulatividade ampla, gera crédito:", ["Só a compra de mercadoria para revenda", "Praticamente toda aquisição, exceto uso e consumo pessoal", "Nenhuma aquisição", "Só energia elétrica"], 1, "A regra é crédito amplo, com exceção de bens e serviços de uso e consumo pessoal."],
+      ["Em regra, para tomar o crédito é preciso que:", ["O fornecedor seja do mesmo estado", "O IBS/CBS da compra tenha sido efetivamente extinto (pago)", "A compra seja à vista", "A nota seja impressa"], 1, "A LC 214 vincula o crédito ao pagamento do tributo na etapa anterior."],
+      ["O que é a apuração assistida?", ["Um serviço pago de consultoria", "A apuração pré-preenchida pelo Fisco a partir dos documentos fiscais", "A antiga DCTF", "Uma auditoria presencial"], 1, "O Fisco monta a apuração com base nas notas, e o contribuinte confere."],
+      ["Uma joia comprada pela empresa para uso do sócio:", ["Gera crédito integral", "Não gera crédito, por ser uso e consumo pessoal", "Gera crédito em dobro", "Gera crédito só de ICMS"], 1, "Bens de uso e consumo pessoal não geram crédito."],
+      ["Saldo credor que não foi compensado pode ser:", ["Perdido no fim do mês", "Objeto de pedido de ressarcimento", "Usado para pagar IRPJ", "Vendido a terceiros"], 1, "A LC 214 prevê ressarcimento do saldo credor."] ] },
+
+  { n: 8, start: "2027-01-18", title: "Pagamento: compensação, ressarcimento e split payment",
+    vig: { s: "soon", l: "Compensação desde 2027; split payment ainda sem data firme" },
+    past: "Formas de extinção do débito na LC 214", cur: "Decreto 12.955/2026 e aula 7",
+    fiscal: "O split muda o caixa do cliente: o imposto é separado no momento do pagamento. O fiscal precisa saber conciliar isso.",
+    days: [
+      ["past", "Ler na LC 214 as formas de extinção do débito e o split payment", [R.lc214]],
+      ["past", "Ler o guia sobre quando o split payment começa", [R.split]],
+      ["cur", "Ler os arts. 28 a 33 do Decreto 12.955 (split payment)", [R.d12955]],
+      ["cur", "Assistir à aula 7 (compensação, ressarcimento e restituição)", [R.a7]],
+      ["bridge", "Desenhar o fluxo de uma venda com cartão sob split payment. Depois, provinha", []] ],
+    quiz: [
+      ["O que é split payment?", ["Parcelar o imposto em 12 vezes", "Separar automaticamente o tributo no pagamento e enviá-lo ao Fisco", "Dividir a nota em duas", "Pagar metade em cada estado"], 1, "No pagamento eletrônico, a parte do tributo vai direto ao Fisco."],
+      ["Onde o split payment da CBS está regulamentado?", ["Decreto 12.955/2026, arts. 28 a 33", "LC 116/2003", "EC 132, art. 1º", "Resolução CGSN 140"], 0, "O regulamento da CBS disciplina o split nos arts. 28 a 33."],
+      ["Em 2026, o split payment:", ["Já era obrigatório para todos", "Ainda não operava", "Valia só para o Simples", "Foi extinto"], 1, "Em 2026 o split ainda não estava em funcionamento."],
+      ["Qual destas NÃO é forma de extinguir o débito de IBS/CBS?", ["Compensação com créditos", "Pagamento pelo contribuinte", "Split payment", "Compensação com créditos de IRPJ"], 3, "IBS/CBS não se compensam com créditos de imposto de renda."],
+      ["Ressarcimento é:", ["Devolução em dinheiro de saldo credor", "Multa por atraso", "Desconto ao consumidor", "Parcelamento"], 0, "É a devolução do saldo credor acumulado."] ] },
+
+  { n: 9, start: "2027-01-25", title: "Reduções, alíquota zero e cesta básica",
+    vig: { s: "soon", l: "Valem na CBS desde 01/01/2027" },
+    past: "Regimes diferenciados na LC 214", cur: "Aula 10 do curso (jul. 2026)",
+    fiscal: "Reduções aparecem na nota pelo CST e pelo cClassTrib. O fiscal tem que saber qual código usar para cada produto ou serviço.",
+    days: [
+      ["past", "Ler na LC 214 as reduções de 30% e 60% e a alíquota zero", [R.lc214, R.g8]],
+      ["past", "Assistir ao episódio Diálogos sobre cesta básica e cashback", [R.g7]],
+      ["cur", "Assistir à primeira metade da aula 10", [R.a10, R.rfbreg]],
+      ["cur", "Terminar a aula 10 e anotar dúvidas", [R.a10]],
+      ["bridge", "Classificar produtos e serviços de 2 clientes nas reduções, com cClassTrib. Depois, provinha", [R.classtrib]] ],
+    quiz: [
+      ["Qual destes tem redução de 60%?", ["Serviços de educação", "Bebidas alcoólicas", "Cigarros", "Joias"], 0, "Educação, saúde e alguns alimentos têm redução de 60%."],
+      ["Profissões regulamentadas (ex.: contadores, advogados) têm redução de:", ["30%", "60%", "100%", "Nenhuma"], 0, "Profissionais intelectuais regulamentados têm redução de 30%."],
+      ["Produtos da Cesta Básica Nacional têm:", ["Alíquota cheia", "Alíquota zero", "Alíquota dobrada", "Imposto Seletivo"], 1, "A Cesta Básica Nacional tem alíquota zero de IBS e CBS."],
+      ["O que é o cashback da reforma?", ["Desconto para empresas", "Devolução de IBS/CBS a famílias de baixa renda", "Crédito para exportadores", "Bônus do Simples"], 1, "Famílias de baixa renda inscritas no CadÚnico recebem parte do tributo de volta."],
+      ["Como a redução aparece na nota fiscal?", ["Num campo de observação livre", "Pelo CST e pelo cClassTrib próprios", "Não aparece", "Pelo CFOP"], 1, "Cada redução tem seu código de classificação tributária."] ] },
+
+  { n: 10, start: "2027-02-01", title: "Regimes específicos e cadastro",
+    vig: { s: "soon", l: "Valem na CBS desde 01/01/2027" },
+    past: "Setores com regra própria na LC 214", cur: "Aulas 4 (cadastro), 12 e 13 do curso",
+    fiscal: "Combustíveis, imóveis, serviços financeiros e restaurantes não seguem a regra geral. Saiba reconhecer quando um cliente cai num deles.",
+    days: [
+      ["past", "Ler na LC 214: combustíveis, serviços financeiros e saúde", [R.lc214, R.g10]],
+      ["past", "Ler na LC 214: imóveis, cooperativas, bares e restaurantes", [R.lc214, R.g12, R.g14]],
+      ["cur", "Assistir à aula 4 (cadastro)", [R.a4]],
+      ["cur", "Assistir à aula do setor que atinge seus clientes: 12, 13 ou 11", [R.a12, R.a13, R.a11]],
+      ["bridge", "Resumir em uma página o regime específico de um cliente. Depois, provinha", []] ],
+    quiz: [
+      ["Como funciona a tributação de combustíveis?", ["Alíquota percentual na nota", "Monofásica, com alíquota fixa por unidade de medida", "Isenta", "Só ICMS"], 1, "Combustíveis são tributados uma vez só, com valor fixo por litro ou unidade."],
+      ["Operações com imóveis contam com:", ["Redutor de ajuste e redutor social", "Alíquota zero", "Imposto Seletivo", "Nada diferente"], 0, "O regime de imóveis usa redutores para chegar à base de cálculo."],
+      ["O cadastro único de imóveis da reforma se chama:", ["CIB (Cadastro Imobiliário Brasileiro)", "CNPJ", "CAEPF", "NIRF"], 0, "O CIB unifica a identificação dos imóveis."],
+      ["Serviços financeiros seguem:", ["A regra geral", "Um regime específico, com base e alíquotas próprias", "O Simples", "Isenção total"], 1, "Bancos e financeiras têm regime específico."],
+      ["Bares e restaurantes estão em:", ["Regime específico", "Imposto Seletivo", "Cesta básica", "Exportação"], 0, "Bares, restaurantes e hotelaria têm regime específico na LC 214."] ] },
+
+  { n: 11, start: "2027-02-08", title: "Imposto Seletivo, comércio exterior e ZFM", note: "Semana de Carnaval (09/02). Se folgar, passe a terça para o sábado.",
+    vig: { s: "soon", l: "Imposto Seletivo desde 01/01/2027" },
+    past: "Regras da EC 132 e da LC 214", cur: "Aulas 2 e 15 do curso",
+    fiscal: "Importação e exportação mudam o XML e o crédito. O Imposto Seletivo aparece em notas de cigarros, bebidas e veículos.",
+    days: [
+      ["past", "Ler na LC 214 o Imposto Seletivo e a importação/exportação", [R.lc214, R.g5]],
+      ["past", "Ler na LC 214 o tratamento da Zona Franca de Manaus", [R.lc214]],
+      ["cur", "Assistir à aula 2 (comércio internacional)", [R.a2]],
+      ["cur", "Assistir à aula 15 (Zona Franca de Manaus)", [R.a15]],
+      ["bridge", "Listar clientes atingidos por IS, ZFM ou importação. Depois, provinha", []] ],
+    quiz: [
+      ["Exportações de bens e serviços:", ["Pagam IBS/CBS em dobro", "São desoneradas, com manutenção dos créditos", "Pagam só IS", "Pagam só ICMS"], 1, "Exporta-se sem tributo e mantendo os créditos das compras."],
+      ["Na importação, IBS e CBS:", ["Não incidem", "Incidem", "Só incidem para pessoa física", "Viram ICMS"], 1, "IBS e CBS incidem também na importação."],
+      ["O Imposto Seletivo incide sobre:", ["Todos os produtos", "Bens e serviços prejudiciais à saúde ou ao meio ambiente", "Só serviços", "Alimentos da cesta básica"], 1, "Exemplos: cigarros, bebidas alcoólicas e açucaradas, veículos."],
+      ["Em que ano o Imposto Seletivo começa?", ["2026", "2027", "2029", "2033"], 1, "O IS passa a ser cobrado em 2027, junto com a CBS cheia."],
+      ["A Zona Franca de Manaus:", ["Perde todo tratamento favorecido", "Mantém tratamento favorecido", "Passa a pagar IS sempre", "É extinta em 2027"], 1, "A Constituição preservou o diferencial da ZFM."] ] },
+
+  { n: 12, start: "2027-02-15", title: "Comitê Gestor e regulamentos",
+    vig: { s: "on", l: "LC 227 em vigor; regulamentos publicados em 30/04/2026" },
+    past: "Do PLP 108/2024 à LC 227/2026", cur: "Resolução CGIBS 6/2026 e Decreto 12.955/2026",
+    fiscal: "Quem fiscaliza o IBS, onde estão as regras detalhadas e como o cliente contesta uma cobrança.",
+    days: [
+      ["past", "Ler a explicação do Senado sobre a criação do Comitê Gestor", [R.senado, R.g11]],
+      ["past", "Ler a análise da LC 227 e dos vetos", [R.mattos227]],
+      ["cur", "Ler o resumo dos regulamentos do IBS e da CBS", [R.mattosreg]],
+      ["cur", "Ler o Livro I do Decreto 12.955 (normas comuns)", [R.d12955]],
+      ["bridge", "Desenhar o fluxo de como um cliente contesta uma cobrança de IBS. Depois, provinha", []] ],
+    quiz: [
+      ["Quem edita o regulamento único do IBS?", ["A Receita Federal", "O Comitê Gestor do IBS (CGIBS)", "Cada prefeitura", "O Senado"], 1, "O CGIBS edita o regulamento e coordena a arrecadação do IBS."],
+      ["Qual lei criou o Comitê Gestor do IBS?", ["LC 214/2025", "LC 227/2026", "EC 132/2023", "LC 123/2006"], 1, "A LC 227/2026, sancionada em 13/01/2026."],
+      ["Qual é o regulamento do IBS?", ["Resolução CGIBS nº 6/2026", "Decreto 12.955/2026", "IN RFB 2.121", "LC 116"], 0, "Publicada junto com o regulamento da CBS, em 30/04/2026."],
+      ["Qual é o regulamento da CBS?", ["Resolução CGIBS nº 6/2026", "Decreto 12.955/2026", "LC 214/2025", "NT 2025.002"], 1, "O Decreto 12.955/2026 regulamenta a CBS."],
+      ["O contencioso administrativo do IBS é julgado:", ["Na Justiça Federal direto", "No âmbito do CGIBS", "Pelo CARF", "Pelo município do contribuinte"], 1, "A LC 227 organizou o processo administrativo do IBS dentro do Comitê Gestor."] ] },
+
+  { n: 13, start: "2027-02-22", title: "O que vem depois: 2029 a 2033 e revisão geral",
+    vig: { s: "later", l: "Começa em 2029" },
+    past: "Fundo de compensação de benefícios do ICMS (EC 132)", cur: "Queda gradual de ICMS e ISS a partir de 2029",
+    fiscal: "Clientes com incentivo de ICMS vão sentir a mudança em 2029. Feche o estudo revendo tudo e simulando três clientes.",
+    days: [
+      ["past", "Ler na EC 132 o fundo de compensação de benefícios do ICMS", [R.ec132]],
+      ["past", "Assistir à aula 3 (fundo de compensação)", [R.a3]],
+      ["cur", "Reler o quadro de/para, a tabela da transição e seus resumos", [R.sijur]],
+      ["cur", "Listar o que ainda precisa ser confirmado em norma oficial", [R.faz, R.nfe]],
+      ["bridge", "Simular a nota e a apuração de 3 clientes: Simples, Presumido e Real. Depois, provinha", [R.calc]] ],
+    quiz: [
+      ["Para que serve o fundo de compensação de benefícios fiscais?", ["Pagar o cashback", "Compensar empresas com benefícios onerosos de ICMS que acabam na transição", "Financiar o CGIBS", "Pagar ressarcimentos"], 1, "Ele compensa quem tinha incentivo de ICMS concedido com contrapartida."],
+      ["Em 2031, ICMS e ISS são cobrados a:", ["90%", "80%", "70%", "60%"], 2, "2029: 90%, 2030: 80%, 2031: 70%, 2032: 60%."],
+      ["A partir de quando ICMS e ISS deixam de existir?", ["2029", "2031", "2033", "Nunca"], 2, "Em 2033 o sistema novo vale integralmente."],
+      ["Qual documento passou a exigir IBS/CBS antes: NF-e ou NFS-e?", ["NF-e (03/08/2026)", "NFS-e (01/01/2026)", "As duas em 2033", "Nenhuma"], 0, "NF-e, NFC-e e CT-e em 03/08/2026; a NFS-e depois, pelo seu próprio cronograma."],
+      ["Onde conferir a classificação tributária oficial de um item?", ["Na tabela cClassTrib do portal SVRS", "No CFOP", "No Simples Nacional", "No eSocial"], 0, "A tabela oficial de cClassTrib fica no Portal da Conformidade Fácil (SVRS)."] ] },
+];
+/* ============ DADOS-FIM ============ */
+
+const DAY = ["Seg","Ter","Qua","Qui","Sex"];
+const TAG = { past: "Passado", cur: "Atual", bridge: "Prática" };
+const VIG = { on: "Em vigor", soon: "Prestes a entrar", later: "Mais adiante" };
+const MONTHS = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+const addDays = (dt, n) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate() + n);
+const fmt = dt => String(dt.getDate()).padStart(2,"0") + "/" + String(dt.getMonth()+1).padStart(2,"0");
+const fmtY = dt => fmt(dt) + "/" + dt.getFullYear();
+const t0 = new Date(); const today = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate());
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+const DL_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 2v8m0 0l-3-3m3 3l3-3M3 13h10"/></svg>';
+
+let state = { done: [], answers: {}, graded: {} };
+let filter = "all";
+const openQuiz = new Set();
+const LS = "reforma-estudo-v4";
+try { const raw = localStorage.getItem(LS); if (raw) state = Object.assign(state, JSON.parse(raw)); } catch (e) {}
+const isDone = id => state.done.includes(id);
+const allIds = [];
+WEEKS.forEach(w => { if (!w.pause) w.days.forEach((_, i) => allIds.push(`w${w.n}d${i}`)); });
+document.getElementById("total").textContent = allIds.length;
+const CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" style="color:var(--surface)"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+
+/* ---------- download para imprimir ---------- */
+function printableHtml(weeks, title) {
+  const rows = weeks.map(w => {
+    const s = parse(w.start);
+    const tasks = w.days.map(([k, t, refs], i) => `
+      <tr><td class="c">☐</td><td class="d">${DAY[i]} ${fmt(addDays(s, i))}</td>
+      <td><b>${TAG[k]}</b> · ${esc(t)} (1h)${refs.length ? `<div class="r">${refs.map(r => `${esc(r.l)}: <a href="${esc(r.u)}">${esc(r.u)}</a>`).join("<br>")}</div>` : ""}</td></tr>`).join("");
+    const quiz = w.quiz.map((q, i) => `<li>${esc(q[0])}<ol type="a">${q[1].map(o => `<li>${esc(o)}</li>`).join("")}</ol></li>`).join("");
+    const key = w.quiz.map((q, i) => `${i + 1}-${"abcd"[q[2]]}`).join("  ");
+    return `<section><h2>Módulo ${w.n}: ${esc(w.title)}</h2>
+      <p class="m">${fmtY(s)} a ${fmtY(addDays(s, 4))} · ${VIG[w.vig.s]}: ${esc(w.vig.l)}</p>
+      <p><b>Passado:</b> ${esc(w.past)}<br><b>Atual:</b> ${esc(w.cur)}<br><b>No fiscal:</b> ${esc(w.fiscal)}</p>
+      ${w.note ? `<p class="m">${esc(w.note)}</p>` : ""}
+      <table>${tasks}</table>
+      <h3>Provinha</h3><ol class="q">${quiz}</ol>
+      <p class="k">Gabarito: ${key}</p></section>`;
+  }).join("");
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  body { font: 11pt/1.45 Arial, Helvetica, sans-serif; color: #111; max-width: 780px; margin: 24px auto; padding: 0 16px; }
+  h1 { font-size: 18pt; margin: 0 0 4px; } h2 { font-size: 14pt; margin: 0 0 4px; } h3 { font-size: 12pt; margin: 14px 0 4px; }
+  .m { color: #555; margin: 0 0 8px; } section { page-break-after: always; margin-bottom: 32px; } section:last-child { page-break-after: auto; }
+  table { width: 100%; border-collapse: collapse; } td { border-bottom: 1px solid #ccc; padding: 6px 4px; vertical-align: top; }
+  td.c { width: 22px; font-size: 14pt; } td.d { width: 82px; white-space: nowrap; color: #444; }
+  .r { font-size: 9pt; color: #333; margin-top: 3px; word-break: break-all; } a { color: #0f6e66; }
+  ol.q > li { margin-bottom: 6px; } .k { font-size: 9pt; color: #666; margin-top: 10px; }
+  .top { color: #555; margin-bottom: 20px; }
+</style></head><body>
+<h1>${esc(title)}</h1><p class="top">Estudo da Reforma Tributária · 1h por dia · atualizado em ${fmtY(parse(ATUALIZADO_EM))}. Abra este arquivo no navegador e use Ctrl+P para imprimir.</p>
+${rows}</body></html>`;
+}
+
+const toastEl = document.getElementById("toast");
+function toast(msg) { toastEl.textContent = msg; clearTimeout(toast.t); toast.t = setTimeout(() => toastEl.textContent = "", 6000); }
+
+async function download(weeks, filename, title) {
+  const html = printableHtml(weeks, title);
+  let dl = null;
+  try { dl = await window.claude?.use?.("downloads"); } catch (e) {}
+  if (dl) {
+    try { await dl.save({ filename, data: new Blob([html], { type: "text/html" }) }); toast("Arquivo salvo. Abra no navegador e use Ctrl+P para imprimir."); }
+    catch (e) { toast("O download foi cancelado ou não pôde ser feito."); }
+    return;
+  }
+  try {
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast("Arquivo baixado. Abra no navegador e use Ctrl+P para imprimir.");
+  } catch (e) { toast("Não foi possível baixar aqui."); }
+}
+const dlAll = document.getElementById("dl-all");
+dlAll.innerHTML = DL_ICON + "Baixar cronograma completo";
+dlAll.addEventListener("click", () => download(WEEKS.filter(w => !w.pause), "cronograma-reforma-tributaria.html", "Cronograma completo"));
+
+/* ---------- render ---------- */
+function refLink(r) {
+  const a = el("a", "ref"); a.href = r.u; a.target = "_blank"; a.rel = "noopener noreferrer";
+  a.append(el("span", "k", r.t), document.createTextNode(r.l), el("span", null, "↗"));
+  a.setAttribute("aria-label", `${r.t.toLowerCase()}: ${r.l} (abre em nova aba)`);
+  return a;
+}
+const score = w => w.quiz.reduce((s, q, i) => s + (state.answers[`w${w.n}q${i}`] === q[2] ? 1 : 0), 0);
+
+function quizBlock(w) {
+  const det = el("details", "quiz");
+  det.open = openQuiz.has(w.n);
+  det.addEventListener("toggle", () => { det.open ? openQuiz.add(w.n) : openQuiz.delete(w.n); });
+  const sum = el("summary");
+  sum.append(document.createTextNode(`Provinha do módulo ${w.n} · ${w.quiz.length} perguntas`));
+  const graded = !!state.graded[w.n];
+  if (graded) sum.append(el("span", "pill score", `Nota ${score(w)}/${w.quiz.length}`));
+  det.append(sum);
+  const body = el("div", "qbody");
+  w.quiz.forEach(([q, opts, right, why], qi) => {
+    const qid = `w${w.n}q${qi}`;
+    const box = el("div", "q");
+    box.append(el("h4", null, `${qi + 1}. ${q}`));
+    const list = el("div", "opts"); list.setAttribute("role", "group"); list.setAttribute("aria-label", q);
+    opts.forEach((o, oi) => {
+      const b = el("button", "opt", `${"abcd"[oi]}) ${o}`); b.type = "button";
+      const chosen = state.answers[qid] === oi;
+      if (graded) { b.disabled = true; if (oi === right) b.classList.add("right"); else if (chosen) b.classList.add("wrong"); }
+      else if (chosen) b.classList.add("sel");
+      b.setAttribute("aria-pressed", chosen);
+      b.addEventListener("click", () => { state.answers[qid] = oi; persist(); render(); });
+      list.append(b);
+    });
+    box.append(list);
+    if (graded) box.append(el("p", "why", (state.answers[qid] === right ? "Certo. " : "Resposta certa: " + "abcd"[right] + ". ") + why));
+    body.append(box);
+  });
+  const foot = el("div", "qfoot");
+  if (!graded) {
+    const answered = w.quiz.filter((_, i) => state.answers[`w${w.n}q${i}`] != null).length;
+    const go = el("button", "btn primary", "Corrigir provinha"); go.type = "button";
+    go.disabled = answered < w.quiz.length;
+    go.addEventListener("click", () => { state.graded[w.n] = true; persist(); render(); });
+    foot.append(go, el("span", "why", answered < w.quiz.length ? `Respondidas: ${answered} de ${w.quiz.length}` : "Tudo respondido"));
+  } else {
+    const s = score(w);
+    foot.append(el("span", "result", s >= 4 ? `Você acertou ${s} de 5. Pode seguir.` : `Você acertou ${s} de 5. Vale rever o módulo antes de seguir.`));
+    const again = el("button", "btn", "Refazer"); again.type = "button";
+    again.addEventListener("click", () => { delete state.graded[w.n]; w.quiz.forEach((_, i) => delete state.answers[`w${w.n}q${i}`]); persist(); render(); });
+    foot.append(again);
+  }
+  body.append(foot);
+  det.append(body);
+  return det;
+}
+
+function renderUpdates() {
+  document.getElementById("upd-when").textContent = "revisado em " + fmtY(parse(ATUALIZADO_EM));
+  const ul = document.getElementById("upd-list");
+  ul.textContent = "";
+  UPDATES.slice(0, 5).forEach(u => {
+    const li = el("li");
+    const t = el("time", null, fmt(parse(u.d))); t.dateTime = u.d;
+    li.append(t, el("div", null, u.t)); ul.append(li);
+  });
+}
+
+function render() {
+  const root = document.getElementById("timeline");
+  const y = window.scrollY;
+  root.textContent = "";
+  let curMonth = null, weeksEl = null;
+  for (const w of WEEKS) {
+    const s = parse(w.start);
+    const key = s.getFullYear() + "-" + s.getMonth();
+    if (key !== curMonth) {
+      curMonth = key;
+      const sec = el("section", "month");
+      sec.append(el("h2", null, MONTHS[s.getMonth()] + " " + s.getFullYear()));
+      weeksEl = el("div", "weeks"); sec.append(weeksEl); root.append(sec);
+    }
+    if (w.pause) {
+      if (filter === "open") continue;
+      const p = el("div", "pause");
+      p.innerHTML = `<b>Pausa de ${fmt(s)} a ${fmt(parse(w.end))}.</b> Festas e fechamento do ano. O estudo volta em 04/01/2027, já com as regras de 2027 valendo.`;
+      weeksEl.append(p); continue;
+    }
+    const ids = w.days.map((_, i) => `w${w.n}d${i}`);
+    const complete = ids.every(isDone) && state.graded[w.n];
+    const isNow = today >= s && today <= addDays(s, 6);
+    if (filter === "open" && complete) continue;
+
+    const card = el("article", "week" + (isNow ? " now" : ""));
+    if (isNow) card.id = "semana-atual";
+    const head = el("div", "whead");
+    head.append(el("span", "wnum", "MÓDULO " + String(w.n).padStart(2, "0")), el("h3", null, w.title), el("span", "dates", `${fmt(s)} – ${fmt(addDays(s, 4))}`));
+    if (isNow) head.append(el("span", "pill now", "Esta semana")); else if (complete) head.append(el("span", "pill ok", "Concluído"));
+    card.append(head);
+
+    const vig = el("div", "vig"); vig.append(el("span", "st " + w.vig.s, VIG[w.vig.s]), el("span", null, w.vig.l)); card.append(vig);
+    const pair = el("div", "pair");
+    const p = el("div", "p"); p.append(el("span", null, "Passado"), document.createTextNode(w.past));
+    const c = el("div", "c"); c.append(el("span", null, "Atual"), document.createTextNode(w.cur));
+    pair.append(p, c); card.append(pair);
+    const f = el("p", "fiscal"); f.append(el("b", null, "No fiscal: "), document.createTextNode(w.fiscal)); card.append(f);
+    if (w.note) card.append(el("p", "note", w.note));
+
+    const ul = el("ul", "tasks");
+    w.days.forEach(([kind, text, refs], i) => {
+      const id = ids[i];
+      const li = el("li", isDone(id) ? "checked" : "");
+      const lab = el("label", "chk"); lab.htmlFor = id;
+      const cb = el("input"); cb.type = "checkbox"; cb.id = id; cb.checked = isDone(id);
+      const box = el("span", "box"); box.innerHTML = CHECK;
+      lab.append(cb, box, el("span", "day", `${DAY[i]} ${fmt(addDays(s, i))}`));
+      const body = el("div", "body");
+      const txt = el("label", "txt"); txt.htmlFor = id;
+      txt.append(el("span", "tag " + kind, TAG[kind]), document.createTextNode(text + " · 1h"));
+      body.append(txt);
+      if (refs.length) { const rb = el("div", "refs"); refs.forEach(r => rb.append(refLink(r))); body.append(rb); }
+      li.append(lab, body);
+      cb.addEventListener("change", () => {
+        state.done = cb.checked ? [...new Set([...state.done, id])] : state.done.filter(x => x !== id);
+        persist(); render(); document.getElementById(id)?.focus({ preventScroll: true });
+      });
+      ul.append(li);
+    });
+    card.append(ul, quizBlock(w));
+    const wf = el("div", "wfoot");
+    const db = el("button", "btn dl"); db.type = "button"; db.innerHTML = DL_ICON; db.append(document.createTextNode("Baixar esta semana para imprimir"));
+    db.addEventListener("click", () => download([w], `reforma-modulo-${String(w.n).padStart(2, "0")}.html`, `Módulo ${w.n}: ${w.title}`));
+    wf.append(db); card.append(wf);
+    weeksEl.append(card);
+  }
+  root.querySelectorAll(".month").forEach(m => { if (!m.querySelector(".weeks").children.length) m.remove(); });
+  const n = allIds.filter(isDone).length;
+  document.getElementById("count").textContent = n;
+  const pct = Math.round(n / allIds.length * 100);
+  document.getElementById("pct").textContent = pct + "%";
+  document.getElementById("bar").style.width = pct + "%";
+  const gw = WEEKS.filter(w => !w.pause && state.graded[w.n]);
+  const pts = gw.reduce((a, w) => a + score(w), 0);
+  document.getElementById("quizstat").textContent = gw.length ? `Provinhas: ${gw.length} feitas, ${Math.round(pts / (gw.length * 5) * 100)}% de acerto` : "Provinhas: nenhuma feita ainda";
+  window.scrollTo(0, y);
+}
+
+function renderLibrary() {
+  const groups = [
+    ["Leis e regulamentos", ["ec132","lc214","lc227","d12955"]],
+    ["Fiscal na prática: notas e ferramentas", ["classtrib","calc","manual","nfe","nfse","nfsertc","nfseato","nfse009"]],
+    ["Materiais do governo", ["faz","rfbmods","rfbreg","senado","comsefaz"]],
+    ["Vídeos", ["cfc","dialogos","a1","a5","a6","a7","a8","a10"]],
+    ["Análises e guias", ["cst","nfecampos","simples","split","migalhas","pwc","mattos227","mattosreg","sijur"]],
+  ];
+  const root = document.getElementById("libcols");
+  groups.forEach(([title, keys]) => {
+    const col = el("div", "libcol"); col.append(el("h3", null, title));
+    const ul = el("ul");
+    keys.forEach(k => { const r = R[k]; const li = el("li"); const a = el("a", null, r.l); a.href = r.u; a.target = "_blank"; a.rel = "noopener noreferrer"; li.append(a); if (r.d) li.append(el("small", null, r.d)); ul.append(li); });
+    col.append(ul); root.append(col);
+  });
+}
+
+/* ---------- persistência: banco do artifact (conta Claude) ou navegador ---------- */
+let docRef = null, writing = false, dirty = false;
+const saveEl = document.getElementById("save");
+function persist() {
+  try { localStorage.setItem(LS, JSON.stringify(state)); } catch (e) {}
+  if (!docRef) { saveEl.textContent = "Salvo neste navegador"; return; }
+  dirty = true; flush();
+}
+async function flush() {
+  if (writing || !dirty) return;
+  writing = true; dirty = false; saveEl.textContent = "Salvando…";
+  try { await docRef.set({ done: state.done, answers: state.answers, graded: state.graded, atualizadoEm: new Date().toISOString() }); saveEl.textContent = "Progresso salvo"; }
+  catch (e) { saveEl.textContent = "Não foi possível salvar agora. Ficou guardado neste navegador."; }
+  writing = false; if (dirty) flush();
+}
+(async () => {
+  let settled = false;
+  const fallback = () => { settled = true; clearTimeout(timer); docRef = null; saveEl.textContent = "Salvo neste navegador"; };
+  const timer = setTimeout(() => { if (!settled) saveEl.textContent = "Salvo neste navegador"; }, 10000);
+  try {
+    if (!window.claude?.use) return fallback();
+    const db = await window.claude.use("db");
+    if (!db) return fallback();
+    docRef = db.doc("progresso/cronograma-v4");
+    docRef.onSnapshot(snap => {
+      settled = true; clearTimeout(timer);
+      if (snap.exists) {
+        const d = snap.data();
+        if (!writing && !dirty) { state = { done: Array.isArray(d.done) ? d.done : [], answers: d.answers || {}, graded: d.graded || {} }; render(); }
+      } else if (state.done.length || Object.keys(state.answers).length) { dirty = true; flush(); }
+      if (!writing) saveEl.textContent = "Progresso salvo";
+    }, fallback);
+  } catch (e) { fallback(); }
+})();
+
+function setFilter(f) {
+  filter = f;
+  document.getElementById("f-all").setAttribute("aria-pressed", f === "all");
+  document.getElementById("f-open").setAttribute("aria-pressed", f === "open");
+  render();
+}
+const smooth = () => matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+document.getElementById("f-all").addEventListener("click", () => setFilter("all"));
+document.getElementById("f-open").addEventListener("click", () => setFilter("open"));
+document.getElementById("f-now").addEventListener("click", () => document.getElementById("semana-atual")?.scrollIntoView({ behavior: smooth(), block: "start" }));
+document.getElementById("f-lib").addEventListener("click", () => document.getElementById("biblioteca").scrollIntoView({ behavior: smooth(), block: "start" }));
+renderUpdates();
+renderLibrary();
+render();
+</script>
+
+</body>
+</html>
