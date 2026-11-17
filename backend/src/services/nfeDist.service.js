@@ -374,11 +374,13 @@ async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force =
     let saved = 0;
     let nextAllowedAt = null;
     let aviso = '';
+    let ultimaResposta = '';
 
     for (let consulta = 0; consulta < MAX_CONSULTAS; consulta += 1) {
       const response = await post(DIST_URL, 'http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse', distRequestXml({ cUFAutor, cnpj, ultNsu }), cert);
       if (response.status === 403) throw new Error('A SEFAZ recusou o certificado (HTTP 403). Confira se é o e-CNPJ da própria empresa e se está válido.');
       const ret = parseDistResponse(response.text);
+      ultimaResposta = `SEFAZ ${ret.cStat} - ${ret.xMotivo} (ultNSU ${ret.ultNsu}, maxNSU ${ret.maxNsu})`;
       if (ret.cStat === '656') {
         nextAllowedAt = new Date(Date.now() + UMA_HORA);
         aviso = 'A SEFAZ pediu para aguardar 1 hora (consumo indevido). A próxima busca continua de onde parou.';
@@ -418,7 +420,8 @@ async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force =
       data: {
         nfeLastSyncAt: new Date(),
         nfeLastSyncStatus: 'SUCESSO',
-        nfeLastSyncError: aviso || null,
+        // Guarda a última resposta da SEFAZ para conferência na tela.
+        nfeLastSyncError: [aviso, ultimaResposta].filter(Boolean).join(' | ') || null,
         nfeLastSyncCount: saved,
         ...(nextAllowedAt ? { nfeNextAllowedAt: nextAllowedAt } : {}),
       },
