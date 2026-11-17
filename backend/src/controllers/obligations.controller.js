@@ -3,6 +3,8 @@ const pdfParse = require('pdf-parse');
 const prisma = require('../lib/prisma');
 const fileStorage = require('../services/fileStorage.service');
 const { sendStoredFile } = require('../utils/sendStoredFile');
+const driveConference = require('../services/driveConference.service');
+const { periodsFromReference } = require('../services/conferenceIdentify');
 const { seedCatalogForFirm } = require('../services/obligationCatalog.service');
 const { sendEmail, missingEmailConfig } = require('../services/email.service');
 
@@ -485,10 +487,27 @@ async function updateProtocolDocument(req, res) {
   const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
   if (!existing) return res.status(404).json({ error: 'Documento nao encontrado.' });
   const data = updateProtocolSchema.parse(req.body);
+  // Se a competência, o vencimento ou a obrigação mudarem, recalcula o mês da tarefa
+  // que recebe a baixa ao aprovar o envio.
+  let periods = {};
+  if (data.reference !== undefined || data.dueDate !== undefined || data.obligationId !== undefined) {
+    const obligationId = data.obligationId !== undefined ? data.obligationId : existing.obligationId;
+    const obligation = obligationId ? await prisma.obligation.findFirst({ where: { id: obligationId, ...firmWhere(req) }, select: { frequency: true } }) : null;
+    const reference = data.reference !== undefined ? data.reference : existing.reference;
+    const dueDate = data.dueDate !== undefined ? data.dueDate : existing.dueDate;
+    const result = periodsFromReference(reference, { dueDate, frequency: obligation?.frequency });
+    periods = {
+      competenceYear: result.competence?.year || null,
+      competenceMonth: result.competence?.month || null,
+      taskYear: result.taskPeriod?.year || null,
+      taskMonth: result.taskPeriod?.month || null,
+    };
+  }
   const protocol = await prisma.protocolDocument.update({
     where: { id: existing.id },
     data: {
       ...data,
+      ...periods,
       dueDate: data.dueDate !== undefined ? (data.dueDate ? new Date(data.dueDate) : null) : undefined,
       payDate: data.payDate !== undefined ? (data.payDate ? new Date(data.payDate) : null) : undefined,
     },
@@ -562,6 +581,14 @@ async function removeProtocolDocument(req, res) {
   res.status(204).send();
 }
 
+async function syncConferenceDrive(req, res) {
+  res.json(await driveConference.syncFirm(req.user.accountingFirmId));
+}
+
+async function approveProtocol(req, res) {
+  res.json(await driveConference.approveAndSend(req.params.id, req.user));
+}
+
 async function downloadProtocolFile(req, res) {
   const clientOnly = req.user.role === 'CLIENT' ? { clientId: req.user.clientId || '__none__' } : {};
   const existing = await prisma.protocolDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req), ...clientOnly } });
@@ -570,6 +597,8 @@ async function downloadProtocolFile(req, res) {
 }
 
 module.exports = {
+  syncConferenceDrive,
+  approveProtocol,
   downloadProtocolFile,
   listObligations,
   createObligation,

@@ -1,5 +1,7 @@
 const { z } = require('zod');
 const prisma = require('../lib/prisma');
+const drive = require('../services/googleDrive.service');
+const { isEmailConfigured, missingEmailConfig } = require('../services/email.service');
 const certCrypto = require('../utils/certCrypto');
 const { inspectPfx } = require('../utils/certInspect');
 const { logoDataUrl, preserveFirmLogo } = require('../utils/firmLogo');
@@ -107,7 +109,56 @@ async function removeCertificate(req, res) {
   res.json(serializeFirm(firm));
 }
 
+// ---------- Conferência pelo Google Drive ----------
+
+function driveSettingsPayload(firm) {
+  return {
+    driveConfigured: drive.isConfigured(),
+    serviceAccountEmail: drive.serviceAccountEmail(),
+    conferenceFolderId: firm.driveConferenceFolderId || null,
+    clientsFolderId: firm.driveClientsFolderId || null,
+    lastSyncAt: firm.driveLastSyncAt || null,
+    lastSyncError: firm.driveLastSyncError || null,
+    emailConfigured: isEmailConfigured(),
+    emailMissing: missingEmailConfig(),
+  };
+}
+
+async function getDriveSettings(req, res) {
+  const firm = await prisma.accountingFirm.findUnique({ where: { id: req.user.accountingFirmId } });
+  res.json(driveSettingsPayload(firm));
+}
+
+const driveSettingsSchema = z.object({
+  conferenceFolder: z.string().max(500).optional().nullable(),
+  clientsFolder: z.string().max(500).optional().nullable(),
+});
+
+async function updateDriveSettings(req, res) {
+  const data = driveSettingsSchema.parse(req.body || {});
+  const update = {};
+  const checked = [];
+  for (const [field, column, label] of [['conferenceFolder', 'driveConferenceFolderId', 'Pasta de conferência'], ['clientsFolder', 'driveClientsFolderId', 'Pasta de clientes']]) {
+    if (data[field] === undefined) continue;
+    if (!data[field]) { update[column] = null; continue; }
+    const folderId = drive.folderIdFromInput(data[field]);
+    if (!folderId) return res.status(400).json({ error: `${label}: cole o link da pasta do Google Drive.` });
+    if (drive.isConfigured()) {
+      const folder = await drive.getFolder(folderId);
+      if (folder.capabilities && folder.capabilities.canAddChildren === false) {
+        return res.status(400).json({ error: `${label}: a conta de serviço precisa ser Editor da pasta "${folder.name}".` });
+      }
+      checked.push({ label, name: folder.name });
+    }
+    update[column] = folderId;
+  }
+  const firm = await prisma.accountingFirm.update({ where: { id: req.user.accountingFirmId }, data: update });
+  res.json({ ...driveSettingsPayload(firm), checked });
+}
+
 module.exports = {
+  getDriveSettings,
+  updateDriveSettings,
   getFirm,
   updateFirm,
   uploadLogo,

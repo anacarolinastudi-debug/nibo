@@ -43,6 +43,12 @@ model AccountingFirm {
   certificateValidUntil          DateTime?
   certificateUploadedAt          DateTime?
 
+  // Conferência automática: pasta do Drive com documentos a conferir e pasta raiz dos clientes.
+  driveConferenceFolderId String?
+  driveClientsFolderId    String?
+  driveLastSyncAt         DateTime?
+  driveLastSyncError      String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -743,6 +749,15 @@ model ProtocolDocument {
   emailTo        String?
   emailStatus    String?
   deliveryNote   String?
+  // Origem no Google Drive e identificação automática
+  sourceDriveFileId   String?
+  competenceYear      Int?
+  competenceMonth     Int?
+  taskYear            Int?
+  taskMonth           Int?
+  identificationNotes String?
+  driveMovedAt        DateTime?
+  driveDestination    String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
@@ -765,6 +780,7 @@ model ProtocolDocument {
   @@index([clientId])
   @@index([obligationId])
   @@index([demandId])
+  @@unique([accountingFirmId, sourceDriveFileId])
   @@index([status])
   @@map("protocol_documents")
 }

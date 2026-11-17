@@ -238,12 +238,88 @@ function EscritorioTab() {
         </div>
       </section>
 
+      <DriveConferenceSection />
+
       <div className="fixed bottom-0 left-[282px] right-0 flex justify-end gap-3 border-t border-[#dfe5e8] bg-white px-6 py-3">
         <button onClick={handleSave} disabled={saving} className="rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50">
           {saving ? 'Salvando…' : 'Salvar alterações'}
         </button>
       </div>
     </div>
+  );
+}
+
+function driveFolderLink(id) {
+  return id ? `https://drive.google.com/drive/folders/${id}` : '';
+}
+
+function DriveConferenceSection() {
+  const [settings, setSettings] = useState(null);
+  const [conferenceFolder, setConferenceFolder] = useState('');
+  const [clientsFolder, setClientsFolder] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    api.get('/firm/drive').then(({ data }) => {
+      setSettings(data);
+      setConferenceFolder(driveFolderLink(data.conferenceFolderId));
+      setClientsFolder(driveFolderLink(data.clientsFolderId));
+    }).catch(() => setSettings(null));
+  }, []);
+
+  async function handleSave() {
+    setSaving(true);
+    setMessage('');
+    try {
+      const { data } = await api.put('/firm/drive', { conferenceFolder, clientsFolder });
+      setSettings(data);
+      setMessage(data.checked?.length ? `Acesso confirmado: ${data.checked.map((item) => `${item.label} "${item.name}"`).join(' e ')}.` : 'Pastas salvas.');
+    } catch (error) {
+      setMessage(error.response?.data?.error || 'Não foi possível salvar as pastas.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!settings) return null;
+
+  return (
+    <section className="mb-20 grid grid-cols-3 gap-6 border-t border-[#eef0f2] pt-8">
+      <div className="col-span-1">
+        <h2 className="font-semibold">Conferência pelo Google Drive</h2>
+        <p className="mt-1 text-sm text-[#78838a]">
+          Os PDFs colocados na pasta de conferência entram sozinhos na aba Conferência, já identificados. Depois do seu OK, vão por e-mail ao cliente, a tarefa recebe baixa e o arquivo é movido para a pasta do cliente.
+        </p>
+      </div>
+      <div className="col-span-2 space-y-4">
+        <div className="rounded border border-[#dfe5e8] bg-[#fafbfc] p-4 text-sm">
+          <p className="mb-2 flex items-center gap-2">
+            <ShieldCheck size={16} className={settings.driveConfigured ? 'text-emerald-500' : 'text-[#9aa5ad]'} />
+            {settings.driveConfigured ? 'Conta de serviço do Google configurada' : 'Conta de serviço do Google ainda não configurada no servidor (GOOGLE_SERVICE_ACCOUNT_JSON).'}
+          </p>
+          {settings.serviceAccountEmail && (
+            <p className="text-[#68737a]">Compartilhe as duas pastas como <b>Editor</b> com: <span className="select-all font-mono text-ink">{settings.serviceAccountEmail}</span></p>
+          )}
+          <p className="mt-2 flex items-center gap-2">
+            <ShieldCheck size={16} className={settings.emailConfigured ? 'text-emerald-500' : 'text-[#9aa5ad]'} />
+            {settings.emailConfigured ? 'E-mail de envio configurado' : `E-mail de envio não configurado. Faltando: ${settings.emailMissing.join(', ')}`}
+          </p>
+        </div>
+        <TextInput label="Link da pasta de conferência (onde você coloca os documentos)" value={conferenceFolder} onChange={setConferenceFolder} />
+        <TextInput label="Link da pasta raiz dos clientes (onde ficam as pastas de cada cliente)" value={clientsFolder} onChange={setClientsFolder} />
+        <div className="flex items-center gap-3">
+          <button onClick={handleSave} disabled={saving} className="h-10 rounded bg-[#2693d2] px-5 text-white disabled:opacity-50">{saving ? 'Verificando…' : 'Salvar pastas'}</button>
+          {message && <p className="text-sm text-[#68737a]">{message}</p>}
+        </div>
+        {settings.lastSyncAt && (
+          <p className="text-xs text-[#9aa5ad]">
+            Última busca: {new Date(settings.lastSyncAt).toLocaleString('pt-BR')}
+            {settings.lastSyncError && <span className="block whitespace-pre-line text-red-500">{settings.lastSyncError}</span>}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 

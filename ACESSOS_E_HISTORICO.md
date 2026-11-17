@@ -426,3 +426,15 @@ Atualização registrada em 12/11/2026:
 - Removido o login de demonstração criado automaticamente (`admin@exemplo.com` / `senha123`) e o aviso com esses dados na tela de login. Se esse usuário já existir no banco, desativá-lo ou trocar a senha em Configurações > Equipe.
 - Em produção, o servidor não usa mais chave reserva para os tokens de login: sem `JWT_SECRET` no Render, o login fica indisponível em vez de inseguro.
 - Login, cadastro e "Esqueci minha senha" limitados a 8 tentativas por e-mail e 30 por IP a cada 15 minutos.
+
+## 14. Conferência automática pelo Google Drive
+
+Atualização registrada em 12/11/2026:
+
+- Fluxo: PDFs colocados na **pasta de conferência** do Drive entram sozinhos na aba Conferência (busca a cada 15 minutos e sempre que a aba é aberta, ou pelo botão **Buscar no Drive**). O sistema lê o PDF e identifica cliente (CNPJ/CPF, ou nome), obrigação (tipo de guia, identificadores dos robôs e vínculos do cliente), competência, vencimento e valor. O que não for identificado aparece com aviso em amarelo para correção manual.
+- **Aprovar e enviar**: manda o PDF por e-mail para o e-mail do cadastro do cliente, dá baixa (CONCLUIDA) na tarefa do mês do vencimento e move o arquivo no Drive para `PASTA DE CLIENTES / CLIENTE / DEPARTAMENTO / AAAA / MMAAAA` (ou `DEPARTAMENTO / MMAAAA`, se o cliente já usa essa estrutura). Pastas que faltarem são criadas. Nada é apagado.
+- Se o e-mail falhar, nada é baixado nem movido. Se só a movimentação no Drive falhar, o envio vale e o aviso fica registrado no documento.
+- Configuração: Configurações > Escritório > "Conferência pelo Google Drive" (links das duas pastas). As pastas precisam ser compartilhadas como **Editor** com o e-mail da conta de serviço exibido na tela.
+- Variáveis no Render: `GOOGLE_SERVICE_ACCOUNT_JSON` (conteúdo do arquivo JSON da conta de serviço do Google Cloud, com a Google Drive API ativada) e `EMAIL_HOST=smtp.gmail.com`, `EMAIL_PORT=465`, `EMAIL_USER`, `EMAIL_PASS` (senha de app do Gmail), `EMAIL_FROM`. Nunca registrar os valores neste arquivo.
+- PDFs escaneados (imagem, sem texto) não são lidos automaticamente: entram na Conferência para identificação manual.
+

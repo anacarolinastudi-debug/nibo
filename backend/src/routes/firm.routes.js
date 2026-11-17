@@ -9,6 +9,8 @@ const uploadMemory = require('../middleware/uploadMemory');
 router.use(requireAuth);
 
 router.get('/', ctrl.getFirm);
+router.get('/drive', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.getDriveSettings);
+router.put('/drive', requireRole('ADMIN'), ctrl.updateDriveSettings);
 router.put('/', requireRole('ADMIN'), ctrl.updateFirm);
 router.post('/logo', requireRole('ADMIN'), uploadLogo.single('file'), ctrl.uploadLogo);
 router.post('/certificate', requireRole('ADMIN'), uploadMemory.single('file'), ctrl.uploadCertificate);

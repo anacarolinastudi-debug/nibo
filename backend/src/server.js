@@ -81,6 +81,7 @@ app.listen(PORT, process.env.HOST, () => {
   console.log(`API rodando em http://localhost:${PORT}`);
   startEcacScheduler();
   require('./jobs/accountingNewsScheduler').startAccountingNewsScheduler();
+  require('./jobs/driveConferenceScheduler').startDriveConferenceScheduler();
 });
 
 function stripSensitiveClientFields(value) {

@@ -870,6 +870,57 @@ function Conference() {
     }).catch(() => {});
   }
 
+  const [driveSyncing, setDriveSyncing] = useState(false);
+  const [driveMessage, setDriveMessage] = useState('');
+  const [approvingIds, setApprovingIds] = useState([]);
+
+  async function syncDrive({ silent = false } = {}) {
+    setDriveSyncing(true);
+    if (!silent) setDriveMessage('');
+    try {
+      const { data } = await api.post('/obligations/conference/drive-sync');
+      if (data.status === 'NOT_CONFIGURED') {
+        if (!silent) setDriveMessage(data.error || 'Configure as pastas do Drive em Configurações > Escritório.');
+      } else if (data.status === 'RUNNING') {
+        if (!silent) setDriveMessage('Já existe uma busca em andamento.');
+      } else {
+        const parts = [`${data.imported} documento${data.imported === 1 ? '' : 's'} novo${data.imported === 1 ? '' : 's'} do Drive`];
+        if (data.remaining) parts.push(`${data.remaining} ainda na fila (busque de novo)`);
+        if (data.errors?.length) parts.push(`${data.errors.length} com erro: ${data.errors.join('; ')}`);
+        if (data.imported || !silent || data.errors?.length) setDriveMessage(parts.join(' · '));
+        if (data.imported) loadDocuments();
+      }
+    } catch (error) {
+      setDriveMessage(error.response?.data?.error || 'Não foi possível buscar os documentos no Drive.');
+    } finally {
+      setDriveSyncing(false);
+    }
+  }
+
+  async function approveAndSend(doc) {
+    setApprovingIds((current) => [...current, doc.id]);
+    try {
+      const { data } = await api.post(`/obligations/protocols/${doc.id}/approve`);
+      setDocuments((current) => current.filter((item) => item.id !== doc.id));
+      setSelectedIds((current) => current.filter((id) => id !== doc.id));
+      if (data.warning) window.alert(data.warning);
+      return true;
+    } catch (error) {
+      window.alert(`${doc.fileName}: ${error.response?.data?.error || 'Não foi possível aprovar e enviar.'}`);
+      return false;
+    } finally {
+      setApprovingIds((current) => current.filter((id) => id !== doc.id));
+    }
+  }
+
+  async function approveSelected(docs) {
+    for (const doc of docs) {
+      // Um por vez, para cada erro aparecer com o nome do arquivo.
+      // eslint-disable-next-line no-await-in-loop
+      await approveAndSend(doc);
+    }
+  }
+
   useEffect(() => {
     Promise.all([api.get('/clients'), api.get('/obligations'), api.get('/demands')])
       .then(([clientsResponse, obligationsResponse, demandsResponse]) => {
@@ -879,6 +930,7 @@ function Conference() {
       })
       .catch(() => {});
     loadDocuments();
+    syncDrive({ silent: true });
   }, []);
 
   async function addFiles(fileList) {
@@ -914,15 +966,6 @@ function Conference() {
   async function protocolDocument(doc) {
     await api.post(`/obligations/protocols/${doc.id}/confirm`, { deliveryType: doc.deliveryType || 'PORTAL' });
     setDocuments((current) => current.filter((item) => item.id !== doc.id));
-  }
-
-  async function sendByEmail(doc) {
-    try {
-      await api.post(`/obligations/protocols/${doc.id}/send-email`);
-      setDocuments((current) => current.filter((item) => item.id !== doc.id));
-    } catch (error) {
-      window.alert(error.response?.data?.error || 'Não foi possível enviar por e-mail.');
-    }
   }
 
   async function markPhysical(doc) {
@@ -973,10 +1016,12 @@ function Conference() {
         <h2 className="text-2xl font-semibold">Conferência</h2>
         <div className="flex gap-3">
           <input ref={fileRef} type="file" multiple className="hidden" onChange={(event) => addFiles(event.target.files)} />
+          <button onClick={() => syncDrive()} disabled={driveSyncing} className="rounded bg-[#f2f2f2] px-4 py-2 disabled:opacity-50">{driveSyncing ? 'Buscando no Drive…' : 'Buscar no Drive'}</button>
           <button onClick={() => fileRef.current?.click()} className="rounded bg-[#f2f2f2] px-4 py-2">Carregar arquivos</button>
           <button onClick={() => setActiveDocument({})} className="rounded bg-[#2693d2] px-4 py-2 text-white">+ Novo protocolo</button>
         </div>
       </div>
+      {driveMessage && <p className="mb-3 rounded border border-[#dfe5e8] bg-[#fafbfc] px-3 py-2 text-sm text-[#4c5a62]">{driveMessage}</p>}
       <div className="grid grid-cols-4 gap-4">
         <SelectField label="Cliente" value={filterClient} onChange={setFilterClient} options={['Todos os clientes', ...serverClients.map((item) => item.name)]} />
         <SelectField label="Departamento" value={filterDepartment} onChange={setFilterDepartment} options={['Todos os departamentos', ...departments]} />
@@ -1027,7 +1072,11 @@ function Conference() {
                   return (
                     <tr key={doc.id} className="relative border-t border-[#e7ecef]">
                       <td className="px-3 py-3"><input type="checkbox" checked={selectedIds.includes(doc.id)} onChange={() => toggleSelected(doc.id)} /></td>
-                      <td className="px-3 py-3"><button onClick={() => setActiveDocument(doc)} className="font-semibold text-[#16829b]">{doc.fileName}</button></td>
+                      <td className="px-3 py-3">
+                        <button onClick={() => setActiveDocument(doc)} className="text-left font-semibold text-[#16829b]">{doc.fileName}</button>
+                        {doc.sourceDriveFileId && <span className="ml-2 rounded bg-[#e8f4fb] px-1.5 py-0.5 text-[10px] font-medium text-[#16829b]">Drive</span>}
+                        {doc.identificationNotes && <p className="mt-1 max-w-xs whitespace-pre-line text-xs text-amber-700">{doc.identificationNotes}</p>}
+                      </td>
                       <td className="px-3 py-3">{doc.obligation?.name || '-'}</td>
                       <td className="px-3 py-3">{doc.demand?.title || '-'}</td>
                       <td className="px-3 py-3">{doc.reference || '-'}</td>
@@ -1062,7 +1111,14 @@ function Conference() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center gap-2 text-[#68737a]">
-                          <button title="Enviar por e-mail" onClick={() => sendByEmail(doc)} disabled={!doc.client?.email} className="disabled:cursor-not-allowed disabled:opacity-40"><Mail size={16} /></button>
+                          <button
+                            title={doc.client?.email ? `Aprovar e enviar para ${doc.client.email} (dá baixa na tarefa)` : 'O cliente não tem e-mail no cadastro'}
+                            onClick={() => approveAndSend(doc)}
+                            disabled={!doc.client?.email || approvingIds.includes(doc.id)}
+                            className="flex items-center gap-1 rounded bg-[#2693d2] px-2 py-1 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            <Mail size={14} /> {approvingIds.includes(doc.id) ? 'Enviando…' : 'Aprovar e enviar'}
+                          </button>
                           <button title="Registrar entrega física" onClick={() => markPhysical(doc)}><Send size={16} /></button>
                           <button title="Editar" onClick={() => setActiveDocument(doc)}><Pencil size={16} /></button>
                           <button title="Excluir" onClick={() => removeDocument(doc)}><Trash2 size={16} /></button>
@@ -1075,7 +1131,10 @@ function Conference() {
             </table>
             <div className="flex justify-end border-t border-[#e7ecef] px-4 py-2">
               {group.docs.filter((doc) => selectedIds.includes(doc.id)).length > 0 && (
-                <button onClick={() => group.docs.filter((doc) => selectedIds.includes(doc.id)).forEach(protocolDocument)} className="rounded bg-[#2693d2] px-3 py-1.5 text-sm text-white">Protocolar selecionados</button>
+                <div className="flex gap-2">
+                  <button onClick={() => group.docs.filter((doc) => selectedIds.includes(doc.id)).forEach(protocolDocument)} className="rounded bg-[#f2f2f2] px-3 py-1.5 text-sm">Protocolar sem enviar</button>
+                  <button onClick={() => approveSelected(group.docs.filter((doc) => selectedIds.includes(doc.id)))} disabled={!group.client?.email} className="rounded bg-[#2693d2] px-3 py-1.5 text-sm text-white disabled:opacity-40">Aprovar e enviar selecionados</button>
+                </div>
               )}
             </div>
           </div>

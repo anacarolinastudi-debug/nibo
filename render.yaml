@@ -22,6 +22,18 @@ services:
         sync: false
       - key: SUPABASE_STORAGE_BUCKET
         value: arquivos
+      - key: GOOGLE_SERVICE_ACCOUNT_JSON
+        sync: false
+      - key: EMAIL_HOST
+        sync: false
+      - key: EMAIL_PORT
+        sync: false
+      - key: EMAIL_USER
+        sync: false
+      - key: EMAIL_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: "0"
       - key: NODE_OPTIONS

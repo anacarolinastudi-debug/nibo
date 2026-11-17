@@ -30,6 +30,8 @@ router.delete('/robots/:id', requireRole('ADMIN'), ctrl.removeRobot);
 
 router.get('/protocols/list', ctrl.listProtocols);
 router.get('/protocols/:id/file', ctrl.downloadProtocolFile);
+router.post('/conference/drive-sync', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.syncConferenceDrive);
+router.post('/protocols/:id/approve', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.approveProtocol);
 router.post('/conference/upload', requireRole('ADMIN', 'ACCOUNTANT'), upload.single('file'), ctrl.uploadConferenceFile);
 router.post('/protocols/:id/confirm', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.confirmProtocol);
 router.post('/protocols/:id/send-email', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.sendProtocolByEmail);
