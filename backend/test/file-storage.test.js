@@ -74,3 +74,34 @@ test.after(() => {
   loadService({});
   fs.rmSync(require('node:path').join(__dirname, '..', 'private-files', 'firma-1'), { recursive: true, force: true });
 });
+
+test('aceita URL da Data API e bucket que já existe (Storage responde 400/409)', async () => {
+  const storage = loadService({ SUPABASE_URL: 'https://proj.supabase.co/rest/v1/', SUPABASE_SERVICE_ROLE_KEY: ' sb_secret_teste ', SUPABASE_STORAGE_BUCKET: 'arquivos' });
+  const calls = [];
+  const originalFetch = global.fetch;
+  global.fetch = async (url, options = {}) => {
+    calls.push({ url, method: options.method || 'GET', headers: options.headers });
+    if (url.endsWith('/bucket/arquivos')) return new Response(JSON.stringify({ statusCode: '404', error: 'Bucket not found' }), { status: 400 });
+    if (url.endsWith('/bucket')) return new Response(JSON.stringify({ statusCode: '409', error: 'Duplicate', message: 'The resource already exists' }), { status: 400 });
+    return new Response('{}', { status: 200 });
+  };
+  try {
+    const ref = await storage.saveFile({ buffer: Buffer.from('x'), originalName: 'a.xml', mimeType: 'application/xml', folder: 'nfse' });
+    assert.match(ref, /^storage:nfse\//);
+    assert.ok(calls.every((call) => call.url.startsWith('https://proj.supabase.co/storage/v1/')));
+    assert.equal(calls[0].headers.apikey, 'sb_secret_teste');
+  } finally {
+    global.fetch = originalFetch;
+  }
+});
+
+test('explica a recusa do Supabase quando a chave não tem permissão', async () => {
+  const storage = loadService({ SUPABASE_URL: 'https://proj.supabase.co', SUPABASE_SERVICE_ROLE_KEY: 'chave-anon', SUPABASE_STORAGE_BUCKET: 'arquivos' });
+  const originalFetch = global.fetch;
+  global.fetch = async () => new Response(JSON.stringify({ statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' }), { status: 400 });
+  try {
+    await assert.rejects(() => storage.saveFile({ buffer: Buffer.from('x'), originalName: 'a.xml', mimeType: 'application/xml', folder: 'nfse' }), /row-level security.*service_role ou secret/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+});

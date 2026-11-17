@@ -17,8 +17,9 @@ const LOCAL_ROOT = path.join(__dirname, '..', '..', 'private-files');
 const LEGACY_ROOT = path.join(__dirname, '..', '..', 'uploads');
 
 function config() {
-  const url = (process.env.SUPABASE_URL || '').replace(/\/+$/, '');
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  // Aceita a URL copiada da tela "Data API" (que termina em /rest/v1).
+  const url = (process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '').replace(/\/(rest|storage)\/v1$/i, '');
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
   const bucket = process.env.SUPABASE_STORAGE_BUCKET || 'arquivos';
   return { url, key, bucket, remote: Boolean(url && key) };
 }
@@ -49,6 +50,23 @@ function headers(extra = {}) {
   return { Authorization: `Bearer ${key}`, apikey: key, ...extra };
 }
 
+// Mensagem do Supabase (sem dados sensíveis) para entender uma recusa.
+async function supabaseReason(response) {
+  const text = await response.text().catch(() => '');
+  try {
+    const body = JSON.parse(text);
+    return { code: String(body.statusCode || body.status || ''), message: String(body.message || body.error || text).slice(0, 200) };
+  } catch {
+    return { code: '', message: text.slice(0, 200) };
+  }
+}
+
+function keyHint(reason) {
+  return /jwt|jws|signature|unauthori|invalid api key|apikey|row-level|policy|permission/i.test(reason.message)
+    ? ' Confira se SUPABASE_SERVICE_ROLE_KEY é a chave service_role ou secret (não a anon/publishable).'
+    : '';
+}
+
 let bucketReady = null;
 async function ensureBucket() {
   if (bucketReady) return bucketReady;
@@ -60,14 +78,17 @@ async function ensureBucket() {
       if (info.public) throw new Error(`O bucket "${bucket}" do Supabase está público. Ele precisa ser privado.`);
       return;
     }
+    const lookup = await supabaseReason(found);
     const created = await fetch(`${url}/storage/v1/bucket`, {
       method: 'POST',
       headers: headers({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ id: bucket, name: bucket, public: false }),
     });
-    if (!created.ok && created.status !== 409) {
-      throw new Error(`Não foi possível criar o bucket "${bucket}" no Supabase (HTTP ${created.status}).`);
-    }
+    if (created.ok) return;
+    const reason = await supabaseReason(created);
+    // O Storage responde 400 com statusCode 409 quando o bucket já existe.
+    if (created.status === 409 || reason.code === '409' || /already exists|duplicate/i.test(reason.message)) return;
+    throw new Error(`Não foi possível criar o bucket "${bucket}" no Supabase (HTTP ${created.status}: ${reason.message || 'sem detalhe'}; consulta HTTP ${found.status}: ${lookup.message || 'sem detalhe'}).${keyHint(reason)}`);
   })().catch((error) => {
     bucketReady = null;
     throw error;
