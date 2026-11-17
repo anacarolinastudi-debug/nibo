@@ -27,6 +27,26 @@ function inputDate(value) {
   return value ? new Date(value).toISOString().slice(0, 10) : '';
 }
 
+function RecurrenceChoice({ choice, onClose }) {
+  useEffect(() => {
+    const onKey = (event) => { if (event.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div role="dialog" aria-modal="true" aria-label={choice.title} className="w-full max-w-md rounded bg-white p-6 shadow-xl">
+      <div className="mb-4 flex items-start justify-between gap-4"><h2 className="text-lg font-semibold">{choice.title}</h2><button type="button" onClick={onClose} aria-label="Fechar"><X size={18} /></button></div>
+      {choice.message && <p className="mb-4 text-sm text-[#68737a]">{choice.message}</p>}
+      <div className="space-y-3">
+        {choice.options.map((option) => <button key={option.label} type="button" onClick={async () => { onClose(); await option.action(); }} className={`block w-full rounded border px-4 py-3 text-left text-sm hover:bg-[#f4f7fb] ${option.danger ? 'border-red-200 hover:bg-red-50' : 'border-[#dfe5e8]'}`}>
+          <b className={option.danger ? 'text-red-700' : 'text-[#16829b]'}>{option.label}</b>
+          {option.description && <span className="mt-1 block text-[#68737a]">{option.description}</span>}
+        </button>)}
+      </div>
+    </div>
+  </div>;
+}
+
 function SettlementDrawer({ transaction, onClose, onSaved }) {
   const [paidAt, setPaidAt] = useState(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Cuiaba' }));
   const [saving, setSaving] = useState(false);
@@ -425,9 +445,53 @@ export default function Financial() {
     setDrawer({ type: 'settlement', transaction });
   }
 
+  const [choice, setChoice] = useState(null);
+  const [actionError, setActionError] = useState('');
+  const competence = (item) => { const d = new Date(item.dueDate); return { year: d.getUTCFullYear(), month: d.getUTCMonth() + 1 }; };
+  const monthLabel = (item) => new Date(item.dueDate).toLocaleDateString('pt-BR', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  async function runAction(fn, fallback) {
+    setActionError('');
+    try { await fn(); } catch (error) { setActionError(error.response?.data?.error || fallback); }
+  }
+
+  // Mês de uma recorrência: editar só ele (vira lançamento próprio) ou a recorrência toda.
+  function editRecurring(item) {
+    const source = transactions.find((t) => t.id === item.sourceId);
+    setChoice({
+      title: `Editar "${item.description}"`,
+      message: `Este lançamento se repete todo mês. O que você quer editar?`,
+      options: [
+        { label: `Só ${monthLabel(item)}`, description: 'Muda apenas este mês; os outros continuam como estão.', action: () => runAction(async () => {
+          const { data } = await api.post(`/financial/transactions/${item.sourceId}/occurrence`, competence(item));
+          setDrawer({ type: 'transaction', transaction: { ...data, client: item.client, category: item.category, account: item.account } });
+          loadTransactions();
+        }, 'Não foi possível abrir este mês para edição.') },
+        ...(source ? [{ label: 'Toda a recorrência', description: 'Muda o lançamento original; vale para os meses ainda não lançados.', action: () => setDrawer({ type: 'transaction', transaction: source }) }] : []),
+      ],
+    });
+  }
+
+  function removeRecurring(item) {
+    setChoice({
+      title: `Excluir "${item.description}"`,
+      message: `Este lançamento se repete todo mês. O que você quer excluir?`,
+      options: [
+        { label: `Só ${monthLabel(item)}`, description: 'Este mês deixa de aparecer; os outros continuam.', danger: true, action: () => runAction(async () => {
+          await api.post(`/financial/transactions/${item.sourceId}/occurrence`, { ...competence(item), skip: true });
+          loadTransactions();
+        }, 'Não foi possível excluir este mês.') },
+        { label: `${monthLabel(item)} e os próximos`, description: 'Encerra a recorrência a partir deste mês. Os meses anteriores e os já pagos continuam.', danger: true, action: () => runAction(async () => {
+          await api.post(`/financial/transactions/${item.sourceId}/end-recurrence`, competence(item));
+          loadTransactions();
+        }, 'Não foi possível encerrar a recorrência.') },
+      ],
+    });
+  }
+
   async function removeTransaction(transaction) {
     const linkedText = transaction.receipt ? ' Essa movimentação tem um recibo vinculado, que também será excluído.' : '';
-    if (!window.confirm(`Excluir a movimentação "${transaction.description}"?${linkedText}`)) return;
+    const seriesText = transaction.recurrenceInfinite ? ' Este é o lançamento original de uma recorrência: os próximos meses também deixam de aparecer. Para excluir só um mês, use a lixeira do mês desejado.' : '';
+    if (!window.confirm(`Excluir a movimentação "${transaction.description}"?${linkedText}${seriesText}`)) return;
     await api.delete(`/financial/transactions/${transaction.id}`);
     loadTransactions();
     loadReceipts();
@@ -561,7 +625,13 @@ export default function Financial() {
                         <td className={`px-5 py-4 text-right font-semibold ${item.type === 'RECEITA' ? 'text-emerald-700' : 'text-red-700'}`}>{item.type === 'RECEITA' ? '+' : '-'} {money(item.amount)}</td>
                         <td className="px-5 py-4">
                           <div className="flex justify-end gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
-                            {item.projected ? <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button> : (
+                            {item.projected ? (
+                              <>
+                                <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button>
+                                <button onClick={() => editRecurring(item)} title="Editar" aria-label={`Editar ${item.description}`} className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
+                                <button onClick={() => removeRecurring(item)} title="Excluir" aria-label={`Excluir ${item.description}`} className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b] hover:bg-red-50 hover:text-red-600"><Trash2 size={16} /></button>
+                              </>
+                            ) : (
                               <>
                                 {item.status !== 'PAID' && <button onClick={() => markPaid(item)} className="rounded bg-[#eef8fc] px-3 py-2 text-[#16829b]">{item.type === 'RECEITA' ? 'Receber' : 'Pagar'}</button>}
                                 <button onClick={() => setDrawer({ type: 'transaction', transaction: item })} title="Editar" className="rounded border border-[#dfe5e8] px-3 py-2 text-[#16829b]"><Pencil size={16} /></button>
@@ -638,6 +708,8 @@ export default function Financial() {
       </main>
       {drawer?.type === 'settlement' && <SettlementDrawer transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={async () => { await Promise.all([loadTransactions(), loadReceipts()]); setDrawer(null); }} />}
       {drawer?.type === 'transaction' && <TransactionDrawer clients={clients} transaction={drawer.transaction} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadTransactions(); }} onCreateReceipt={receiptFromTransaction} />}
+      {choice && <RecurrenceChoice choice={choice} onClose={() => setChoice(null)} />}
+      {actionError && <div role="alert" className="fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded bg-red-600 px-4 py-3 text-sm text-white shadow-lg"><span>{actionError}</span><button type="button" onClick={() => setActionError('')} aria-label="Fechar aviso"><X size={16} /></button></div>}
       {drawer?.type?.startsWith('receipt') && <ReceiptDrawer clients={clients} receipt={drawer.receipt} onClose={() => setDrawer(null)} onSaved={(saved) => { setDrawer(null); loadReceipts(); loadTransactions(); setTab('Recibos'); setQuery(saved.number); }} />}
       {drawer?.type === 'budget' && <BudgetDrawer clients={clients} budget={drawer.budget} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); loadBudgets(); }} />}
     </div>

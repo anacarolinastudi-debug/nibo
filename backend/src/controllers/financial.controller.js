@@ -387,6 +387,67 @@ async function markPaid(req, res) {
   res.json(transaction);
 }
 
+// Um mês de uma recorrência sem fim vira lançamento próprio (para editar só
+// aquele mês) ou fica marcado como pulado ("não haverá neste mês").
+async function createOccurrence(req, res) {
+  const data = z.object({
+    year: z.number().int().min(2000).max(9999),
+    month: z.number().int().min(1).max(12),
+    skip: z.boolean().optional().default(false),
+  }).parse(req.body || {});
+  const source = await prisma.financialTransaction.findFirst({ where: { id: req.params.id, ...clientScope(req.user) } });
+  if (!source) return res.status(404).json({ error: 'Lançamento não encontrado.' });
+  const dueDate = occurrenceDate(source.dueDate, data.year, data.month);
+  if (!source.recurrenceInfinite || dueDate <= new Date(source.dueDate) || (source.recurrenceUntil && dueDate > new Date(source.recurrenceUntil))) {
+    return res.status(400).json({ error: 'Este mês não faz parte da recorrência.' });
+  }
+  const id = occurrenceId(source.id, data.year, data.month);
+  const occurrence = await prisma.$transaction(async (tx) => {
+    const current = await tx.financialTransaction.upsert({
+      where: { id },
+      update: {},
+      create: {
+        id,
+        description: source.description, amount: source.amount, type: source.type,
+        dueDate, status: 'PENDING', notes: source.notes,
+        clientId: source.clientId, accountId: source.accountId, categoryId: source.categoryId,
+        recurrence: 'NONE', recurrenceInfinite: false,
+      },
+    });
+    if (!data.skip) return current;
+    if (current.status === 'PAID') throw Object.assign(new Error('Este mês já foi pago/recebido. Desfaça o pagamento antes de excluir.'), { status: 400 });
+    await tx.financialReceipt.deleteMany({ where: { transactionId: current.id } });
+    return tx.financialTransaction.update({ where: { id: current.id }, data: { skipped: true } });
+  });
+  res.status(201).json(occurrence);
+}
+
+// Encerra a recorrência a partir de um mês: os meses anteriores continuam.
+async function endRecurrence(req, res) {
+  const data = z.object({ year: z.number().int().min(2000).max(9999), month: z.number().int().min(1).max(12) }).parse(req.body || {});
+  const source = await prisma.financialTransaction.findFirst({ where: { id: req.params.id, ...clientScope(req.user) } });
+  if (!source) return res.status(404).json({ error: 'Lançamento não encontrado.' });
+  if (!source.recurrenceInfinite) return res.status(400).json({ error: 'Este lançamento não é uma recorrência sem fim.' });
+  const first = occurrenceDate(source.dueDate, data.year, data.month);
+  if (first <= new Date(source.dueDate)) return res.status(400).json({ error: 'Para encerrar desde o primeiro mês, exclua o lançamento original.' });
+  const until = new Date(first.getTime() - 24 * 60 * 60 * 1000);
+  // Meses já gravados e ainda pendentes, deste mês em diante, também saem.
+  const ids = Array.from({ length: 240 }, (_, index) => {
+    const date = new Date(Date.UTC(data.year, data.month - 1 + index, 1));
+    return occurrenceId(source.id, date.getUTCFullYear(), date.getUTCMonth() + 1);
+  });
+  await prisma.$transaction(async (tx) => {
+    const pendentes = await tx.financialTransaction.findMany({ where: { id: { in: ids }, status: { not: 'PAID' } }, select: { id: true } });
+    const pendingIds = pendentes.map((item) => item.id);
+    if (pendingIds.length) {
+      await tx.financialReceipt.deleteMany({ where: { transactionId: { in: pendingIds } } });
+      await tx.financialTransaction.deleteMany({ where: { id: { in: pendingIds } } });
+    }
+    await tx.financialTransaction.update({ where: { id: source.id }, data: { recurrenceUntil: until } });
+  });
+  res.json({ recurrenceUntil: until });
+}
+
 async function removeTransaction(req, res) {
   const existing = await prisma.financialTransaction.findFirst({
     where: { id: req.params.id, ...clientScope(req.user) },
@@ -1085,6 +1146,8 @@ async function summary(req, res) {
 }
 
 module.exports = {
+  createOccurrence,
+  endRecurrence,
   listAccounts, createAccount,
   listCategories, createCategory,
   listTransactions, createTransaction, updateTransaction, markPaid, removeTransaction,

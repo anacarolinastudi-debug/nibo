@@ -5,11 +5,13 @@ export function buildMonthlyTransactions(items, filters) {
   const savedIds = new Set(items.map((item) => item.id));
   return items.flatMap((item) => {
     const due = new Date(item.dueDate);
-    if (due.getUTCFullYear() === year && due.getUTCMonth() === month - 1) return [item];
+    // Mês pulado: continua ocupando o lugar da previsão, mas não aparece.
+    if (due.getUTCFullYear() === year && due.getUTCMonth() === month - 1) return item.skipped ? [] : [item];
     if (!item.recurrenceInfinite) return [];
     const day = Math.min(due.getUTCDate(), new Date(Date.UTC(year, month, 0)).getUTCDate());
     const date = new Date(Date.UTC(year, month - 1, day));
     if (date <= due) return [];
+    if (item.recurrenceUntil && date > new Date(item.recurrenceUntil)) return [];
     const id = item.projectedIds?.[`${year}-${month}`] || item.projectedId || `${item.id}-projected-${year}-${month}`;
     if (savedIds.has(id)) return [];
     return [{ ...item, id, sourceId: item.id, dueDate: date.toISOString(), status: 'PENDING', paidAt: null, receipt: null, projected: true }];

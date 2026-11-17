@@ -1041,6 +1041,10 @@ model FinancialTransaction {
   recurrence  String            @default("NONE")
   recurrenceCount Int?
   recurrenceInfinite Boolean    @default(false)
+  // Último vencimento de uma recorrência sem fim (encerrada a partir de um mês)
+  recurrenceUntil    DateTime?
+  // Mês de uma recorrência marcado como "não haverá neste mês"
+  skipped            Boolean    @default(false)
   dueDate     DateTime
   paidAt      DateTime?
   createdAt   DateTime          @default(now())

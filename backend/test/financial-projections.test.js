@@ -49,3 +49,17 @@ test('12 month view carries recurrences across years and clamps February', async
   assert.equal(rows.reduce((sum, row) => sum + row.aReceber, 0), 8400);
   assert.equal(buildMonthlyTransactions([source], { year: 2027, month: 2 })[0].dueDate.slice(0, 10), '2027-02-28');
 });
+
+test('mês pulado some da lista e não volta como previsão', async () => {
+  const { buildMonthlyTransactions } = await modulePromise;
+  const skipped = { ...source, id: 'october', recurrenceInfinite: false, dueDate: '2026-10-30', status: 'PENDING', skipped: true };
+  assert.equal(buildMonthlyTransactions([source, skipped], { year: 2026, month: 10 }).length, 0);
+  assert.equal(buildMonthlyTransactions([source, skipped], { year: 2026, month: 11 }).length, 1);
+});
+
+test('recorrência encerrada não projeta meses depois do fim', async () => {
+  const { buildMonthlyTransactions } = await modulePromise;
+  const ended = { ...source, recurrenceUntil: '2026-10-31T00:00:00.000Z' };
+  assert.equal(buildMonthlyTransactions([ended], { year: 2026, month: 10 }).length, 1);
+  assert.equal(buildMonthlyTransactions([ended], { year: 2026, month: 11 }).length, 0);
+});

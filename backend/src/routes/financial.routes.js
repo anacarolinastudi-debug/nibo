@@ -18,6 +18,8 @@ router.post('/transactions', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createTran
 router.put('/transactions/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.updateTransaction);
 router.patch('/transactions/:id/pay', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.markPaid);
 router.delete('/transactions/:id', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.removeTransaction);
+router.post('/transactions/:id/occurrence', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createOccurrence);
+router.post('/transactions/:id/end-recurrence', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.endRecurrence);
 
 router.get('/receipts', ctrl.listReceipts);
 router.post('/receipts', requireRole('ADMIN', 'ACCOUNTANT'), ctrl.createReceipt);
