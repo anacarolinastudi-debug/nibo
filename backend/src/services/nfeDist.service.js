@@ -392,7 +392,20 @@ async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force =
         aviso = 'A SEFAZ pediu para aguardar 1 hora (consumo indevido). A próxima busca continua de onde parou.';
         break;
       }
-      if (ret.cStat === '137') { nextAllowedAt = new Date(Date.now() + UMA_HORA); break; }
+      if (ret.cStat === '137') {
+        // Faixa sem documentos disponíveis (ex.: mais de 90 dias). Se a
+        // numeração ainda vai além, continua dela; senão, espera 1 hora.
+        if (ret.ultNsu > ultNsu) {
+          ultNsu = ret.ultNsu;
+          await prisma.clientNfseConfig.update({ where: { id: config.id }, data: { nfeLastNsu: ultNsu } });
+        }
+        if (ret.ultNsu < ret.maxNsu) {
+          if (pause) await sleep(pause);
+          continue;
+        }
+        nextAllowedAt = new Date(Date.now() + UMA_HORA);
+        break;
+      }
       if (ret.cStat !== '138') throw new Error(`A SEFAZ respondeu ${ret.cStat} - ${ret.xMotivo}`);
       if (ret.docs.length === 0) {
         // Nunca avançar o NSU sem ter gravado os documentos.

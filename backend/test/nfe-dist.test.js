@@ -117,3 +117,46 @@ test('lê docZip com prefixo de namespace e atributos em outra ordem', () => {
   assert.equal(ret.docs[0].schema, 'resNFe_v1.01.xsd');
   assert.match(ret.docs[0].xml, /<chNFe>/);
 });
+
+test('continua depois de uma faixa vazia (137) quando a numeração vai além', async () => {
+  const prismaPath = require.resolve('../src/lib/prisma');
+  const servicePath = require.resolve('../src/services/nfeDist.service');
+  const calls = [];
+  const updates = [];
+  const created = [];
+  require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: {
+    client: { findUnique: async () => ({ id: 'c1', accountingFirmId: 'f1', cnpj: CLIENTE, state: 'SP', nfseConfig: { id: 'k1', nfeLastNsu: 0n, certificatePfxEncrypted: 'x', certificatePassphraseEncrypted: 'y' } }) },
+    clientNfseConfig: { update: async ({ data }) => { updates.push(data); return {}; } },
+    nfeDocument: {
+      findUnique: async () => null,
+      create: async ({ data }) => { created.push(data); return data; },
+      updateMany: async () => ({}),
+      findMany: async () => [],
+    },
+  } };
+  const certCryptoPath = require.resolve('../src/utils/certCrypto');
+  require.cache[certCryptoPath] = { id: certCryptoPath, filename: certCryptoPath, loaded: true, exports: { decrypt: () => Buffer.from('x'), encrypt: (v) => v, isConfigured: () => true } };
+  const storagePath = require.resolve('../src/services/fileStorage.service');
+  require.cache[storagePath] = { id: storagePath, filename: storagePath, loaded: true, exports: { saveFile: async () => 'local:x', readFile: async () => null, isRemote: () => true } };
+  delete require.cache[servicePath];
+  const service = require(servicePath);
+  const post = async (url, action, xml) => {
+    const ult = Number((xml.match(/<ultNSU>(\d+)<\/ultNSU>/) || [])[1]);
+    calls.push(ult);
+    if (ult === 0) return { status: 200, text: distResponse([], '137', '000000000000050', '000000000000152') };
+    if (ult === 50) return { status: 200, text: distResponse([`<docZip NSU="000000000000151" schema="resNFe_v1.01.xsd">${gz(resNFe)}</docZip>`], '138', '000000000000152', '000000000000152') };
+    return { status: 200, text: distResponse([], '137', '000000000000152', '000000000000152') };
+  };
+  try {
+    const result = await service.syncClient('c1', { post, pause: 0 });
+    assert.deepEqual(calls.slice(0, 2), [0, 50]);
+    assert.equal(created.length, 1);
+    assert.equal(result.saved, 1);
+    assert.ok(updates.some((data) => data.nfeLastNsu === 152n));
+  } finally {
+    delete require.cache[prismaPath];
+    delete require.cache[certCryptoPath];
+    delete require.cache[storagePath];
+    delete require.cache[servicePath];
+  }
+});
