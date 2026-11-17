@@ -18,4 +18,10 @@ router.get('/clients/:clientId/documents', ctrl.listDocuments);
 router.get('/clients/:clientId/zip', ctrl.downloadZip);
 router.get('/documents/:id/xml', ctrl.downloadXml);
 
+// NF-e (modelo 55) recebidas pela distribuição de DF-e da SEFAZ
+router.post('/clients/:clientId/nfe/sync', ctrl.syncNfeNow);
+router.get('/clients/:clientId/nfe/documents', ctrl.listNfe);
+router.get('/clients/:clientId/nfe/zip', ctrl.downloadNfeZip);
+router.get('/nfe/documents/:id/xml', ctrl.downloadNfeXml);
+
 module.exports = router;

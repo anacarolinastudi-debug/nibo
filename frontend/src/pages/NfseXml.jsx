@@ -6,7 +6,7 @@ import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import ContentMenuLink from '../components/ContentMenuLink';
 import {
-  downloadNfseXml, downloadNfseZip, listNfseClients, listNfseDocuments, removeClientCertificate, syncNfse, uploadClientCertificate,
+  downloadNfeXml, downloadNfeZip, downloadNfseXml, downloadNfseZip, listNfeDocuments, syncNfe, listNfseClients, listNfseDocuments, removeClientCertificate, syncNfse, uploadClientCertificate,
 } from '../api/nfse';
 
 const TZ = 'America/Cuiaba';
@@ -41,12 +41,13 @@ function NfseHub() {
   const [query, setQuery] = useState('');
   const [certFor, setCertFor] = useState(null);
   const [selected, setSelected] = useState(null);
+  const [nfeFor, setNfeFor] = useState(null);
   const [notice, setNotice] = useState('');
 
   const load = useCallback(() => listNfseClients().then(setClients).finally(() => setLoading(false)), []);
   useEffect(() => { load(); }, [load]);
 
-  const busy = clients.some((client) => client.config?.lastSyncStatus === 'EM_ANDAMENTO');
+  const busy = clients.some((client) => client.config?.lastSyncStatus === 'EM_ANDAMENTO' || client.config?.nfe?.lastSyncStatus === 'EM_ANDAMENTO');
   useEffect(() => {
     if (!busy) return undefined;
     const timer = setInterval(load, 5000);
@@ -67,6 +68,16 @@ function NfseHub() {
       setClients((rows) => rows.map((row) => (row.id === client.id ? { ...row, config: { ...row.config, lastSyncStatus: 'EM_ANDAMENTO', lastSyncError: null } } : row)));
     } catch (error) {
       setNotice(errorText(error, 'Não foi possível iniciar a busca.'));
+    }
+  }
+
+  async function handleNfeSync(client) {
+    setNotice('');
+    try {
+      await syncNfe(client.id);
+      setClients((rows) => rows.map((row) => (row.id === client.id ? { ...row, config: { ...row.config, nfe: { ...row.config.nfe, lastSyncStatus: 'EM_ANDAMENTO', lastSyncError: null } } } : row)));
+    } catch (error) {
+      setNotice(errorText(error, 'Não foi possível iniciar a busca de NF-e.'));
     }
   }
 
@@ -115,13 +126,14 @@ function NfseHub() {
                   <th className="px-4 py-3">Empresa</th>
                   <th className="px-4 py-3">Certificado</th>
                   <th className="px-4 py-3">Última busca</th>
-                  <th className="px-4 py-3">XMLs</th>
+                  <th className="px-4 py-3">XMLs NFS-e</th>
+                  <th className="px-4 py-3">NF-e recebidas</th>
                   <th className="px-4 py-3"><span className="sr-only">Ações</span></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((client) => <ClientRow key={client.id} client={client} onCert={() => setCertFor(client)} onSync={() => handleSync(client)} onRedo={() => handleSync(client, true)} onOpen={() => setSelected(client)} />)}
-                {filtered.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-[#78838a]">Nenhuma empresa encontrada.</td></tr>}
+                {filtered.map((client) => <ClientRow key={client.id} client={client} onCert={() => setCertFor(client)} onSync={() => handleSync(client)} onRedo={() => handleSync(client, true)} onOpen={() => setSelected(client)} onNfeSync={() => handleNfeSync(client)} onNfeOpen={() => setNfeFor(client)} />)}
+                {filtered.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-[#78838a]">Nenhuma empresa encontrada.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -130,10 +142,12 @@ function NfseHub() {
     </main>
     {certFor && <CertificateDialog client={certFor} onClose={() => setCertFor(null)} onSaved={() => { setCertFor(null); load(); }} />}
     {selected && <DocumentsDialog client={selected} onClose={() => setSelected(null)} />}
+    {nfeFor && <NfeDialog client={nfeFor} onClose={() => setNfeFor(null)} />}
   </div>;
 }
 
-function ClientRow({ client, onCert, onSync, onRedo, onOpen }) {
+function ClientRow({ client, onCert, onSync, onRedo, onOpen, onNfeSync, onNfeOpen }) {
+  const nfe = client.config?.nfe;
   const config = client.config;
   const status = config?.lastSyncStatus;
   return <tr className="border-t border-[#dfe5e8] align-top">
@@ -154,6 +168,15 @@ function ClientRow({ client, onCert, onSync, onRedo, onOpen }) {
       {status === 'ERRO' && <p className="mt-1 max-w-sm text-xs text-red-600">{config.lastSyncError}</p>}
     </td>
     <td className="px-4 py-3">{client.documents}</td>
+    <td className="px-4 py-3">
+      {nfe?.lastSyncStatus ? <span className={`rounded px-2 py-0.5 text-xs font-semibold ${STATUS_CLASS[nfe.lastSyncStatus] || ''}`}>{STATUS_LABEL[nfe.lastSyncStatus] || nfe.lastSyncStatus}</span> : <span className="text-xs text-[#9aa5ad]">Nunca buscado</span>}
+      <p className="mt-1 text-xs text-[#78838a]">{client.nfeDocuments} doc(s){nfe?.lastSyncAt ? ` · ${dateTimeBr(nfe.lastSyncAt)}` : ''}</p>
+      {nfe?.lastSyncError && <p className={`mt-1 max-w-xs text-xs ${nfe.lastSyncStatus === 'ERRO' ? 'text-red-600' : 'text-amber-700'}`}>{nfe.lastSyncError}</p>}
+      <div className="mt-2 flex gap-2">
+        <button type="button" onClick={onNfeSync} disabled={!client.config || client.config.expired || nfe?.lastSyncStatus === 'EM_ANDAMENTO'} className="rounded bg-[#2693d2] px-2 py-1 text-xs text-white disabled:opacity-50">Buscar NF-e</button>
+        <button type="button" onClick={onNfeOpen} disabled={!client.nfeDocuments} className="rounded border border-[#2693d2] px-2 py-1 text-xs text-[#16829b] disabled:opacity-50">Ver NF-e</button>
+      </div>
+    </td>
     <td className="px-4 py-3">
       <div className="flex flex-wrap justify-end gap-2">
         <button type="button" onClick={onCert} className="inline-flex items-center gap-1 rounded border px-3 py-1.5 text-xs hover:bg-[#f4f7fb]"><KeyRound size={14} aria-hidden="true" /> {config ? 'Trocar certificado' : 'Enviar certificado'}</button>
@@ -304,6 +327,76 @@ function DocumentsDialog({ client, onClose }) {
           </tbody>
         </table>
       </div>
+    </div>
+  </Dialog>;
+}
+
+const CIENCIA_LABEL = { PENDENTE: 'aguardando Ciência', ENVIADA: 'Ciência registrada, XML completo na próxima busca', ERRO: 'Ciência recusada' };
+
+function NfeDialog({ client, onClose }) {
+  const [mes, setMes] = useState(previousMonth());
+  const [docs, setDocs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    listNfeDocuments(client.id, { mes })
+      .then(setDocs)
+      .catch((err) => setError(errorText(err, 'Não foi possível carregar as NF-e.')))
+      .finally(() => setLoading(false));
+  }, [client.id, mes]);
+
+  // Quando a nota completa já chegou, o resumo da mesma chave não precisa aparecer.
+  const completas = new Set(docs.filter((doc) => doc.tipo === 'NFE').map((doc) => doc.chaveAcesso));
+  const visiveis = docs.filter((doc) => !(doc.tipo === 'RESUMO' && completas.has(doc.chaveAcesso)));
+  const notas = visiveis.filter((doc) => doc.tipo !== 'EVENTO');
+  const total = notas.filter((doc) => !doc.cancelada).reduce((sum, doc) => sum + (doc.valorTotal || 0), 0);
+  const resumos = notas.filter((doc) => doc.tipo === 'RESUMO').length;
+
+  async function zip() {
+    setError('');
+    try { await downloadNfeZip(client.id, { mes }, client.name); } catch (err) {
+      setError(err.response?.status === 404 ? 'Nenhuma NF-e completa nesse mês (resumos não entram no ZIP).' : 'Não foi possível gerar o ZIP.');
+    }
+  }
+
+  return <Dialog title={`NF-e recebidas de ${client.name}`} onClose={onClose} wide>
+    <div className="p-5 text-sm">
+      <div className="mb-4 flex flex-wrap items-end gap-3">
+        <label><span className="mb-1 block text-xs font-medium">Mês de emissão</span><input type="month" value={mes} onChange={(event) => setMes(event.target.value)} className="rounded border border-[#d8dfe3] px-3 py-2" /></label>
+        <button type="button" onClick={zip} disabled={!notas.length} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-4 py-2 text-white disabled:opacity-50"><FileArchive size={16} aria-hidden="true" /> Baixar ZIP do mês</button>
+        <div className="ml-auto text-right text-[#68737a]">
+          <p>{notas.length} nota(s) · <b className="text-[#3f4548]">{money(total)}</b></p>
+          {resumos > 0 && <p className="text-xs">{resumos} ainda só em resumo</p>}
+        </div>
+      </div>
+      {error && <p role="alert" className="mb-3 rounded bg-red-50 px-3 py-2 text-red-700">{error}</p>}
+      <div className="max-h-[60vh] overflow-auto rounded border border-[#dfe5e8]">
+        <table className="w-full min-w-[760px] text-left">
+          <thead className="sticky top-0 bg-[#f3f3f3]">
+            <tr><th className="px-3 py-2">Nº</th><th className="px-3 py-2">Emissão</th><th className="px-3 py-2">Fornecedor</th><th className="px-3 py-2">Situação</th><th className="px-3 py-2 text-right">Valor</th><th className="px-3 py-2"><span className="sr-only">XML</span></th></tr>
+          </thead>
+          <tbody>
+            {loading && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#78838a]">Carregando…</td></tr>}
+            {!loading && visiveis.length === 0 && <tr><td colSpan={6} className="px-3 py-6 text-center text-[#78838a]">Nenhuma NF-e nesse mês.</td></tr>}
+            {!loading && visiveis.map((doc) => <tr key={doc.id} className={`border-t border-[#dfe5e8] ${doc.cancelada ? 'text-[#9aa5ad] line-through' : ''}`}>
+              <td className="px-3 py-2">{doc.numero || '-'}</td>
+              <td className="px-3 py-2">{dateBr(doc.dataEmissao)}</td>
+              <td className="px-3 py-2">{doc.tipo === 'EVENTO' ? <span className="text-xs">{doc.chaveAcesso}</span> : <>{doc.emitenteNome || '-'}<span className="block text-xs text-[#78838a]">{doc.emitenteDoc || ''}</span></>}</td>
+              <td className="px-3 py-2 text-xs">
+                {doc.tipo === 'EVENTO' ? doc.eventoDescricao : doc.tipo === 'NFE' ? 'XML completo' : (CIENCIA_LABEL[doc.ciencia] || 'Resumo')}
+                {doc.ciencia === 'ERRO' && doc.cienciaErro && <span className="block text-red-600">{doc.cienciaErro}</span>}
+                {doc.cancelada && <span className="ml-1 rounded bg-red-100 px-1 text-[10px] text-red-700">cancelada</span>}
+              </td>
+              <td className="px-3 py-2 text-right">{doc.tipo === 'EVENTO' ? '' : money(doc.valorTotal)}</td>
+              <td className="px-3 py-2 text-right"><button type="button" onClick={() => downloadNfeXml(doc.id, `${doc.chaveAcesso}.xml`)} aria-label={`Baixar XML da NF-e ${doc.numero || doc.chaveAcesso}`} className="rounded p-1 text-[#16829b] hover:bg-[#f4f7fb]"><Download size={16} /></button></td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-3 text-xs text-[#78838a]">A SEFAZ entrega primeiro um resumo. O sistema registra a Ciência da Operação (não é confirmação da compra) e o XML completo chega na busca seguinte. Notas emitidas pela própria empresa não vêm por aqui.</p>
     </div>
   </Dialog>;
 }

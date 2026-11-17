@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const prisma = require('../lib/prisma');
 const nfseAdn = require('../services/nfseAdn.service');
+const nfeDist = require('../services/nfeDist.service');
 
 // Todo dia às 5h: busca as NFS-e novas de cada empresa que tem certificado
 // cadastrado e válido. Uma empresa por vez, para não sobrecarregar a API.
@@ -10,6 +11,10 @@ function startNfseScheduler() {
     where: { lastSyncStatus: 'EM_ANDAMENTO' },
     data: { lastSyncStatus: 'ERRO', lastSyncError: 'Busca interrompida porque o servidor reiniciou. Clique em Buscar agora.' },
   }).catch((error) => console.error('Falha ao liberar buscas de NFS-e interrompidas:', error.message));
+  prisma.clientNfseConfig.updateMany({
+    where: { nfeLastSyncStatus: 'EM_ANDAMENTO' },
+    data: { nfeLastSyncStatus: 'ERRO', nfeLastSyncError: 'Busca interrompida porque o servidor reiniciou. Tente de novo.' },
+  }).catch((error) => console.error('Falha ao liberar buscas de NF-e interrompidas:', error.message));
   cron.schedule('0 5 * * *', async () => {
     const configs = await prisma.clientNfseConfig.findMany({
       where: {
@@ -23,6 +28,11 @@ function startNfseScheduler() {
         await nfseAdn.syncClient(clientId);
       } catch (error) {
         console.error(`Busca automática de NFS-e (${clientId}):`, error.message);
+      }
+      try {
+        await nfeDist.syncClient(clientId);
+      } catch (error) {
+        console.error(`Busca automática de NF-e (${clientId}):`, error.message);
       }
     }
   }, { timezone: 'America/Cuiaba' });

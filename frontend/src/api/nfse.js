@@ -47,3 +47,23 @@ export async function downloadNfseZip(clientId, params, clientName = '') {
   const safeName = clientName.normalize('NFD').replace(/[^\w ]/g, '').trim().replace(/\s+/g, '_').slice(0, 60);
   saveBlob(response, `NFSe_${safeName ? `${safeName}_` : ''}${month}${year}.zip`);
 }
+
+export function syncNfe(clientId) {
+  return api.post(`/nfse/clients/${clientId}/nfe/sync`).then((res) => res.data);
+}
+
+export function listNfeDocuments(clientId, params) {
+  return api.get(`/nfse/clients/${clientId}/nfe/documents`, { params }).then((res) => res.data);
+}
+
+export async function downloadNfeXml(documentId, fallbackName) {
+  const response = await api.get(`/nfse/nfe/documents/${documentId}/xml`, { responseType: 'blob' });
+  saveBlob(response, fallbackName);
+}
+
+export async function downloadNfeZip(clientId, params, clientName = '') {
+  const response = await api.get(`/nfse/clients/${clientId}/nfe/zip`, { params, responseType: 'blob' });
+  const [year, month] = String(params.mes).split('-');
+  const safeName = clientName.normalize('NFD').replace(/[^\w ]/g, '').trim().replace(/\s+/g, '_').slice(0, 60);
+  saveBlob(response, `NFe_${safeName ? `${safeName}_` : ''}${month}${year}.zip`);
+}

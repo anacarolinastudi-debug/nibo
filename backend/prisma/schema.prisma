@@ -307,6 +307,7 @@ model Client {
   departmentResponsibilities ClientDepartmentResponsible[]
   nfseDocuments      NfseDocument[]
   nfseConfig         ClientNfseConfig?
+  nfeDocuments       NfeDocument[]
 
   @@index([accountingFirmId])
   @@map("clients")
@@ -331,6 +332,13 @@ model ClientNfseConfig {
   lastSyncStatus                 String?   // SUCESSO, ERRO, EM_ANDAMENTO
   lastSyncError                  String?
   lastSyncCount                  Int?
+  // NF-e (modelo 55) pela distribuição de DF-e da SEFAZ (Ambiente Nacional)
+  nfeLastNsu                     BigInt    @default(0)
+  nfeLastSyncAt                  DateTime?
+  nfeLastSyncStatus              String?
+  nfeLastSyncError               String?
+  nfeLastSyncCount               Int?
+  nfeNextAllowedAt               DateTime?
   updatedAt                      DateTime  @updatedAt
 
   @@index([accountingFirmId])
@@ -1263,4 +1271,38 @@ model StudyProgress {
   updatedAt DateTime @updatedAt
   @@id([userId, plan])
   @@map("study_progress")
+}
+
+// NF-e (modelo 55) recebidas pela distribuição de DF-e da SEFAZ. Uma linha por
+// documento distribuído: resumo (antes da Ciência), nota completa ou evento.
+model NfeDocument {
+  id               String    @id @default(uuid())
+  accountingFirmId String
+  clientId         String
+  client           Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  nsu              BigInt
+  chaveAcesso      String
+  tipo             String    // NFE (XML completo), RESUMO ou EVENTO
+  papel            String    // RECEBIDA, EMITIDA ou TERCEIRO
+  numero           String?
+  serie            String?
+  dataEmissao      DateTime?
+  valorTotal       Decimal?  @db.Decimal(14, 2)
+  emitenteDoc      String?
+  emitenteNome     String?
+  destinatarioDoc  String?
+  destinatarioNome String?
+  situacao         String?   // cSitNFe do resumo: 1 autorizada, 2 denegada, 3 cancelada
+  cancelada        Boolean   @default(false)
+  ciencia          String?   // PENDENTE, ENVIADA ou ERRO (só para resumos)
+  cienciaErro      String?
+  eventoDescricao  String?
+  xmlRef           String
+  createdAt        DateTime  @default(now())
+
+  @@unique([clientId, nsu])
+  @@index([accountingFirmId])
+  @@index([clientId, dataEmissao])
+  @@index([chaveAcesso])
+  @@map("nfe_documents")
 }

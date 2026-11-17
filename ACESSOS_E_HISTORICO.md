@@ -449,3 +449,14 @@ Atualização registrada em 16/11/2026:
 - XMLs no armazenamento privado (`nfse/<escritório>/<cliente>/`); dados da nota na tabela `nfse_documents`.
 - Variáveis opcionais no Render: `NFSE_ADN_BASE_URL` (padrão `https://adn.nfse.gov.br/contribuintes`; para testes, `https://adn.producaorestrita.nfse.gov.br/contribuintes`) e `NFSE_ADN_CA_PEM` (cadeia ICP-Brasil, só se o servidor recusar o certificado do ADN).
 - **Pendente de validação real:** a documentação detalhada da API (Swagger) só abre com certificado. A leitura da resposta aceita variações de nome de campo e XML em base64 com ou sem gzip; se o formato real for diferente, o erro na tela mostra os campos recebidos para ajuste.
+
+## 16. NF-e recebidas pela Distribuição de DF-e da SEFAZ
+
+Atualização registrada em 17/11/2026:
+
+- Na tela `/xml-nfse`, coluna **NF-e recebidas** com **Buscar NF-e** e **Ver NF-e** (lista por mês de emissão, XML de cada nota e ZIP do mês).
+- Fonte: `NFeDistribuicaoDFe` do Ambiente Nacional (NT 2014.002), por NSU, com o certificado da própria empresa (o mesmo cadastrado para NFS-e). Exige a **UF** preenchida no cadastro do cliente.
+- A SEFAZ entrega primeiro o **resumo**; o sistema registra a **Ciência da Operação** (evento 210210, assinado com o certificado, não conclusivo) e o XML completo chega na busca seguinte. Notas canceladas não recebem Ciência.
+- Não vêm por aqui: NF-e **emitidas** pela própria empresa (só os eventos delas) e NFC-e. Para receber as emitidas, incluir o CNPJ do escritório no campo "autorizados a baixar XML" (autXML) do emissor do cliente.
+- Regra da SEFAZ respeitada: sem documentos novos (137) ou NSU no máximo, nova consulta só depois de 1 hora; 656 (consumo indevido) também espera 1 hora. Busca automática diária às 5h, logo após a NFS-e.
+- Tabela `nfe_documents`; controle em `client_nfse_configs` (`nfeLastNsu`, `nfeNextAllowedAt`...). Variáveis opcionais: `NFE_DIST_URL`, `NFE_EVENTO_URL`, `NFE_TP_AMB`.

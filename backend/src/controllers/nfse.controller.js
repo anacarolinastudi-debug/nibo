@@ -3,6 +3,7 @@ const certCrypto = require('../utils/certCrypto');
 const { inspectPfx } = require('../utils/certInspect');
 const fileStorage = require('../services/fileStorage.service');
 const nfseAdn = require('../services/nfseAdn.service');
+const nfeDist = require('../services/nfeDist.service');
 
 const { onlyDigits, cnpjRoot } = nfseAdn._private;
 
@@ -30,6 +31,13 @@ function serializeConfig(config) {
     lastSyncStatus: config.lastSyncStatus,
     lastSyncError: config.lastSyncError,
     lastSyncCount: config.lastSyncCount,
+    nfe: {
+      lastSyncAt: config.nfeLastSyncAt,
+      lastSyncStatus: config.nfeLastSyncStatus,
+      lastSyncError: config.nfeLastSyncError,
+      lastSyncCount: config.nfeLastSyncCount,
+      nextAllowedAt: config.nfeNextAllowedAt,
+    },
   };
 }
 
@@ -77,12 +85,16 @@ async function listClients(req, res) {
   });
   const counts = await prisma.nfseDocument.groupBy({ by: ['clientId'], where: firmWhere(req), _count: { _all: true } });
   const countBy = Object.fromEntries(counts.map((row) => [row.clientId, row._count._all]));
+  const nfeCounts = await prisma.nfeDocument.groupBy({ by: ['clientId'], where: firmWhere(req), _count: { _all: true } });
+  const nfeBy = Object.fromEntries(nfeCounts.map((row) => [row.clientId, row._count._all]));
   res.json(clients.map((client) => ({
     id: client.id,
     name: client.name,
     cnpj: client.cnpj,
     code: client.code,
     documents: countBy[client.id] || 0,
+    nfeDocuments: nfeBy[client.id] || 0,
+    state: client.state || null,
     config: serializeConfig(client.nfseConfig),
   })));
 }
@@ -194,4 +206,92 @@ async function downloadZip(req, res) {
   res.send(nfseAdn.createZip(files));
 }
 
-module.exports = { listClients, uploadCertificate, removeCertificate, syncNow, listDocuments, downloadXml, downloadZip };
+// ---------- NF-e (modelo 55) ----------
+
+function serializeNfe(doc) {
+  return {
+    id: doc.id,
+    nsu: doc.nsu.toString(),
+    chaveAcesso: doc.chaveAcesso,
+    tipo: doc.tipo,
+    papel: doc.papel,
+    numero: doc.numero,
+    serie: doc.serie,
+    dataEmissao: doc.dataEmissao,
+    valorTotal: doc.valorTotal === null ? null : Number(doc.valorTotal),
+    emitenteDoc: doc.emitenteDoc,
+    emitenteNome: doc.emitenteNome,
+    destinatarioDoc: doc.destinatarioDoc,
+    destinatarioNome: doc.destinatarioNome,
+    cancelada: doc.cancelada,
+    ciencia: doc.ciencia,
+    cienciaErro: doc.cienciaErro,
+    eventoDescricao: doc.eventoDescricao,
+  };
+}
+
+function nfeFilter(req, clientId) {
+  const where = { ...firmWhere(req), clientId };
+  const range = monthRange(req.query.mes);
+  if (range) where.dataEmissao = range;
+  if (['NFE', 'RESUMO', 'EVENTO'].includes(req.query.tipo)) where.tipo = req.query.tipo;
+  return where;
+}
+
+async function syncNfeNow(req, res) {
+  const client = await findClient(req);
+  if (!client.nfseConfig) return res.status(400).json({ error: 'Cadastre o certificado digital da empresa antes de buscar as notas.' });
+  if (nfeDist.isRunning(client.id)) return res.status(409).json({ error: 'A busca de NF-e deste cliente já está em andamento.' });
+  nfseAdn.assertPermanentStorage();
+  const next = client.nfseConfig.nfeNextAllowedAt;
+  if (next && next > new Date()) {
+    const hora = next.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
+    return res.status(429).json({ error: `A SEFAZ só permite nova consulta desta empresa a partir das ${hora} (horário de Brasília).` });
+  }
+  nfeDist.syncClient(client.id).catch((error) => console.error(`Busca de NF-e (${client.name}):`, error.message));
+  res.status(202).json({ started: true });
+}
+
+async function listNfe(req, res) {
+  const client = await findClient(req);
+  const documents = await prisma.nfeDocument.findMany({ where: nfeFilter(req, client.id), orderBy: [{ dataEmissao: 'desc' }, { nsu: 'desc' }], take: 1000 });
+  res.json(documents.map(serializeNfe));
+}
+
+async function downloadNfeXml(req, res) {
+  const doc = await prisma.nfeDocument.findFirst({ where: { id: req.params.id, ...firmWhere(req) } });
+  if (!doc) return res.status(404).json({ error: 'Documento não encontrado.' });
+  const buffer = await fileStorage.readFile(doc.xmlRef);
+  if (!buffer) return res.status(404).json({ error: 'O arquivo XML não está mais disponível.' });
+  const suffix = doc.tipo === 'NFE' ? '' : `-${doc.tipo.toLowerCase()}`;
+  res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${doc.chaveAcesso || doc.nsu.toString()}${suffix}.xml"`);
+  res.send(buffer);
+}
+
+// ZIP do mês só com as notas completas e os eventos; resumo não é NF-e válida.
+async function downloadNfeZip(req, res) {
+  const client = await findClient(req);
+  if (!monthRange(req.query.mes)) return res.status(400).json({ error: 'Informe o mês no formato AAAA-MM.' });
+  const documents = await prisma.nfeDocument.findMany({ where: { ...nfeFilter(req, client.id), tipo: { in: ['NFE', 'EVENTO'] } }, orderBy: { nsu: 'asc' } });
+  if (documents.length === 0) return res.status(404).json({ error: 'Nenhuma NF-e completa nesse mês.' });
+  const files = [];
+  const used = new Set();
+  for (const doc of documents) {
+    const buffer = await fileStorage.readFile(doc.xmlRef);
+    if (!buffer) continue;
+    const folder = doc.tipo === 'EVENTO' ? 'Eventos' : { RECEBIDA: 'Recebidas', EMITIDA: 'Emitidas' }[doc.papel] || 'Outras';
+    let name = `${folder}/${doc.chaveAcesso || doc.nsu.toString()}${doc.tipo === 'EVENTO' ? `-evento-${doc.nsu}` : ''}.xml`;
+    if (used.has(name)) name = name.replace(/\.xml$/, `-${doc.nsu}.xml`);
+    used.add(name);
+    files.push({ name, data: buffer });
+  }
+  if (files.length === 0) return res.status(410).json({ error: 'Os XMLs deste mês não estão mais no armazenamento.' });
+  const [year, month] = req.query.mes.split('-');
+  const safeName = client.name.normalize('NFD').replace(/[^\w ]/g, '').trim().replace(/\s+/g, '_').slice(0, 60);
+  res.setHeader('Content-Type', 'application/zip');
+  res.setHeader('Content-Disposition', `attachment; filename="NFe_${safeName}_${month}${year}.zip"`);
+  res.send(nfseAdn.createZip(files));
+}
+
+module.exports = { listClients, uploadCertificate, removeCertificate, syncNow, listDocuments, downloadXml, downloadZip, syncNfeNow, listNfe, downloadNfeXml, downloadNfeZip };
