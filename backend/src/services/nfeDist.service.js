@@ -112,18 +112,23 @@ function parseDistResponse(text) {
     const fault = findKey(tree, 'Text') || findKey(tree, 'faultstring');
     throw new Error(`Resposta inesperada da SEFAZ na distribuição${fault ? `: ${typeof fault === 'object' ? JSON.stringify(fault) : fault}` : ''}.`);
   }
-  let docs = ret.loteDistDFeZip?.docZip || [];
-  if (!Array.isArray(docs)) docs = [docs];
+  // Os documentos são lidos direto do texto: cada docZip tem NSU, schema e o
+  // conteúdo em base64 (gzip). Não depende de como o parser monta a árvore.
+  const docs = [];
+  for (const match of String(text).matchAll(/<(?:[\w-]+:)?docZip\b([^>]*)>([^<]*)<\/(?:[\w-]+:)?docZip>/g)) {
+    const attrs = match[1];
+    docs.push({
+      nsu: BigInt(onlyDigits((attrs.match(/NSU="([^"]*)"/) || [])[1]) || '0'),
+      schema: String((attrs.match(/schema="([^"]*)"/) || [])[1] || ''),
+      xml: decodeDocZip(match[2].trim()),
+    });
+  }
   return {
     cStat: String(ret.cStat || ''),
     xMotivo: String(ret.xMotivo || ''),
     ultNsu: BigInt(onlyDigits(ret.ultNSU) || '0'),
     maxNsu: BigInt(onlyDigits(ret.maxNSU) || '0'),
-    docs: docs.map((doc) => ({
-      nsu: BigInt(onlyDigits(doc['@_NSU']) || '0'),
-      schema: String(doc['@_schema'] || ''),
-      xml: decodeDocZip(doc['#text']),
-    })),
+    docs,
   };
 }
 
@@ -345,7 +350,7 @@ async function registrarCiencias({ client, cnpj, cert, post }) {
   return enviadas;
 }
 
-async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force = false } = {}) {
+async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force = false, refazer = false } = {}) {
   assertPermanentStorage();
   if (running.has(clientId)) throw Object.assign(new Error('A busca de NF-e deste cliente já está em andamento.'), { status: 409 });
   running.add(clientId);
@@ -370,7 +375,8 @@ async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force =
       pfx: certCrypto.decrypt(config.certificatePfxEncrypted),
       passphrase: certCrypto.decrypt(config.certificatePassphraseEncrypted).toString('utf8'),
     };
-    let ultNsu = config.nfeLastNsu;
+    let ultNsu = refazer ? 0n : config.nfeLastNsu;
+    let recebidos = 0;
     let saved = 0;
     let nextAllowedAt = null;
     let aviso = '';
@@ -388,6 +394,12 @@ async function syncClient(clientId, { post = postSoap, pause = PAUSA_MS, force =
       }
       if (ret.cStat === '137') { nextAllowedAt = new Date(Date.now() + UMA_HORA); break; }
       if (ret.cStat !== '138') throw new Error(`A SEFAZ respondeu ${ret.cStat} - ${ret.xMotivo}`);
+      if (ret.docs.length === 0) {
+        // Nunca avançar o NSU sem ter gravado os documentos.
+        const trecho = String(response.text).replace(/\s+/g, ' ').slice(0, 600);
+        throw new Error(`A SEFAZ informou documentos (138), mas nenhum foi lido. Trecho da resposta: ${trecho}`);
+      }
+      recebidos += ret.docs.length;
 
       for (const doc of ret.docs) {
         const info = parseDistDoc(doc.xml, doc.schema, cnpj);

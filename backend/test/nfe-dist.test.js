@@ -108,3 +108,12 @@ test('lê o retorno do registro de eventos', () => {
   assert.equal(ret.cStat, '128');
   assert.deepEqual(ret.resultados, [{ chave: CHAVE, cStat: '135', xMotivo: 'Evento registrado' }]);
 });
+
+test('lê docZip com prefixo de namespace e atributos em outra ordem', () => {
+  const xml = `<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope"><s:Body><r:retDistDFeInt xmlns:r="http://www.portalfiscal.inf.br/nfe"><r:cStat>138</r:cStat><r:xMotivo>Documento localizado</r:xMotivo><r:ultNSU>000000000000651</r:ultNSU><r:maxNSU>000000000000651</r:maxNSU><r:loteDistDFeZip><r:docZip schema="resNFe_v1.01.xsd" NSU="000000000000650">${gz(resNFe)}</r:docZip></r:loteDistDFeZip></r:retDistDFeInt></s:Body></s:Envelope>`;
+  const ret = parseDistResponse(xml);
+  assert.equal(ret.docs.length, 1);
+  assert.equal(ret.docs[0].nsu, 650n);
+  assert.equal(ret.docs[0].schema, 'resNFe_v1.01.xsd');
+  assert.match(ret.docs[0].xml, /<chNFe>/);
+});

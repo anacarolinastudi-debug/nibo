@@ -248,7 +248,8 @@ async function syncNfeNow(req, res) {
     const hora = next.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
     return res.status(429).json({ error: `A SEFAZ só permite nova consulta desta empresa a partir das ${hora} (horário de Brasília).` });
   }
-  nfeDist.syncClient(client.id).catch((error) => console.error(`Busca de NF-e (${client.name}):`, error.message));
+  const refazer = req.query.refazer === '1';
+  nfeDist.syncClient(client.id, { refazer }).catch((error) => console.error(`Busca de NF-e (${client.name}):`, error.message));
   res.status(202).json({ started: true });
 }
 
