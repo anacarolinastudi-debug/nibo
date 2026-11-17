@@ -254,7 +254,7 @@ function DocumentsDialog({ client, onClose }) {
 
   async function zip() {
     setError('');
-    try { await downloadNfseZip(client.id, { mes, papel: papel || undefined }); } catch (err) {
+    try { await downloadNfseZip(client.id, { mes, papel: papel || undefined }, client.name); } catch (err) {
       setError(err.response?.status === 404 ? 'Nenhum XML para esse filtro.' : 'Não foi possível gerar o ZIP.');
     }
   }

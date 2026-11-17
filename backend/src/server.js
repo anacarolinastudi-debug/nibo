@@ -26,7 +26,8 @@ const app = express();
 // O Render fica atrás de um proxy: usa o IP real do visitante (para o limite de login).
 app.set('trust proxy', 1);
 
-app.use(cors({ origin: process.env.FRONTEND_URL || '*' }));
+// Content-Disposition liberado para o navegador ler o nome dos arquivos baixados (ZIP de NFS-e).
+app.use(cors({ origin: process.env.FRONTEND_URL || '*', exposedHeaders: ['Content-Disposition'] }));
 app.use('/api/content', express.json({ limit: '2mb' }));
 app.use(express.json());
 app.use((req, res, next) => {

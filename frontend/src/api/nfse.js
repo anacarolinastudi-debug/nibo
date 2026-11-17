@@ -41,7 +41,9 @@ export async function downloadNfseXml(documentId, fallbackName) {
   saveBlob(response, fallbackName);
 }
 
-export async function downloadNfseZip(clientId, params) {
+export async function downloadNfseZip(clientId, params, clientName = '') {
   const response = await api.get(`/nfse/clients/${clientId}/zip`, { params, responseType: 'blob' });
-  saveBlob(response, `NFSe_${params.mes}.zip`);
+  const [year, month] = String(params.mes).split('-');
+  const safeName = clientName.normalize('NFD').replace(/[^\w ]/g, '').trim().replace(/\s+/g, '_').slice(0, 60);
+  saveBlob(response, `NFSe_${safeName ? `${safeName}_` : ''}${month}${year}.zip`);
 }
