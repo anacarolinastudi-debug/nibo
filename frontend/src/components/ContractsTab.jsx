@@ -214,7 +214,7 @@ export default function ContractsTab() {
         <button type="button" disabled={!config} onClick={() => setDrawer(config?.configured ? 'new' : 'settings-then-new')} className="inline-flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} aria-hidden="true" /> Novo contrato</button>
       </div>
     </div>
-    {config && !config.configured && <p className="mb-4 flex gap-2 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"><TriangleAlert size={18} className="mt-0.5 shrink-0" aria-hidden="true" />Antes do primeiro contrato, preencha os dados do escritório (representante, CPF, CRC e foro). É só uma vez.</p>}
+    {config && !config.configured && <div className="mb-4 flex flex-wrap items-center gap-3 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"><TriangleAlert size={18} className="shrink-0" aria-hidden="true" /><span className="flex-1">Antes do primeiro contrato, preencha os dados do escritório (representante, CPF, CRC e foro). É só uma vez. Também ficam em Configurações › Escritório.</span><button type="button" onClick={() => setDrawer('settings-then-new')} className="rounded bg-amber-600 px-4 py-1.5 font-medium text-white hover:bg-amber-700">Preencher agora</button></div>}
     {notice && <p role="alert" className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{notice}</p>}
     <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar por número, cliente ou CNPJ" aria-label="Buscar contrato" className="mb-4 h-10 w-full max-w-sm rounded border border-[#d8dfe3] px-3 text-sm" />
     <div className="overflow-x-auto rounded border">
@@ -240,4 +240,29 @@ export default function ContractsTab() {
     {drawer?.startsWith('settings') && config && <SettingsDrawer initial={config.settings} onClose={() => setDrawer(null)} onSaved={(data) => { setConfig((c) => ({ ...c, ...data })); setDrawer(drawer === 'settings-then-new' && data.configured ? 'new' : null); }} />}
     {drawer === 'new' && config && <NewContractDrawer services={config.services} onClose={() => setDrawer(null)} onSaved={() => { setDrawer(null); load(); }} />}
   </div>;
+}
+
+// Seção usada em Configurações › Escritório: mesmos campos do botão "Dados do escritório".
+export function ContractSettingsSection() {
+  const [config, setConfig] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => { api.get('/contracts/settings').then(({ data }) => setConfig(data)).catch((err) => setError(errorText(err, 'Não foi possível carregar.'))); }, []);
+  const s = config?.settings;
+  return <section className="grid grid-cols-3 gap-6 border-t border-[#eef0f2] pt-8">
+    <div className="col-span-1">
+      <h2 className="font-semibold">Dados para contratos</h2>
+      <p className="mt-1 text-sm text-[#78838a]">Representante, CPF, CRC e foro usados nos contratos gerados em Financeiro › Contratos.</p>
+    </div>
+    <div className="col-span-2">
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {config && <div className="flex flex-wrap items-center justify-between gap-3 rounded border border-[#dfe5e8] p-4 text-sm">
+        {config.configured
+          ? <div><b>{s.representanteNome}</b><p className="text-[#78838a]">{[s.crc, s.representanteCpf && `CPF ${s.representanteCpf}`, s.foro && `Foro: ${s.foro}${s.ufAssinatura ? ` - ${s.ufAssinatura}` : ''}`].filter(Boolean).join(' · ')}</p></div>
+          : <p className="flex items-center gap-2 text-amber-800"><TriangleAlert size={16} aria-hidden="true" /> Ainda não preenchido.</p>}
+        <button type="button" onClick={() => setOpen(true)} className="inline-flex items-center gap-2 rounded border border-[#2693d2] px-4 py-2 text-[#16829b]"><Settings size={16} aria-hidden="true" /> {config.configured ? 'Editar' : 'Preencher'}</button>
+      </div>}
+    </div>
+    {open && config && <SettingsDrawer initial={config.settings} onClose={() => setOpen(false)} onSaved={(data) => { setConfig((c) => ({ ...c, ...data })); setOpen(false); }} />}
+  </section>;
 }

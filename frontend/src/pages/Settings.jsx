@@ -10,6 +10,7 @@ import {
   getClientMatrix, upsertClientMatrix, listFirmRoles, createFirmRole, removeFirmRole,
 } from '../api/departments';
 import api from '../api/client';
+import { ContractSettingsSection } from '../components/ContractsTab';
 import FirmHeader from '../components/FirmHeader';
 import NiboRail from '../components/NiboRail';
 import ContentMenuLink from '../components/ContentMenuLink';
@@ -196,6 +197,8 @@ function EscritorioTab() {
           </div>
         </div>
       </section>
+
+      <ContractSettingsSection />
 
       <section className="grid grid-cols-3 gap-6 border-t border-[#eef0f2] pt-8">
         <div className="col-span-1">

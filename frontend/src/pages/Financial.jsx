@@ -522,7 +522,7 @@ export default function Financial() {
             <div><h1 className="text-2xl font-semibold">Financeiro</h1><p className="mt-1 text-sm text-[#68737a]">Controle entradas, saídas, pendências e recibos por cliente.</p></div>
             <div className="flex gap-3">
               {tab === 'Movimentações' && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'transaction' })} className="flex items-center gap-2 rounded border border-[#2693d2] px-5 py-2.5 text-[#16829b] disabled:opacity-50"><Plus size={17} /> Nova movimentação</button>}
-              {tab !== 'Orçamento' && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'receipt-new' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} /> Novo recibo</button>}
+              {['Movimentações', 'Recibos'].includes(tab) && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'receipt-new' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} /> Novo recibo</button>}
               {tab === 'Orçamento' && <button disabled={clients.length === 0} onClick={() => setDrawer({ type: 'budget' })} className="flex items-center gap-2 rounded bg-[#2693d2] px-5 py-2.5 text-white disabled:opacity-50"><Plus size={17} /> Novo orçamento</button>}
             </div>
           </div>
