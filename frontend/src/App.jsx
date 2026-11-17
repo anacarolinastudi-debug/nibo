@@ -19,6 +19,7 @@ import ContentStudio from './pages/ContentStudio';
 import Updates from './pages/Updates';
 import ProLaboreCalculator from './pages/ProLaboreCalculator';
 import Studies from './pages/Studies';
+import NfseXml from './pages/NfseXml';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -35,6 +36,7 @@ export default function App() {
       <Route path="/conteudos" element={<ProtectedRoute><ContentStudio /></ProtectedRoute>} />
       <Route path="/atualizacoes" element={<ProtectedRoute><Updates /></ProtectedRoute>} />
       <Route path="/estudos" element={<ProtectedRoute><Studies /></ProtectedRoute>} />
+      <Route path="/xml-nfse" element={<ProtectedRoute><NfseXml /></ProtectedRoute>} />
       <Route path="/notas-fiscais" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
       <Route path="/folha-pagamento" element={<ProtectedRoute><Payroll /></ProtectedRoute>} />
       <Route path="/documentos" element={<ProtectedRoute><Documents /></ProtectedRoute>} />

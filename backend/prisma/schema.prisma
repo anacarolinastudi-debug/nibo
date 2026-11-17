@@ -305,9 +305,67 @@ model Client {
   whatsappConversations WhatsAppConversation[]
   taxPendencyChecks  TaxPendencyCheck[]
   departmentResponsibilities ClientDepartmentResponsible[]
+  nfseDocuments      NfseDocument[]
+  nfseConfig         ClientNfseConfig?
 
   @@index([accountingFirmId])
   @@map("clients")
+}
+
+// Certificado digital da própria empresa (e-CNPJ) e controle da distribuição
+// de NFS-e do ADN. Fica fora de Client de propósito: várias telas devolvem o
+// cliente inteiro, e o certificado criptografado nunca deve sair do servidor.
+model ClientNfseConfig {
+  id                             String    @id @default(uuid())
+  clientId                       String    @unique
+  client                         Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  accountingFirmId               String
+  certificatePfxEncrypted        String
+  certificatePassphraseEncrypted String
+  certificateSubject             String?
+  certificateCnpj                String?
+  certificateValidUntil          DateTime?
+  certificateUploadedAt          DateTime  @default(now())
+  lastNsu                        BigInt    @default(0)
+  lastSyncAt                     DateTime?
+  lastSyncStatus                 String?   // SUCESSO, ERRO, EM_ANDAMENTO
+  lastSyncError                  String?
+  lastSyncCount                  Int?
+  updatedAt                      DateTime  @updatedAt
+
+  @@index([accountingFirmId])
+  @@map("client_nfse_configs")
+}
+
+// NFS-e (padrão nacional) baixadas da API de distribuição do ADN, uma linha
+// por documento distribuído (nota ou evento). O XML fica no armazenamento privado.
+model NfseDocument {
+  id               String    @id @default(uuid())
+  accountingFirmId String
+  clientId         String
+  client           Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  nsu              BigInt
+  chaveAcesso      String
+  tipoDocumento    String    // NFSE, EVENTO ou o que a API informar
+  papel            String    // EMITIDA, RECEBIDA, INTERMEDIARIO ou EVENTO
+  numero           String?
+  dataEmissao      DateTime?
+  competencia      DateTime?
+  valorServico     Decimal?  @db.Decimal(14, 2)
+  emitenteDoc      String?
+  emitenteNome     String?
+  tomadorDoc       String?
+  tomadorNome      String?
+  cancelada        Boolean   @default(false)
+  eventoDescricao  String?
+  xmlRef           String
+  createdAt        DateTime  @default(now())
+
+  @@unique([clientId, nsu])
+  @@index([accountingFirmId])
+  @@index([clientId, competencia])
+  @@index([chaveAcesso])
+  @@map("nfse_documents")
 }
 
 model ClientContact {

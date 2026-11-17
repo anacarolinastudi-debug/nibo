@@ -438,3 +438,14 @@ Atualização registrada em 12/11/2026:
 - Variáveis no Render: `GOOGLE_SERVICE_ACCOUNT_JSON` (conteúdo do arquivo JSON da conta de serviço do Google Cloud, com a Google Drive API ativada) e `EMAIL_HOST=smtp.gmail.com`, `EMAIL_PORT=465`, `EMAIL_USER`, `EMAIL_PASS` (senha de app do Gmail), `EMAIL_FROM`. Nunca registrar os valores neste arquivo.
 - PDFs escaneados (imagem, sem texto) não são lidos automaticamente: entram na Conferência para identificação manual.
 
+## 15. XML de NFS-e pelo Ambiente de Dados Nacional (ADN)
+
+Atualização registrada em 16/11/2026:
+
+- Tela `/xml-nfse` (menu **XML de NFS-e**, só equipe): para cada empresa, envio do certificado e-CNPJ A1 (.pfx + senha), botão **Buscar agora**, lista das notas por competência (emitidas, recebidas e eventos), download do XML de cada nota e **Baixar ZIP do mês** (pastas Emitidas/Recebidas/Eventos).
+- Fonte: API de distribuição do ADN (`GET /DFe/{NSU}?cnpjConsulta=<CNPJ>&lote=true`), autenticada por mTLS com o certificado **da própria empresa** (mesmo CNPJ raiz). Não usa o Emissor Nacional, então não há captcha. O certificado do escritório não serve para isso.
+- Busca automática todo dia às 5h (`jobs/nfseScheduler.js`), continuando do último NSU de cada empresa (sem duplicar). Eventos de cancelamento marcam a nota como cancelada.
+- Certificado e senha ficam criptografados (AES-256-GCM, `CERT_ENCRYPTION_KEY`) na tabela `client_nfse_configs`, separada de `clients` para nunca sair do servidor nas outras telas. O upload recusa certificado de outro CNPJ, senha errada e certificado vencido.
+- XMLs no armazenamento privado (`nfse/<escritório>/<cliente>/`); dados da nota na tabela `nfse_documents`.
+- Variáveis opcionais no Render: `NFSE_ADN_BASE_URL` (padrão `https://adn.nfse.gov.br/contribuintes`; para testes, `https://adn.producaorestrita.nfse.gov.br/contribuintes`) e `NFSE_ADN_CA_PEM` (cadeia ICP-Brasil, só se o servidor recusar o certificado do ADN).
+- **Pendente de validação real:** a documentação detalhada da API (Swagger) só abre com certificado. A leitura da resposta aceita variações de nome de campo e XML em base64 com ou sem gzip; se o formato real for diferente, o erro na tela mostra os campos recebidos para ajuste.

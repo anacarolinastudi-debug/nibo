@@ -72,6 +72,7 @@ app.use('/api/departments', departmentsRoutes);
 app.use('/api/content', require('./routes/content.routes'));
 app.use('/api/updates', require('./routes/updates.routes'));
 app.use('/api/study', require('./routes/study.routes'));
+app.use('/api/nfse', require('./routes/nfse.routes'));
 
 // Precisa ser o último middleware
 app.use(errorHandler);
@@ -82,6 +83,7 @@ app.listen(PORT, process.env.HOST, () => {
   startEcacScheduler();
   require('./jobs/accountingNewsScheduler').startAccountingNewsScheduler();
   require('./jobs/driveConferenceScheduler').startDriveConferenceScheduler();
+  require('./jobs/nfseScheduler').startNfseScheduler();
 });
 
 function stripSensitiveClientFields(value) {
