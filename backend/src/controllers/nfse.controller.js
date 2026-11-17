@@ -100,7 +100,7 @@ async function uploadCertificate(req, res) {
   } catch (error) {
     return res.status(400).json({ error: error.message });
   }
-  const certificateCnpj = (String(meta.subject).match(/\d{14}/) || [null])[0];
+  const certificateCnpj = meta.cnpj;
   if (certificateCnpj && onlyDigits(client.cnpj).length === 14 && cnpjRoot(certificateCnpj) !== cnpjRoot(client.cnpj)) {
     return res.status(400).json({ error: `Este certificado é do CNPJ ${certificateCnpj}, que não é da empresa ${client.name}. Envie o certificado da própria empresa.` });
   }

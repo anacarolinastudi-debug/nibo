@@ -75,3 +75,35 @@ test('gera ZIP válido com crc correto', () => {
   assert.equal(end.readUInt32LE(0), 0x06054b50);
   assert.equal(end.readUInt16LE(10), 2);
 });
+
+test('lê o CNPJ do titular no nome do certificado, ignorando o CNPJ da autoridade de registro', () => {
+  const forge = require('node-forge');
+  const { inspectPfx } = require('../src/utils/certInspect');
+  const keys = forge.pki.rsa.generateKeyPair(1024);
+  const make = (subject, issuer, ca) => {
+    const cert = forge.pki.createCertificate();
+    cert.publicKey = keys.publicKey;
+    cert.serialNumber = ca ? '0a' : '0b';
+    cert.validity.notBefore = new Date();
+    cert.validity.notAfter = new Date(Date.now() + 86400000);
+    cert.setSubject(subject);
+    cert.setIssuer(issuer);
+    cert.setExtensions([{ name: 'basicConstraints', cA: ca }]);
+    cert.sign(keys.privateKey);
+    return cert;
+  };
+  const caSubject = [{ name: 'countryName', value: 'BR' }, { name: 'commonName', value: 'AC TESTE RFB' }];
+  const holder = [
+    { name: 'countryName', value: 'BR' },
+    { name: 'organizationName', value: 'ICP-Brasil' },
+    { shortName: 'OU', value: '29690074000189' },
+    { shortName: 'OU', value: 'Videoconferencia' },
+    { name: 'commonName', value: 'OFICINA TESTE LTDA:11222333000181' },
+  ];
+  const ca = make(caSubject, caSubject, true);
+  const leaf = make(holder, caSubject, false);
+  const der = forge.asn1.toDer(forge.pkcs12.toPkcs12Asn1(keys.privateKey, [ca, leaf], 'x')).getBytes();
+  const meta = inspectPfx(Buffer.from(der, 'binary'), 'x');
+  assert.equal(meta.cnpj, '11222333000181');
+  assert.equal(meta.commonName, 'OFICINA TESTE LTDA:11222333000181');
+});
