@@ -460,3 +460,12 @@ Atualização registrada em 17/11/2026:
 - Não vêm por aqui: NF-e **emitidas** pela própria empresa (só os eventos delas) e NFC-e. Para receber as emitidas, incluir o CNPJ do escritório no campo "autorizados a baixar XML" (autXML) do emissor do cliente.
 - Regra da SEFAZ respeitada: sem documentos novos (137) ou NSU no máximo, nova consulta só depois de 1 hora; 656 (consumo indevido) também espera 1 hora. Busca automática diária às 5h, logo após a NFS-e.
 - Tabela `nfe_documents`; controle em `client_nfse_configs` (`nfeLastNsu`, `nfeNextAllowedAt`...). Variáveis opcionais: `NFE_DIST_URL`, `NFE_EVENTO_URL`, `NFE_TP_AMB`.
+
+## 17. Contratos no Financeiro e cadastro pelo CNPJ
+
+Atualização registrada em 17/11/2026:
+
+- **Clientes:** ao digitar o CNPJ de um cliente novo, o formulário é preenchido com os dados públicos da Receita (BrasilAPI, reserva CNPJ.ws). Em cliente existente, "Buscar na Receita" atualiza após confirmação. Rota `GET /api/clients/cnpj-lookup/:cnpj`.
+- **Financeiro › Contratos:** informa-se só CNPJ, data de início, valor mensal e serviços; o sistema preenche contratante (Receita, com o sócio administrador do quadro societário), escritório, valor por extenso e cláusulas, a partir do modelo "CONTRATO DE PRESTAÇÃO DE SERVIÇOS CONTÁBEIS" do escritório (com LGPD; a antiga cláusula de RAIS/DIRF virou honorário adicional anual opcional). PDF gerado pelo servidor (Playwright). Numeração sequencial por escritório.
+- "Dados do escritório" (uma vez): representante, qualificação, CPF, CRC, estado do CRC, cidade/foro, dias de vencimento, prazo dos documentos, aviso prévio e honorário anual. Guardado em `accounting_firms.contractSettings`.
+- Rotas `/api/contracts` (settings, prefill/:cnpj, lista, criar, status, PDF). Tabela `contracts`.

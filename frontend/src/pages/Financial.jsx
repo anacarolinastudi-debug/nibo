@@ -8,6 +8,7 @@ import ContentMenuLink from '../components/ContentMenuLink';
 import SideMenuSection from '../components/SideMenuSection';
 import { buildMonthlyTransactions, summarizeTransactions, buildFinancialChart } from '../utils/financialProjection.mjs';
 import { DEFAULT_RECEIPT_NOTES } from '../utils/receiptDefaults';
+import ContractsTab from '../components/ContractsTab';
 
 function money(value) {
   return Number(value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -514,7 +515,7 @@ export default function Financial() {
       <main className="ml-[282px]">
         <FirmHeader className="px-6" />
         <div className="flex h-[45px] items-end gap-14 border-b px-6 text-sm">
-          {['Movimentações', 'Recibos', 'Orçamento'].map((item) => <button key={item} onClick={() => { setTab(item); setQuery(''); }} className={`h-full border-b-2 px-1 ${tab === item ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{item}</button>)}
+          {['Movimentações', 'Recibos', 'Orçamento', 'Contratos'].map((item) => <button key={item} onClick={() => { setTab(item); setQuery(''); }} className={`h-full border-b-2 px-1 ${tab === item ? 'border-[#003f82] font-semibold' : 'border-transparent'}`}>{item}</button>)}
         </div>
         <section className="p-6">
           <div className="mb-6 flex items-center justify-between">
@@ -600,6 +601,7 @@ export default function Financial() {
             </>
           )}
 
+          {tab === 'Contratos' && <ContractsTab />}
           {tab === 'Orçamento' && (
             <>
               <div className="mb-5 grid grid-cols-[minmax(320px,520px)_180px_180px_180px] gap-4">

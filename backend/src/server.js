@@ -74,6 +74,7 @@ app.use('/api/content', require('./routes/content.routes'));
 app.use('/api/updates', require('./routes/updates.routes'));
 app.use('/api/study', require('./routes/study.routes'));
 app.use('/api/nfse', require('./routes/nfse.routes'));
+app.use('/api/contracts', require('./routes/contracts.routes'));
 
 // Precisa ser o último middleware
 app.use(errorHandler);

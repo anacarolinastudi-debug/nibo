@@ -56,6 +56,8 @@ function fromBrasilApi(d) {
     stateRegistration: '',
     taxRegime: regimeFrom({ mei: d.opcao_pelo_mei, simples: d.opcao_pelo_simples }),
     situation: clean(d.descricao_situacao_cadastral),
+    legalNature: clean(d.natureza_juridica),
+    partners: (d.qsa || []).map((item) => ({ name: clean(item.nome_socio), role: clean(item.qualificacao_socio) })).filter((item) => item.name),
     source: 'BrasilAPI',
   };
 }
@@ -80,6 +82,8 @@ function fromCnpjWs(d) {
     stateRegistration: clean(ie?.inscricao_estadual),
     taxRegime: regimeFrom({ mei: d.simples?.mei === 'Sim', simples: d.simples?.simples === 'Sim' }),
     situation: clean(e.situacao_cadastral),
+    legalNature: clean(d.natureza_juridica?.descricao),
+    partners: (d.socios || []).map((item) => ({ name: clean(item.nome), role: clean(item.qualificacao_socio?.descricao) })).filter((item) => item.name),
     source: 'CNPJ.ws',
   };
 }

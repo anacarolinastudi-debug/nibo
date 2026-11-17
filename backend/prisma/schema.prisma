@@ -49,6 +49,9 @@ model AccountingFirm {
   driveLastSyncAt         DateTime?
   driveLastSyncError      String?
 
+  // Dados do escritório usados nos contratos (representante, CRC, foro...)
+  contractSettings        Json?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -72,6 +75,7 @@ model AccountingFirm {
   departments        Department[]
   firmRoles          FirmRole[]
   passwordResetRequests PasswordResetRequest[]
+  contracts          Contract[]
   contentProjects       ContentProject[]
   contentStudioSettings ContentStudioSettings?
   newsArticleStates     NewsArticleState[]
@@ -1305,4 +1309,27 @@ model NfeDocument {
   @@index([clientId, dataEmissao])
   @@index([chaveAcesso])
   @@map("nfe_documents")
+}
+
+// Contratos de prestação de serviços contábeis gerados no Financeiro.
+model Contract {
+  id               String         @id @default(uuid())
+  accountingFirmId String
+  accountingFirm   AccountingFirm @relation(fields: [accountingFirmId], references: [id])
+  clientId         String?
+  number           Int
+  cnpj             String
+  contratante      Json           // razão social, endereço e representante (Receita + ajustes)
+  startDate        DateTime
+  monthlyFee       Decimal        @db.Decimal(12, 2)
+  services         String[]
+  status           String         @default("ATIVO") // ATIVO ou ENCERRADO
+  createdById      String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([accountingFirmId, number])
+  @@index([accountingFirmId])
+  @@index([clientId])
+  @@map("contracts")
 }
