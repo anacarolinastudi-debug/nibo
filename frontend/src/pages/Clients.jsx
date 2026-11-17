@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Archive, Building2, ClipboardCheck, ClipboardList, ContactRound, ExternalLink, ListChecks, MessageCircle, MoreVertical, Pencil, Plus, Search, Settings, Trash2, Users, WalletCards, X } from 'lucide-react';
 import api from '../api/client';
@@ -63,7 +63,42 @@ function visibleTaxId(value) {
 function ClientDrawer({ client, onClose, onSaved }) {
   const [form, setForm] = useState(client ? { ...emptyClient, ...client } : emptyClient);
   const [saving, setSaving] = useState(false);
+  const [lookup, setLookup] = useState({ status: 'idle', message: '' });
+  const lastLookup = useRef('');
   const set = (key, value) => setForm((current) => ({ ...current, [key]: value }));
+  const cnpjDigits = String(form.cnpj || '').replace(/\D/g, '');
+
+  // Busca os dados públicos da Receita pelo CNPJ. Em cliente novo preenche só o
+  // que está vazio; com "Buscar na Receita" substitui os campos encontrados.
+  async function fetchCnpj({ overwrite = false } = {}) {
+    if (form.personType !== 'JURIDICA' || cnpjDigits.length !== 14) return;
+    lastLookup.current = cnpjDigits;
+    setLookup({ status: 'loading', message: 'Consultando a Receita Federal…' });
+    try {
+      const { data } = await api.get(`/clients/cnpj-lookup/${cnpjDigits}`);
+      const fields = ['name', 'cep', 'street', 'number', 'complement', 'neighborhood', 'city', 'state', 'phone', 'email', 'cnae', 'activity', 'stateRegistration'];
+      const filled = fields.filter((key) => data[key] && (overwrite || !String(form[key] || '').trim())).length;
+      setForm((current) => {
+        const next = { ...current, cnpj: data.cnpj || current.cnpj };
+        for (const key of fields) {
+          if (data[key] && (overwrite || !String(current[key] || '').trim())) next[key] = data[key];
+        }
+        if (data.taxRegime && (overwrite || !client)) next.taxRegime = data.taxRegime;
+        return next;
+      });
+      const situation = data.situation && data.situation.toUpperCase() !== 'ATIVA' ? ` Atenção: situação na Receita "${data.situation}".` : '';
+      setLookup({ status: situation ? 'warn' : 'ok', message: `Dados da Receita Federal preenchidos (${data.source}). Confira antes de salvar.${data.taxRegime ? '' : ' Regime tributário não informado pela Receita: confira.'}${situation}` });
+      if (filled === 0 && !overwrite) setLookup({ status: 'ok', message: 'CNPJ encontrado; os campos já estavam preenchidos.' });
+    } catch (error) {
+      setLookup({ status: 'error', message: error.response?.data?.error || 'Não foi possível consultar o CNPJ agora. Preencha manualmente.' });
+    }
+  }
+
+  useEffect(() => {
+    if (client || form.personType !== 'JURIDICA' || cnpjDigits.length !== 14 || lastLookup.current === cnpjDigits) return;
+    fetchCnpj();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cnpjDigits, form.personType, client]);
 
   useEffect(() => {
     if (!client?.id) return;
@@ -113,12 +148,16 @@ function ClientDrawer({ client, onClose, onSaved }) {
         <div className="flex-1 space-y-7 overflow-y-auto p-6">
           <section><p className="mb-4 text-sm font-medium">Tipo de cliente <b className="text-red-600">*</b></p><div className="flex gap-8 text-sm"><label><input type="radio" checked={form.personType === 'JURIDICA'} onChange={() => setForm((current) => ({ ...current, personType: 'JURIDICA', taxRegime: current.taxRegime === 'PESSOA_FISICA' ? 'SIMPLES_NACIONAL' : current.taxRegime }))} /> Pessoa jurídica</label><label><input type="radio" checked={form.personType === 'FISICA'} onChange={() => setForm((current) => ({ ...current, personType: 'FISICA', taxRegime: 'PESSOA_FISICA' }))} /> Pessoa física</label></div></section>
           <section className="grid grid-cols-[240px_1fr_180px] gap-5 bg-[#fafafa] p-5">
-            <Input required={form.personType !== 'FISICA'} minLength={form.personType !== 'FISICA' ? 11 : undefined} label={form.personType === 'FISICA' ? 'CPF' : 'CNPJ'} value={visibleTaxId(form.cnpj)} onChange={(v) => set('cnpj', v)} />
+            <div>
+              <Input required={form.personType !== 'FISICA'} minLength={form.personType !== 'FISICA' ? 11 : undefined} label={form.personType === 'FISICA' ? 'CPF' : 'CNPJ'} value={visibleTaxId(form.cnpj)} onChange={(v) => set('cnpj', v)} />
+              {form.personType === 'JURIDICA' && <button type="button" disabled={cnpjDigits.length !== 14 || lookup.status === 'loading'} onClick={() => { if (!client || window.confirm('Substituir os dados do cadastro pelos dados atuais da Receita Federal?')) fetchCnpj({ overwrite: Boolean(client) }); }} className="mt-1 text-xs text-[#16829b] hover:underline disabled:text-[#9aa5ad] disabled:no-underline">{lookup.status === 'loading' ? 'Consultando…' : 'Buscar na Receita'}</button>}
+            </div>
             <Input required label={form.personType === 'FISICA' ? 'Nome' : 'Razão social'} value={form.name} onChange={(v) => set('name', v)} />
             <Input label="Código" value={form.code} onChange={(v) => set('code', v)} />
             <Input label="Inscrição Estadual" value={form.stateRegistration} onChange={(v) => set('stateRegistration', v)} />
             <Input label="Inscrição Municipal" value={form.municipalRegistration} onChange={(v) => set('municipalRegistration', v)} />
             <Select required label="Regime tributário" value={form.taxRegime} onChange={(v) => set('taxRegime', v)} options={Object.entries(regimes).map(([value, label]) => ({ value, label }))} />
+            {lookup.message && <p role="status" aria-live="polite" className={`col-span-3 rounded px-3 py-2 text-sm ${{ ok: 'bg-emerald-50 text-emerald-800', warn: 'bg-amber-50 text-amber-800', error: 'bg-red-50 text-red-700', loading: 'bg-[#f4f7fb] text-[#68737a]' }[lookup.status] || ''}`}>{lookup.message}</p>}
           </section>
           <section><h3 className="mb-4 font-semibold">Endereço</h3><div className="grid grid-cols-4 gap-5"><Input label="CEP" value={form.cep} onChange={(v) => set('cep', v)} /><div className="col-span-2"><Input label="Logradouro" value={form.street} onChange={(v) => set('street', v)} /></div><Input label="Número" value={form.number} onChange={(v) => set('number', v)} /><Input label="Complemento" value={form.complement} onChange={(v) => set('complement', v)} /><Input label="Estado" value={form.state} onChange={(v) => set('state', v)} /><Input label="Município" value={form.city} onChange={(v) => set('city', v)} /><Input label="Bairro" value={form.neighborhood} onChange={(v) => set('neighborhood', v)} /></div></section>
           <section><h3 className="mb-4 font-semibold">Atividade</h3><div className="grid grid-cols-2 gap-5"><Input label="Ramo de atividade" value={form.activity} onChange={(v) => set('activity', v)} /><Input label="CNAE Federal" value={form.cnae} onChange={(v) => set('cnae', v)} /></div></section>
