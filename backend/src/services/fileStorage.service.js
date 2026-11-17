@@ -38,6 +38,9 @@ function buildKey(folder, originalName) {
   return `${cleanFolder}/${Date.now()}-${crypto.randomBytes(8).toString('hex')}${safeExtension(originalName)}`;
 }
 
+// Nenhuma chamada ao Storage pode ficar pendurada: 60 segundos no máximo.
+const storageFetch = (url, options = {}) => fetch(url, { ...options, signal: AbortSignal.timeout(60000) });
+
 function encodeKey(key) {
   return key.split('/').map(encodeURIComponent).join('/');
 }
@@ -72,14 +75,14 @@ async function ensureBucket() {
   if (bucketReady) return bucketReady;
   const { url, bucket } = config();
   bucketReady = (async () => {
-    const found = await fetch(`${url}/storage/v1/bucket/${encodeURIComponent(bucket)}`, { headers: headers() });
+    const found = await storageFetch(`${url}/storage/v1/bucket/${encodeURIComponent(bucket)}`, { headers: headers() });
     if (found.ok) {
       const info = await found.json().catch(() => ({}));
       if (info.public) throw new Error(`O bucket "${bucket}" do Supabase está público. Ele precisa ser privado.`);
       return;
     }
     const lookup = await supabaseReason(found);
-    const created = await fetch(`${url}/storage/v1/bucket`, {
+    const created = await storageFetch(`${url}/storage/v1/bucket`, {
       method: 'POST',
       headers: headers({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ id: bucket, name: bucket, public: false }),
@@ -110,7 +113,7 @@ async function saveFile({ buffer, originalName, mimeType, folder }) {
 
   if (remote) {
     await ensureBucket();
-    const response = await fetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${encodeKey(key)}`, {
+    const response = await storageFetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${encodeKey(key)}`, {
       method: 'POST',
       headers: headers({ 'Content-Type': mimeType || 'application/octet-stream', 'x-upsert': 'false' }),
       body: buffer,
@@ -132,7 +135,7 @@ async function readFile(ref) {
   if (ref.startsWith('storage:')) {
     const { url, bucket, remote } = config();
     if (!remote) throw new Error('Supabase Storage não configurado neste ambiente.');
-    const response = await fetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${encodeKey(ref.slice(8))}`, { headers: headers() });
+    const response = await storageFetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}/${encodeKey(ref.slice(8))}`, { headers: headers() });
     if (response.status === 404 || response.status === 400) return null;
     if (!response.ok) throw new Error(`Falha ao ler o arquivo no Supabase Storage (HTTP ${response.status}).`);
     return Buffer.from(await response.arrayBuffer());
@@ -151,7 +154,7 @@ async function deleteFile(ref) {
     if (ref.startsWith('storage:')) {
       const { url, bucket, remote } = config();
       if (!remote) return;
-      await fetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}`, {
+      await storageFetch(`${url}/storage/v1/object/${encodeURIComponent(bucket)}`, {
         method: 'DELETE',
         headers: headers({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ prefixes: [ref.slice(8)] }),

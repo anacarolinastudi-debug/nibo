@@ -395,6 +395,7 @@ function createZip(files) {
 }
 
 module.exports = {
+  isRunning: (clientId) => running.has(clientId),
   syncClient,
   assertPermanentStorage,
   createZip,

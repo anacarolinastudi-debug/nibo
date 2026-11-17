@@ -134,7 +134,9 @@ async function removeCertificate(req, res) {
 async function syncNow(req, res) {
   const client = await findClient(req);
   if (!client.nfseConfig) return res.status(400).json({ error: 'Cadastre o certificado digital da empresa antes de buscar as notas.' });
-  if (client.nfseConfig.lastSyncStatus === 'EM_ANDAMENTO' && client.nfseConfig.updatedAt > new Date(Date.now() - 15 * 60 * 1000)) {
+  // Só bloqueia se a busca está de fato rodando neste servidor (um reinício
+  // do Render interrompe a busca e deixaria o status preso).
+  if (nfseAdn.isRunning(client.id)) {
     return res.status(409).json({ error: 'A busca deste cliente já está em andamento.' });
   }
   nfseAdn.assertPermanentStorage();
