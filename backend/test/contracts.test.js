@@ -47,3 +47,53 @@ test('catálogo de serviços com chave e cláusula', () => {
     assert.ok(item.key && item.label && item.clause.length > 40);
   }
 });
+
+test('pré-preenche pelo CNPJ e cria o contrato numerado, ligado ao cliente', async () => {
+  const prismaPath = require.resolve('../src/lib/prisma');
+  const lookupPath = require.resolve('../src/services/cnpjLookup.service');
+  const ctrlPath = require.resolve('../src/controllers/contracts.controller');
+  const created = [];
+  const firmRow = { id: 'f1', name: 'ESCRITÓRIO', cnpj: '00.000.000/0001-91', contractSettings: { representanteNome: 'MARIA' } };
+  const db = {
+    accountingFirm: { findUnique: async () => firmRow, update: async ({ data }) => Object.assign(firmRow, data) },
+    client: { findFirst: async ({ where }) => (where.cnpj.in.includes('11222333000181') ? { id: 'c1', name: 'CLIENTE EXEMPLO LTDA', code: '7' } : null) },
+    contract: { findFirst: async () => ({ number: 4 }), create: async ({ data }) => { created.push(data); return { id: 'k1', createdAt: new Date(), status: 'ATIVO', ...data }; } },
+    $transaction: async (fn) => fn(db),
+  };
+  require.cache[prismaPath] = { id: prismaPath, filename: prismaPath, loaded: true, exports: db };
+  require.cache[lookupPath] = { id: lookupPath, filename: lookupPath, loaded: true, exports: { lookupCnpj: async () => ({
+    cnpj: '11.222.333/0001-81', name: 'CLIENTE EXEMPLO LTDA', cep: '13480-000', street: 'RUA A', number: '1', complement: '', neighborhood: 'CENTRO', city: 'LIMEIRA', state: 'SP', situation: 'ATIVA',
+    partners: [{ name: 'SÓCIO QUOTISTA', role: 'Sócio' }, { name: 'JOÃO ADMIN', role: 'Sócio-Administrador' }],
+  }) } };
+  delete require.cache[ctrlPath];
+  const ctrl = require(ctrlPath);
+  const res = () => { const r = { statusCode: 200, headers: {}, body: null, status(c) { r.statusCode = c; return r; }, set(k, v) { r.headers[k] = v; return r; }, json(b) { r.body = b; return r; } }; return r; };
+  const req = (extra) => ({ user: { accountingFirmId: 'f1', id: 'u1' }, params: {}, body: {}, ...extra });
+  try {
+    const pre = res();
+    await ctrl.prefill(req({ params: { cnpj: '11222333000181' } }), pre);
+    assert.equal(pre.body.contratante.razaoSocial, 'CLIENTE EXEMPLO LTDA');
+    assert.equal(pre.body.contratante.representanteNome, 'JOÃO ADMIN', 'escolhe o sócio administrador');
+    assert.equal(pre.body.client.code, '7');
+
+    const out = res();
+    await ctrl.create(req({ body: { cnpj: '11222333000181', startDate: '2026-12-01', monthlyFee: '1320.5', services: ['FISCAL', 'IRPF'], contratante: pre.body.contratante } }), out);
+    assert.equal(out.statusCode, 201);
+    assert.equal(created[0].number, 5);
+    assert.equal(created[0].clientId, 'c1');
+    assert.equal(created[0].cnpj, '11.222.333/0001-81');
+    assert.equal(out.body.monthlyFee, 1320.5);
+
+    await assert.rejects(() => ctrl.create(req({ body: { cnpj: '11222333000181', startDate: '2026-12-01', monthlyFee: 10, services: ['INEXISTENTE'], contratante: pre.body.contratante } }), res()), /Serviço inválido/);
+
+    firmRow.contractSettings = null;
+    const semConfig = res();
+    await ctrl.create(req({ body: { cnpj: '11222333000181', startDate: '2026-12-01', monthlyFee: 10, services: ['FISCAL'], contratante: pre.body.contratante } }), semConfig);
+    assert.equal(semConfig.statusCode, 400);
+    assert.match(semConfig.body.error, /Dados do escritório/);
+  } finally {
+    delete require.cache[prismaPath];
+    delete require.cache[lookupPath];
+    delete require.cache[ctrlPath];
+  }
+});
