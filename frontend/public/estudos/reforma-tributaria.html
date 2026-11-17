@@ -210,8 +210,9 @@ footer { margin-top: 32px; font-size: 13px; color: var(--muted); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* ============ DADOS-INICIO (editado pela revisão diária) ============ */
-const ATUALIZADO_EM = "2026-11-16";
+const ATUALIZADO_EM = "2026-11-17";
 const UPDATES = [
+  { d: "2026-11-17", t: "O TCU calculou em 11,3% a alíquota de referência da CBS para 2027 e mandou ao Senado, que deve decidir até 15/12/2026. Se o Senado não decidir, vale o número do TCU. Hoje (17/11) o ministro da Fazenda foi à CAE explicar o cálculo; o governo diz que não vai adiar a reforma." },
   { d: "2026-11-16", t: "Cronograma reorganizado pela ordem de vigência: NF-e, cClassTrib e NFS-e (já em vigor) vêm primeiro; Simples e a virada de 2027 logo em seguida." },
   { d: "2026-11-16", t: "Portal da NF-e (SVRS) informa a NT 2025.002 na versão 1.53 como a versão em vigor do leiaute de IBS/CBS." },
   { d: "2026-11-12", t: "Receita e Comitê Gestor adiaram de 16/11 para 14/12/2026 a entrada em produção das NTs 2026.005 (Simples), 2026.006 (vinculação de pagamento) e 2026.008 (valor líquido) da NF-e. A NT 2025.002 segue valendo." },
@@ -221,6 +222,7 @@ const UPDATES = [
 
 const YT = id => "https://www.youtube.com/watch?v=" + id;
 const R = {
+  sencbs:  { t: "NOTÍCIA", l: "Senado recebe cálculo da CBS (11,3%)", u: "https://www12.senado.leg.br/noticias/materias/2026/11/10/senado-recebe-acordao-do-tcu-que-propoe-aliquota-de-11-3-para-a-cbs", d: "Agência Senado, 10/11/2026: TCU propõe 11,3%; Senado decide até 15/12" },
   ec132:   { t: "TEXTO", l: "EC 132/2023", u: "https://www.planalto.gov.br/ccivil_03/constituicao/emendas/emc/emc132.htm", d: "Texto da emenda no Planalto" },
   lc214:   { t: "TEXTO", l: "LC 214/2025", u: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp214.htm", d: "Lei geral do IBS, CBS e IS" },
   lc227:   { t: "TEXTO", l: "LC 227/2026", u: "https://www.planalto.gov.br/ccivil_03/leis/lcp/lcp227.htm", d: "Comitê Gestor do IBS e ajustes na LC 214" },
@@ -370,13 +372,13 @@ const WEEKS = [
 
   { n: 6, start: "2027-01-04", title: "A virada de 2027: CBS cheia e fim de PIS/Cofins",
     vig: { s: "soon", l: "Começa em 01/01/2027" },
-    past: "Regras de transição gravadas no ADCT em 2023", cur: "O que muda na nota e na apuração a partir de janeiro",
+    past: "Regras de transição gravadas no ADCT em 2023", cur: "O que muda na nota e na apuração a partir de janeiro; alíquota de referência da CBS (TCU propôs 11,3%, Senado decide até 15/12/2026)",
     fiscal: "Primeira semana do ano novo: confira se os clientes do Presumido e do Real já emitem com CBS cheia e se o PIS/Cofins saiu da apuração.",
     days: [
       ["past", "Ler os arts. 125 a 133 do ADCT (transição)", [R.ec132]],
       ["past", "Montar a tabela ano a ano de 2026 a 2033", [R.sijur]],
       ["cur", "Assistir ao episódio da série Diálogos sobre a transição", [R.g15]],
-      ["cur", "Estudar 2027: CBS cheia, fim de PIS/Cofins, IPI zerado e Imposto Seletivo", [R.sijur, R.faz]],
+      ["cur", "Estudar 2027: CBS cheia (alíquota de referência proposta de 11,3%), fim de PIS/Cofins, IPI zerado e Imposto Seletivo", [R.sijur, R.faz, R.sencbs]],
       ["bridge", "Conferir a primeira nota de 2027 de um cliente do Lucro Presumido. Depois, provinha", []] ],
     quiz: [
       ["Em que ano PIS e Cofins deixam de existir?", ["2026", "2027", "2029", "2033"], 1, "Em 2027 a CBS passa a ser cobrada de verdade e PIS/Cofins são extintos."],
@@ -882,6 +884,5 @@ renderUpdates();
 renderLibrary();
 render();
 </script>
-
 </body>
 </html>
