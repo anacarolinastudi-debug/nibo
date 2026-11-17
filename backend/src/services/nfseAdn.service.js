@@ -213,8 +213,20 @@ function loadCertificate(config) {
 
 const running = new Set();
 
+// Em produção os XMLs precisam ir para o armazenamento permanente (Supabase):
+// o disco do Render é apagado a cada deploy e os arquivos seriam perdidos.
+function assertPermanentStorage(isRemote = fileStorage.isRemote) {
+  const production = process.env.NODE_ENV === 'production' || Boolean(process.env.RENDER);
+  if (production && !isRemote()) {
+    throw Object.assign(new Error('Armazenamento permanente não configurado: sem SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY no Render, os XMLs seriam apagados no próximo deploy. Configure essas variáveis antes de buscar.'), { status: 400 });
+  }
+}
+
 // Baixa tudo o que ainda não foi baixado para o cliente, a partir do último NSU.
-async function syncClient(clientId, { request = requestJson, pause = PAUSA_ENTRE_LOTES_MS } = {}) {
+// Com refazer=true, recomeça do NSU 0 e grava de novo os XMLs que sumiram,
+// sem duplicar as notas que já estão no banco.
+async function syncClient(clientId, { request = requestJson, pause = PAUSA_ENTRE_LOTES_MS, refazer = false } = {}) {
+  assertPermanentStorage();
   if (running.has(clientId)) throw Object.assign(new Error('A busca deste cliente já está em andamento.'), { status: 409 });
   running.add(clientId);
   const client = await prisma.client.findUnique({ where: { id: clientId }, include: { nfseConfig: true } });
@@ -229,8 +241,9 @@ async function syncClient(clientId, { request = requestJson, pause = PAUSA_ENTRE
 
     await prisma.clientNfseConfig.update({ where: { id: config.id }, data: { lastSyncStatus: 'EM_ANDAMENTO', lastSyncError: null } });
     const cert = loadCertificate(config);
-    let lastNsu = config.lastNsu;
+    let lastNsu = refazer ? 0n : config.lastNsu;
     let saved = 0;
+    let recovered = 0;
     let lotes = 0;
     let stopReason = 'Sem documentos novos.';
 
@@ -256,6 +269,16 @@ async function syncClient(clientId, { request = requestJson, pause = PAUSA_ENTRE
         const info = parseDocumento(doc.xml, cnpj);
         const chave = info.chave || doc.chave;
         const exists = await prisma.nfseDocument.findUnique({ where: { clientId_nsu: { clientId, nsu: doc.nsu } } });
+        if (exists && refazer && !(await fileStorage.readFile(exists.xmlRef))) {
+          const xmlRef = await fileStorage.saveFile({
+            buffer: Buffer.from(doc.xml, 'utf8'),
+            originalName: `${chave || doc.nsu}.xml`,
+            mimeType: 'application/xml',
+            folder: `nfse/${client.accountingFirmId}/${clientId}`,
+          });
+          await prisma.nfseDocument.update({ where: { id: exists.id }, data: { xmlRef } });
+          recovered += 1;
+        }
         if (!exists) {
           const xmlRef = await fileStorage.saveFile({
             buffer: Buffer.from(doc.xml, 'utf8'),
@@ -290,7 +313,7 @@ async function syncClient(clientId, { request = requestJson, pause = PAUSA_ENTRE
         }
         if (doc.nsu > lastNsu) lastNsu = doc.nsu;
       }
-      await prisma.clientNfseConfig.update({ where: { id: config.id }, data: { lastNsu } });
+      if (lastNsu > config.lastNsu) await prisma.clientNfseConfig.update({ where: { id: config.id }, data: { lastNsu } });
       if (/NENHUM/i.test(status)) break;
       if (lotes === MAX_LOTES_POR_EXECUCAO) stopReason = 'Muitos documentos; a próxima busca continua de onde parou.';
       if (pause) await sleep(pause);
@@ -308,9 +331,10 @@ async function syncClient(clientId, { request = requestJson, pause = PAUSA_ENTRE
 
     await prisma.clientNfseConfig.update({
       where: { id: config.id },
-      data: { lastSyncAt: new Date(), lastSyncStatus: 'SUCESSO', lastSyncError: null, lastSyncCount: saved },
+      data: { lastSyncAt: new Date(), lastSyncStatus: 'SUCESSO', lastSyncError: null, lastSyncCount: saved + recovered },
     });
-    return { saved, lastNsu: lastNsu.toString(), message: saved ? `${saved} documento(s) novo(s).` : stopReason };
+    const parts = [saved ? `${saved} documento(s) novo(s).` : '', recovered ? `${recovered} XML(s) recuperado(s).` : ''].filter(Boolean);
+    return { saved, recovered, lastNsu: (lastNsu > config.lastNsu ? lastNsu : config.lastNsu).toString(), message: parts.join(' ') || stopReason };
   } catch (error) {
     if (client?.nfseConfig) {
       await prisma.clientNfseConfig.update({
@@ -372,6 +396,7 @@ function createZip(files) {
 
 module.exports = {
   syncClient,
+  assertPermanentStorage,
   createZip,
   _private: { normalizeLote, decodeArquivo, parseDocumento, onlyDigits, cnpjRoot, crc32, baseUrl },
 };

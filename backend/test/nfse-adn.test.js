@@ -107,3 +107,15 @@ test('lê o CNPJ do titular no nome do certificado, ignorando o CNPJ da autorida
   assert.equal(meta.cnpj, '11222333000181');
   assert.equal(meta.commonName, 'OFICINA TESTE LTDA:11222333000181');
 });
+
+test('em produção, recusa buscar sem armazenamento permanente', () => {
+  const { assertPermanentStorage } = require('../src/services/nfseAdn.service');
+  const previous = process.env.RENDER;
+  process.env.RENDER = 'true';
+  try {
+    assert.throws(() => assertPermanentStorage(() => false), /Armazenamento permanente não configurado/);
+    assert.doesNotThrow(() => assertPermanentStorage(() => true));
+  } finally {
+    if (previous === undefined) delete process.env.RENDER; else process.env.RENDER = previous;
+  }
+});

@@ -137,7 +137,9 @@ async function syncNow(req, res) {
   if (client.nfseConfig.lastSyncStatus === 'EM_ANDAMENTO' && client.nfseConfig.updatedAt > new Date(Date.now() - 15 * 60 * 1000)) {
     return res.status(409).json({ error: 'A busca deste cliente já está em andamento.' });
   }
-  nfseAdn.syncClient(client.id).catch((error) => console.error(`Busca de NFS-e (${client.name}):`, error.message));
+  nfseAdn.assertPermanentStorage();
+  const refazer = req.query.refazer === '1';
+  nfseAdn.syncClient(client.id, { refazer }).catch((error) => console.error(`Busca de NFS-e (${client.name}):`, error.message));
   res.status(202).json({ started: true });
 }
 
@@ -178,6 +180,11 @@ async function downloadZip(req, res) {
     used.add(name);
     files.push({ name, data: buffer });
   }
+  if (files.length === 0) {
+    return res.status(410).json({ error: 'Os XMLs desta competência não estão mais no armazenamento. Use "Baixar tudo de novo" na linha da empresa para recuperá-los.' });
+  }
+  const missing = documents.length - files.length;
+  if (missing > 0) res.setHeader('X-Nfse-Faltando', String(missing));
   const [year, month] = req.query.mes.split('-');
   const safeName = client.name.normalize('NFD').replace(/[^\w ]/g, '').trim().replace(/\s+/g, '_').slice(0, 60);
   res.setHeader('Content-Type', 'application/zip');

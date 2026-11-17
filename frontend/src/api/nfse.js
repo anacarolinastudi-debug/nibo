@@ -15,8 +15,8 @@ export function removeClientCertificate(clientId) {
   return api.delete(`/nfse/clients/${clientId}/certificate`);
 }
 
-export function syncNfse(clientId) {
-  return api.post(`/nfse/clients/${clientId}/sync`).then((res) => res.data);
+export function syncNfse(clientId, { refazer = false } = {}) {
+  return api.post(`/nfse/clients/${clientId}/sync`, null, { params: refazer ? { refazer: 1 } : undefined }).then((res) => res.data);
 }
 
 export function listNfseDocuments(clientId, params) {

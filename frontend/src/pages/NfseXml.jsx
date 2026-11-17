@@ -59,10 +59,11 @@ function NfseHub() {
     return clients.filter((client) => `${client.name} ${client.cnpj} ${client.code || ''}`.toLowerCase().includes(term));
   }, [clients, query]);
 
-  async function handleSync(client) {
+  async function handleSync(client, refazer = false) {
     setNotice('');
+    if (refazer && !window.confirm(`Baixar de novo todas as NFS-e de ${client.name} desde o início? As notas não serão duplicadas; os XMLs que faltarem serão recuperados.`)) return;
     try {
-      await syncNfse(client.id);
+      await syncNfse(client.id, { refazer });
       setClients((rows) => rows.map((row) => (row.id === client.id ? { ...row, config: { ...row.config, lastSyncStatus: 'EM_ANDAMENTO', lastSyncError: null } } : row)));
     } catch (error) {
       setNotice(errorText(error, 'Não foi possível iniciar a busca.'));
@@ -119,7 +120,7 @@ function NfseHub() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((client) => <ClientRow key={client.id} client={client} onCert={() => setCertFor(client)} onSync={() => handleSync(client)} onOpen={() => setSelected(client)} />)}
+                {filtered.map((client) => <ClientRow key={client.id} client={client} onCert={() => setCertFor(client)} onSync={() => handleSync(client)} onRedo={() => handleSync(client, true)} onOpen={() => setSelected(client)} />)}
                 {filtered.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-[#78838a]">Nenhuma empresa encontrada.</td></tr>}
               </tbody>
             </table>
@@ -132,7 +133,7 @@ function NfseHub() {
   </div>;
 }
 
-function ClientRow({ client, onCert, onSync, onOpen }) {
+function ClientRow({ client, onCert, onSync, onRedo, onOpen }) {
   const config = client.config;
   const status = config?.lastSyncStatus;
   return <tr className="border-t border-[#dfe5e8] align-top">
@@ -159,6 +160,9 @@ function ClientRow({ client, onCert, onSync, onOpen }) {
         <button type="button" onClick={onSync} disabled={!config || config.expired || status === 'EM_ANDAMENTO'} className="rounded bg-[#2693d2] px-3 py-1.5 text-xs text-white disabled:opacity-50">{status === 'EM_ANDAMENTO' ? 'Buscando…' : 'Buscar agora'}</button>
         <button type="button" onClick={onOpen} disabled={!client.documents} className="rounded border border-[#2693d2] px-3 py-1.5 text-xs text-[#16829b] disabled:opacity-50">Ver notas</button>
       </div>
+      {config && client.documents > 0 && !config.expired && status !== 'EM_ANDAMENTO' && (
+        <div className="mt-1 text-right"><button type="button" onClick={onRedo} className="text-xs text-[#16829b] hover:underline">Baixar tudo de novo</button></div>
+      )}
     </td>
   </tr>;
 }
@@ -255,7 +259,9 @@ function DocumentsDialog({ client, onClose }) {
   async function zip() {
     setError('');
     try { await downloadNfseZip(client.id, { mes, papel: papel || undefined }, client.name); } catch (err) {
-      setError(err.response?.status === 404 ? 'Nenhum XML para esse filtro.' : 'Não foi possível gerar o ZIP.');
+      if (err.response?.status === 404) setError('Nenhum XML para esse filtro.');
+      else if (err.response?.status === 410) setError('Os XMLs deste mês não estão mais no armazenamento. Feche e use "Baixar tudo de novo" na linha da empresa.');
+      else setError('Não foi possível gerar o ZIP.');
     }
   }
 
