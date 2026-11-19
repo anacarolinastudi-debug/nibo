@@ -210,8 +210,9 @@ footer { margin-top: 32px; font-size: 13px; color: var(--muted); }
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* ============ DADOS-INICIO (editado pela revisão diária) ============ */
-const ATUALIZADO_EM = "2026-11-17";
+const ATUALIZADO_EM = "2026-11-19";
 const UPDATES = [
+  { d: "2026-11-04", t: "Medida Provisória 1.399/2026 trata do Imposto Seletivo: o IS passa a incidir a partir de fevereiro de 2027 (o texto do Senado diz 2/02/2027; outra cópia diz 1º/02, então confirme no Diário Oficial)." },
   { d: "2026-11-17", t: "O TCU calculou em 11,3% a alíquota de referência da CBS para 2027 e mandou ao Senado, que deve decidir até 15/12/2026. Se o Senado não decidir, vale o número do TCU. Hoje (17/11) o ministro da Fazenda foi à CAE explicar o cálculo; o governo diz que não vai adiar a reforma." },
   { d: "2026-11-16", t: "Cronograma reorganizado pela ordem de vigência: NF-e, cClassTrib e NFS-e (já em vigor) vêm primeiro; Simples e a virada de 2027 logo em seguida." },
   { d: "2026-11-16", t: "Portal da NF-e (SVRS) informa a NT 2025.002 na versão 1.53 como a versão em vigor do leiaute de IBS/CBS." },
@@ -456,7 +457,7 @@ const WEEKS = [
       ["Bares e restaurantes estão em:", ["Regime específico", "Imposto Seletivo", "Cesta básica", "Exportação"], 0, "Bares, restaurantes e hotelaria têm regime específico na LC 214."] ] },
 
   { n: 11, start: "2027-02-08", title: "Imposto Seletivo, comércio exterior e ZFM", note: "Semana de Carnaval (09/02). Se folgar, passe a terça para o sábado.",
-    vig: { s: "soon", l: "Imposto Seletivo desde 01/01/2027" },
+    vig: { s: "soon", l: "Imposto Seletivo a partir de fev/2027 (MP 1.399/2026; dia exato a confirmar no DOU)" },
     past: "Regras da EC 132 e da LC 214", cur: "Aulas 2 e 15 do curso",
     fiscal: "Importação e exportação mudam o XML e o crédito. O Imposto Seletivo aparece em notas de cigarros, bebidas e veículos.",
     days: [
@@ -884,5 +885,6 @@ renderUpdates();
 renderLibrary();
 render();
 </script>
+
 </body>
 </html>
